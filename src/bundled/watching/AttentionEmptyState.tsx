@@ -17,7 +17,7 @@ export function AttentionEmptyState({
           <AttentionSonar name={name} picture={picture} size="large" hints />
         }
         title="Attention"
-        description={`Attention lets ${name} watch for messages and updates across Buzz, then act or notify you based on your instructions.${active ? ` Send ${name} a message to get started.` : ""}`}
+        description={`Attention lets ${name} watch for messages and updates across Zion, then act or notify you based on your instructions.${active ? ` Send ${name} a message to get started.` : ""}`}
       />
     </section>
   );

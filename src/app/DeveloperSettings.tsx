@@ -113,9 +113,9 @@ export function DeveloperSettings({ relay }: { relay: RelayData }) {
     setClearing(true);
     try {
       await relay.clearCache();
-      setStatus("Cache cleared. Buzz will load channels and media as needed.");
+      setStatus("Cache cleared. Zion will load channels and media as needed.");
     } catch (error) {
-      setStatus(`Buzz couldn’t clear the cache. ${String(error)}`);
+      setStatus(`Zion couldn’t clear the cache. ${String(error)}`);
     } finally {
       setClearing(false);
     }

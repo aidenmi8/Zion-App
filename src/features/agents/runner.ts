@@ -778,7 +778,7 @@ export class AgentRunners {
   wakeIn(key: AgentKey, trigger: PluginTrigger) {
     const runner = this.runners.get(key);
     if (!runner || !this.runs(key) || !this.host.ready(key))
-      throw new Error("This copy of Buzz does not run that agent");
+      throw new Error("This copy of Zion does not run that agent");
     if (!this.enqueue(runner, { trigger, channelId: trigger.channel }))
       throw new Error("The agent is busy and could not take this wake");
   }
@@ -790,7 +790,7 @@ export class AgentRunners {
   ) {
     const runner = this.runners.get(key);
     if (!runner || !this.runs(key) || !this.host.ready(key))
-      throw new Error("This copy of Buzz does not run that agent");
+      throw new Error("This copy of Zion does not run that agent");
     const job = {
       trigger,
       matched: { object, epoch: runner.epoch },
@@ -923,7 +923,7 @@ export class AgentRunners {
       !this.host.ready(key)
     )
       throw new Error(
-        "Use session controls in the Buzz app that runs this agent.",
+        "Use session controls in the Zion app that runs this agent.",
       );
     return change();
   }
@@ -946,7 +946,7 @@ export class AgentRunners {
     if (working()) throw answering();
     if (!runner)
       throw new Error(
-        "This agent is not running in this copy of Buzz. Change its provider in the Buzz app that runs it.",
+        "This agent is not running in this copy of Zion. Change its provider in the Zion app that runs it.",
       );
     const pubkey = runner.member.pubkey;
     if (
@@ -959,7 +959,7 @@ export class AgentRunners {
     try {
       if (!(await this.claimForRetype(runner)))
         throw new Error(
-          "Another copy of Buzz is running this agent. Change its provider there, or quit that copy of Buzz and try again.",
+          "Another copy of Zion is running this agent. Change its provider there, or quit that copy of Zion and try again.",
         );
       if (working()) throw answering();
       return await change();

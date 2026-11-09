@@ -38,7 +38,7 @@ it("finishes the first cycle before fading when content is ready early", async (
   vi.advanceTimersByTime(100);
   setLaunchReady(true);
   await Promise.resolve();
-  vi.advanceTimersByTime(1659);
+  vi.advanceTimersByTime(1699);
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(1);
   expect(launch).toHaveClass("buzz-launch--leaving");
@@ -60,7 +60,7 @@ it("keeps looping while content is pending, then finishes the current cycle", as
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   setLaunchReady(true);
   await Promise.resolve();
-  vi.advanceTimersByTime(1219);
+  vi.advanceTimersByTime(1299);
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(1);
   expect(launch).toHaveClass("buzz-launch--leaving");
@@ -76,7 +76,7 @@ it("cancels a planned fade if content becomes pending again", async () => {
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   setLaunchReady(true);
   await Promise.resolve();
-  vi.advanceTimersByTime(1519);
+  vi.advanceTimersByTime(1599);
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(1);
   expect(launch).toHaveClass("buzz-launch--leaving");
@@ -104,7 +104,7 @@ it("keeps looping until the initial visible data settles", async () => {
   pending.remove();
   await Promise.resolve();
   await Promise.resolve();
-  vi.advanceTimersByTime(1279);
+  vi.advanceTimersByTime(1399);
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(1);
   expect(launch).toHaveClass("buzz-launch--leaving");
@@ -119,7 +119,7 @@ it("reveals usable cached content after two cycles if refresh stalls", async () 
   const { setLaunchReady } = await import("./launch");
   setLaunchReady(true);
   await Promise.resolve();
-  vi.advanceTimersByTime(3519);
+  vi.advanceTimersByTime(3599);
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(1);
   await Promise.resolve();
@@ -138,7 +138,7 @@ it("rearms the settling budget when the mark starts after observation", async ()
   await Promise.resolve();
   vi.advanceTimersByTime(500);
   launch.dataset.startedAt = "500";
-  vi.advanceTimersByTime(3020);
+  vi.advanceTimersByTime(3100);
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(500);
   await Promise.resolve();
@@ -162,7 +162,7 @@ it("rearms after a mark load later than the original settling budget", async () 
   launch.dataset.startedAt = "4000";
   Object.defineProperty(mark, "complete", { configurable: true, value: true });
   mark.dispatchEvent(new Event("load"));
-  vi.advanceTimersByTime(3519);
+  vi.advanceTimersByTime(3599);
   expect(launch).not.toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(1);
   await Promise.resolve();
@@ -179,7 +179,7 @@ it("reveals a terminal failure even while content is pending", async () => {
   const { setLaunchReady } = await import("./launch");
   setLaunchReady(true, true);
   await Promise.resolve();
-  vi.advanceTimersByTime(1760);
+  vi.advanceTimersByTime(1800);
   expect(launch).toHaveClass("buzz-launch--leaving");
   expect(root).toHaveAttribute("inert");
   vi.advanceTimersByTime(240);
@@ -220,7 +220,7 @@ it("fades when the cycle-boundary timer wakes late", async () => {
   // Throttling delivers the boundary timer a second after its deadline.
   const now = performance.now.bind(performance);
   vi.spyOn(performance, "now").mockImplementation(() => now() + 1000);
-  vi.advanceTimersByTime(1760);
+  vi.advanceTimersByTime(1800);
   expect(launch).toHaveClass("buzz-launch--leaving");
 });
 
@@ -229,7 +229,7 @@ it("fades even if animation frames never arrive", async () => {
   const { setLaunchReady } = await import("./launch");
   setLaunchReady(true);
   // The frame fallback lands on the first boundary, which fades next turn.
-  vi.advanceTimersByTime(1761);
+  vi.advanceTimersByTime(1801);
   expect(launch).toHaveClass("buzz-launch--leaving");
   vi.advanceTimersByTime(240);
   expect(launch.isConnected).toBe(false);

@@ -45,7 +45,7 @@ export function registerPluginDevelopmentTools(host: PluginDevelopmentHost) {
   const catalog = () => {
     const { configuration } = host.plugins().snapshot();
     if (configuration.status === "loading")
-      throw new Error("Buzz is still reading its plugins. Try again.");
+      throw new Error("Zion is still reading its plugins. Try again.");
     if (configuration.status === "recovery")
       throw new Error(
         `Plugin settings need recovery in Settings → Plugins: ${configuration.reason}`,
@@ -108,7 +108,7 @@ export function registerPluginDevelopmentTools(host: PluginDevelopmentHost) {
   };
   const missing = (id: string) =>
     activation(id)
-      ? new Error(`${id} is built into Buzz and cannot be changed.`)
+      ? new Error(`${id} is built into Zion and cannot be changed.`)
       : new Error(`No plugin ${id} is installed. ${LOAD_FROM_FOLDER}`);
 
   /** The plugin's state once `revision` has finished starting, or undefined
@@ -215,7 +215,7 @@ export function registerPluginDevelopmentTools(host: PluginDevelopmentHost) {
     const plugin = find(id);
     if (!plugin) throw missing(id);
     if (plugin.source === "bundled")
-      throw new Error(`${id} is bundled with Buzz and cannot be reloaded.`);
+      throw new Error(`${id} is bundled with Zion and cannot be reloaded.`);
     if (!plugin.reloadable || !folder(plugin))
       throw new Error(
         `${id} was not installed from a folder, so it has no folder to reload. ${LOAD_FROM_FOLDER}`,
@@ -277,7 +277,7 @@ export function registerPluginDevelopmentTools(host: PluginDevelopmentHost) {
         revision,
         unchanged,
         nextStep:
-          "Buzz was started with external plugins paused (safe mode), so it is saved but not running. It runs after a normal restart.",
+          "Zion was started with external plugins paused (safe mode), so it is saved but not running. It runs after a normal restart.",
       });
     const state = await settled(id, revision);
     if (state?.status === "active")

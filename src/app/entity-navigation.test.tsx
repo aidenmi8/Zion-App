@@ -948,13 +948,13 @@ it("lists active primary pages in the app dock", async () => {
   expect(screen.getByRole("tab", { name: "Bestie" })).toBeInTheDocument();
 
   expect(screen.queryByRole("tab", { name: "Agents" })).not.toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const search = await screen.findByRole("dialog", { name: "Search Buzz" });
+  await userEvent.click(screen.getByRole("button", { name: "Search Zion" }));
+  const search = await screen.findByRole("dialog", { name: "Search Zion" });
   expect(
     within(search).queryByRole("option", { name: "Fixture notes" }),
   ).not.toBeInTheDocument();
   await userEvent.type(
-    within(search).getByRole("combobox", { name: "Search Buzz" }),
+    within(search).getByRole("combobox", { name: "Search Zion" }),
     "Fixture notes",
   );
   expect(
@@ -1407,7 +1407,7 @@ it("keeps the unavailable card for a turned-off external plugin while external p
   if (!card) throw new Error("Expected the failure alert");
   expect(
     within(card).getByText(
-      "It may have been removed, or you may need to update Buzz.",
+      "It may have been removed, or you may need to update Zion.",
     ),
   ).toBeVisible();
   expect(

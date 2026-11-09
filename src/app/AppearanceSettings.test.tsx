@@ -291,7 +291,7 @@ it("selects and restores an accent color, including retry after a failed save", 
   ).toHaveLength(6);
 
   expect(
-    screen.getByRole("button", { name: "Citrus accent color" }),
+    screen.getByRole("button", { name: "Iris accent color" }),
   ).toHaveAttribute("aria-pressed", "true");
   const save = vi
     .spyOn(Storage.prototype, "setItem")

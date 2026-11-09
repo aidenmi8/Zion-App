@@ -142,7 +142,7 @@ export function createRemoteBestie(
       if (!current) {
         publish({
           status: "unavailable",
-          message: "Sign in to Buzz and choose a community to set up Bestie.",
+          message: "Sign in to Zion and choose a community to set up Bestie.",
         });
         return;
       }

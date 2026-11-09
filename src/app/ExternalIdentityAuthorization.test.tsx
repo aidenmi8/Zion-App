@@ -136,7 +136,7 @@ it("refuses an ownership proof from a different signed-in owner", async () => {
   );
   await approve(user);
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Your Buzz identity changed",
+    "Your Zion identity changed",
   );
   expect(screen.queryByLabelText("Ownership proof")).not.toBeInTheDocument();
 });
@@ -183,7 +183,7 @@ it("shows the exact identity and agent-control permission before signing, and ca
   await user.type(screen.getByLabelText("Application public key (hex)"), agent);
   await user.click(screen.getByRole("button", { name: "Authorize identity" }));
   expect(screen.getByRole("alertdialog")).toHaveAccessibleDescription(
-    /directing your Buzz coding agents to run commands as you/,
+    /directing your Zion coding agents to run commands as you/,
   );
   expect(screen.getByLabelText("Application identity (npub)")).toHaveValue(
     npubEncode(agent),
@@ -237,10 +237,10 @@ it("discards an in-flight signer result when settings opens Sign out", async () 
   await user.type(screen.getByLabelText("Application public key (hex)"), agent);
   await approve(user);
   await waitFor(() => expect(complete).toBeTypeOf("function"));
-  await user.click(screen.getByRole("button", { name: "Sign out of Buzz" }));
+  await user.click(screen.getByRole("button", { name: "Sign out of Zion" }));
   await act(async () => complete(tag));
   expect(
-    screen.getByRole("alertdialog", { name: "Sign out of Buzz?" }),
+    screen.getByRole("alertdialog", { name: "Sign out of Zion?" }),
   ).toBeInTheDocument();
   expect(screen.queryByLabelText("Ownership proof")).not.toBeInTheDocument();
   expect(

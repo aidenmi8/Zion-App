@@ -1,5 +1,5 @@
-// Matches the repeated SMIL tracks in public/buzz-loading-mark.svg.
-const CYCLE_MS = 1760;
+// Matches the approved Zion breath in public/buzz-loading-mark.svg.
+const CYCLE_MS = 1800;
 const FADE_MS = 220;
 // A saved workspace stays usable if its live refresh stalls.
 const SETTLING_BUDGET_MS = CYCLE_MS * 2;

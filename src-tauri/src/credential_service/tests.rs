@@ -955,7 +955,7 @@ fn every_kind_has_one_class() {
         0, 3, 5, 9005, 9044, 10002, 10100, 28936, 30621, 41011, 45011,
     ] {
         assert!(
-            matches!(classes(kind), Verdict::Deny(reason) if reason.contains("use Buzz")),
+            matches!(classes(kind), Verdict::Deny(reason) if reason.contains("use Zion")),
             "{kind}"
         );
     }

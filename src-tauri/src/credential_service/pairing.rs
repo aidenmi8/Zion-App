@@ -181,7 +181,7 @@ impl Pairings {
             .unwrap_or_else(PoisonError::into_inner);
         let communities = communities
             .as_ref()
-            .ok_or_else(|| Failure::new("unavailable", "Buzz is starting; try again"))?;
+            .ok_or_else(|| Failure::new("unavailable", "Zion is starting; try again"))?;
         Ok(is_saved(communities, relay))
     }
     fn state(&self) -> MutexGuard<'_, State> {
@@ -372,12 +372,12 @@ impl Pairings {
         if !self.saved(relay)? {
             return Err(Failure::new(
                 "denied",
-                &format!("{relay} isn't a community in Buzz; add it first"),
+                &format!("{relay} isn't a community in Zion; add it first"),
             ));
         }
         let approver = match human().await {
             Human::Ready(approver) => approver,
-            Human::Absent => return Err(Failure::new("denied", "Set up Buzz first")),
+            Human::Absent => return Err(Failure::new("denied", "Set up Zion first")),
             Human::Pending(message) => return Err(Failure::new("unavailable", message)),
         };
         self.settled().await.map_err(Failure::unavailable)?;
@@ -388,7 +388,7 @@ impl Pairings {
         let unsaved = || {
             Failure::new(
                 "denied",
-                &format!("{relay} isn't a community in Buzz; add it first"),
+                &format!("{relay} isn't a community in Zion; add it first"),
             )
         };
         let answer = {
@@ -463,17 +463,17 @@ impl Pairings {
         match tokio::time::timeout(APPROVAL, answer).await {
             Ok(Ok(true)) => {}
             Ok(_) if !self.saved(relay)? => return Err(unsaved()),
-            Ok(_) => return Err(Failure::new("denied", "Pairing was declined in Buzz")),
+            Ok(_) => return Err(Failure::new("denied", "Pairing was declined in Zion")),
             Err(_) => {
                 return Err(Failure::new(
                     "approval_required",
-                    "Nobody approved the pairing in Buzz in time",
+                    "Nobody approved the pairing in Zion in time",
                 ))
             }
         }
         match human().await {
             Human::Ready(now) if now == approver => {}
-            _ => return Err(Failure::new("denied", "Your Buzz account changed")),
+            _ => return Err(Failure::new("denied", "Your Zion account changed")),
         }
         let token =
             super::new_token().map_err(|_| Failure::new("unavailable", "Could not pair"))?;
@@ -487,7 +487,7 @@ impl Pairings {
             last_used: now,
             approved_by: approver.clone(),
         };
-        let account_changed = || Failure::new("denied", "Your Buzz account changed");
+        let account_changed = || Failure::new("denied", "Your Zion account changed");
         // Saved only under the generation it was approved in, and returned
         // only if no revoke-all began while it was saved: that one removes it.
         // A community removed while it was saved is seen before the write

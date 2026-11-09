@@ -1488,7 +1488,7 @@ it("offline top-edge input reads nothing, and the connected session pages once i
     h.gesture();
     h.render();
     expect(h.caption()).toBe(
-      "You can load older messages once Buzz reconnects.",
+      "You can load older messages once Zion reconnects.",
     );
     await flush();
     expect(older()).toHaveLength(0);

@@ -740,7 +740,7 @@ it.each([
   [
     "another key is bound to the account",
     [bound("ab".repeat(32))],
-    "linked to a different Buzz identity",
+    "linked to a different Zion identity",
   ],
   [
     "the key is bound to another account",
@@ -776,7 +776,7 @@ it("refuses to link without a local Buzz identity", async () => {
   const h = await fixture();
   h.owner.key.mockResolvedValueOnce(null);
   await expect(h.client.link(h.signal)).rejects.toThrow(
-    "Set up your Buzz identity",
+    "Set up your Zion identity",
   );
   expect(h.host.request).not.toHaveBeenCalled();
 });

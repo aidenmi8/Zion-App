@@ -59,8 +59,8 @@ it("opens the host Drafts & sent destination from global search", async () => {
   services = createServices();
   render(<App services={services} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Search Buzz" }));
-  const search = await screen.findByRole("combobox", { name: "Search Buzz" });
+  await user.click(await screen.findByRole("button", { name: "Search Zion" }));
+  const search = await screen.findByRole("combobox", { name: "Search Zion" });
   await user.type(search, "drafts");
   await user.click(
     await screen.findByRole("option", { name: "Drafts & sent" }),

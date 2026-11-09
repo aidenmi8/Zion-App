@@ -42,8 +42,8 @@ test("Mesh compute is off by default and can be enabled and disabled", async ({
     page
       .getByRole("region", { name: "Compute consumer", exact: true })
       .getByRole("status")
-      .filter({ hasText: "Open Buzz desktop to use shared compute." }),
-  ).toHaveText("Open Buzz desktop to use shared compute.");
+      .filter({ hasText: "Open Zion desktop to use shared compute." }),
+  ).toHaveText("Open Zion desktop to use shared compute.");
   await expect(
     page.getByText("Shared compute for Primary", { exact: true }),
   ).toBeVisible();

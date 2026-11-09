@@ -315,7 +315,7 @@ it("keeps the copy in use when a new release fails its test", async () => {
   expect(state.used).toEqual([]);
   expect(setup.snapshot()).toMatchObject({
     notice:
-      "Codex 0.163.0 failed its test: it did not list its models. Buzz keeps using 0.162.1.",
+      "Codex 0.163.0 failed its test: it did not list its models. Zion keeps using 0.162.1.",
     status: { state: "ready", version: "0.162.1" },
   });
   // A refused release is not downloaded again, unless the person asks.

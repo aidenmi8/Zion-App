@@ -571,7 +571,7 @@ it("exports the agent as an .agent.json snapshot", async () => {
   // The menu says what an agent card is before offering the backup format.
   expect(
     await screen.findByText(
-      "An agent card is an image that holds the agent’s setup, so anyone can add it to Buzz.",
+      "An agent card is an image that holds the agent’s setup, so anyone can add it to Zion.",
     ),
   ).toBeInTheDocument();
   await user.click(
@@ -605,7 +605,7 @@ it("shows the card and what it does before exporting it", async () => {
   expect(
     await screen.findByRole("dialog", { name: "Export Ada" }),
   ).toHaveAccessibleDescription(
-    "Anyone can add Ada to Buzz with this card. Instructions and settings come along. Memories and chats stay with you.",
+    "Anyone can add Ada to Zion with this card. Instructions and settings come along. Memories and chats stay with you.",
   );
   expect(
     await screen.findByRole("img", { name: "Ada’s agent card" }),
@@ -613,7 +613,7 @@ it("shows the card and what it does before exporting it", async () => {
   // Its name and stats; the echo type has no summary, so its default model.
   expect(text).toEqual(
     expect.arrayContaining([
-      "BUZZ AGENT",
+      "ZION AGENT",
       "ADA",
       "HARNESS",
       "Echo",

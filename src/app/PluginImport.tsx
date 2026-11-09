@@ -995,7 +995,7 @@ export function PluginImport({
                   : preview.candidates.length
                     ? "Select a plugin to review before installing."
                     : "Try another folder or repository."
-                : "Load built plugins containing manifest.json and plugin.js. Buzz doesn’t build source code or run install scripts."
+                : "Load built plugins containing manifest.json and plugin.js. Zion doesn’t build source code or run install scripts."
         }
         size={
           automaticUpdate || error || (reviewing && updating)
@@ -1075,7 +1075,7 @@ export function PluginImport({
                     if (await close()) onOpenInstalled(id);
                   }}
                 >
-                  Open in Buzz
+                  Open in Zion
                 </Button>
               )}
               {reviewing && (duplicate ? !onOpenInstalled : upToDate) && (
@@ -1252,7 +1252,7 @@ export function PluginImport({
                     <p className="m-0 text-caption text-muted">
                       HTTPS or SSH; GitHub owner/repository also works. SSH uses
                       your agent and known hosts. Password prompts and
-                      credential helpers are not used. Buzz git repositories in
+                      credential helpers are not used. Zion git repositories in
                       this community sign in with your account.
                     </p>
                     <div className="justify-self-start">
@@ -1414,7 +1414,7 @@ export function PluginImport({
                   )}
                 {reviewing && existing?.source === "bundled" && !loading && (
                   <p className="m-0 text-body-sm">
-                    This plugin is included with Buzz. Update Buzz to get its
+                    This plugin is included with Zion. Update Zion to get its
                     latest version.
                   </p>
                 )}

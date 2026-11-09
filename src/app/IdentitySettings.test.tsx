@@ -305,7 +305,7 @@ it("places organization sign-in below signing out of Buzz", () => {
     />,
     { wrapper: ToastProvider },
   );
-  const signOut = screen.getByRole("button", { name: "Sign out of Buzz" });
+  const signOut = screen.getByRole("button", { name: "Sign out of Zion" });
   const organization = screen.getByText("Organization sign-in");
   expect(
     signOut.compareDocumentPosition(organization) &
@@ -327,14 +327,14 @@ it.each([
   // First run offers no Try again for it, but a new sign-in clears it.
   [
     { status: "failed", kind: "signed_out" },
-    "Your Builderlab sign-in is no longer valid, so your key wasn’t backed up. Buzz tries again when you next sign in to Builderlab.",
+    "Your Builderlab sign-in is no longer valid, so your key wasn’t backed up. Zion tries again when you next sign in to Builderlab.",
   ],
   // Settings has no Try again, so a retryable failure names what will retry.
   ...(["busy", "unreachable", "unconfirmed", "storage"] as const).map(
     (kind) =>
       [
         { status: "failed", kind },
-        `${BACKUP_FAILURES[kind].cause} Buzz tries again when you next sign in to Builderlab.`,
+        `${BACKUP_FAILURES[kind].cause} Zion tries again when you next sign in to Builderlab.`,
       ] as const,
   ),
 ] as const)(
@@ -455,12 +455,12 @@ it("follows the status store as it publishes a higher seq", async () => {
   const host = renderBackup(at(1, { status: "idle" }));
   await host.settled();
   expect(status()).toHaveTextContent(
-    "Buzz hasn’t checked whether your identity is synced since it opened.",
+    "Zion hasn’t checked whether your identity is synced since it opened.",
   );
   host.push(at(2, { status: "running" }));
   expect(status()).toHaveTextContent("Syncing…");
   host.push(at(3, { status: "failed", kind: "busy" }));
-  const busy = /^Another backup of this key is in progress\. Buzz tries/;
+  const busy = /^Another backup of this key is in progress\. Zion tries/;
   expect(status()).toHaveTextContent(busy);
   // A late, lower seq is not newer news.
   host.push(at(2, { status: "complete" }));

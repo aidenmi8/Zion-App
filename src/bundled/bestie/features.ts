@@ -54,7 +54,7 @@ export const checkinHourly: Feature = {
   id: "checkin.hourly",
   title: "Every hour",
   description:
-    "Bestie wakes once an hour to tidy its memory and tell you only what matters. Runs while Buzz is open and the Watching plugin is on. Each wake uses your tokens. Turning this on also runs Bestie's other watches.",
+    "Bestie wakes once an hour to tidy its memory and tell you only what matters. Runs while Zion is open and the Watching plugin is on. Each wake uses your tokens. Turning this on also runs Bestie's other watches.",
   version: 1,
   requires: "memory",
   timer: {

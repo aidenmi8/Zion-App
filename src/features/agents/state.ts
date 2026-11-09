@@ -75,12 +75,12 @@ export function executionStorage(fallback: AgentStore): AgentStore {
     ...fallback,
     read: async () => {
       throw new Error(
-        "Native agent storage is unavailable. Restart Buzz before running agents.",
+        "Native agent storage is unavailable. Restart Zion before running agents.",
       );
     },
     add: async () => {
       throw new Error(
-        "Native agent storage is unavailable. Restart Buzz before running agents.",
+        "Native agent storage is unavailable. Restart Zion before running agents.",
       );
     },
   });

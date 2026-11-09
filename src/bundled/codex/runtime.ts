@@ -2293,13 +2293,13 @@ export class CodexRuntime {
     const { key, pubkey } = request.agent;
     const reads = this.reads(key);
     if (reads?.scope !== request.scope)
-      throw new Error("Buzz is not connected to this community");
+      throw new Error("Zion is not connected to this community");
     const { connection } = reads;
     const listing = await this.memoryReads.read(reads, pubkey, signal, slug);
     signal.throwIfAborted();
     const current = this.reads(key);
     if (current?.scope !== request.scope || current.connection !== connection)
-      throw new Error("Buzz is not connected to this community");
+      throw new Error("Zion is not connected to this community");
     return listing;
   }
   /** Stops the thread's shells. `linger` keeps looking that long: a command

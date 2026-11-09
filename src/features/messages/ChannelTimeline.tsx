@@ -1782,7 +1782,7 @@ function Timeline({
         {window.historyLimited ? (
           <span>History window limit reached</span>
         ) : window.hasMore && queries.channels.cachedOnly ? (
-          <span>You can load older messages once Buzz reconnects.</span>
+          <span>You can load older messages once Zion reconnects.</span>
         ) : window.hasMore && (historyControl === "button" || window.error) ? (
           <Button
             type="button"

@@ -480,7 +480,7 @@ it.each([
   [
     "an HTML page",
     new Response("<html></html>"),
-    "This address isn’t a Buzz community.",
+    "This address isn’t a Zion community.",
   ],
   [
     "a Buzz relay with no community here",

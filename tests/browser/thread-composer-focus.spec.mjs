@@ -150,10 +150,10 @@ for (const owner of [undefined, "page draft", "menu", "dialog"]) {
         await target.focus();
       } else if (owner === "dialog") {
         await page
-          .getByRole("button", { name: "Search Buzz", exact: true })
+          .getByRole("button", { name: "Search Zion", exact: true })
           .click();
         target = page.getByRole("combobox", {
-          name: "Search Buzz",
+          name: "Search Zion",
           exact: true,
         });
         await expect(target).toBeFocused();

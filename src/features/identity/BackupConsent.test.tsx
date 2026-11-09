@@ -259,7 +259,7 @@ it.each([
       name: "Sync your identity with Builderlab?",
     });
     expect(dialog).toHaveAccessibleDescription(
-      "Buzz will save an encrypted copy of your identity key with your Builderlab account. That copy can restore your identity, including in other apps where you use the same key.",
+      "Zion will save an encrypted copy of your identity key with your Builderlab account. That copy can restore your identity, including in other apps where you use the same key.",
     );
     expect(app.setBackupChoice).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: action }));

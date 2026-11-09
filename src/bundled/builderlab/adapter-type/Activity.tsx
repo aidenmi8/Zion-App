@@ -61,7 +61,7 @@ export function ActivityPanel({
   /** Names the people whose messages prompted the turns. */
   names?: IdentityNameView | undefined;
 }) {
-  if (!activity) return <Note>Activity shows once Buzz is connected.</Note>;
+  if (!activity) return <Note>Activity shows once Zion is connected.</Note>;
   return (
     <ActivityFeed
       agent={agent}
@@ -143,7 +143,7 @@ function ActivityFeed({
       before={
         <>
           <Note>
-            Turns from all of this agent's conversations, captured while Buzz
+            Turns from all of this agent's conversations, captured while Zion
             has been open. Earlier turns aren't shown.
           </Note>
           {snapshot.status === "interrupted" && (

@@ -497,7 +497,7 @@ it.each([true, false])(
       expect(
         await screen.findByText("No hosted communities yet"),
       ).toBeInTheDocument();
-      expect(screen.getByText(/Buzz identity connected/)).toBeVisible();
+      expect(screen.getByText(/Zion identity connected/)).toBeVisible();
       expect(
         screen.getAllByRole("button", {
           name: "Identity → Organization sign-in",
@@ -1604,7 +1604,7 @@ it("uses one development-server login for the Settings account, hosting and remo
     expect(await screen.findByText("No hosted communities yet")).toBeVisible();
     expect(await screen.findByText("No remote agents yet.")).toBeVisible();
     expect(screen.getAllByRole("button", { name: "Sign out" })).toHaveLength(1);
-    expect(screen.getByText(/Buzz identity connected/)).toBeVisible();
+    expect(screen.getByText(/Zion identity connected/)).toBeVisible();
     expect(requests).toContainEqual(
       expect.objectContaining({
         revision: "server-one",

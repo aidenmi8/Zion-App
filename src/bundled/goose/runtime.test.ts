@@ -28,7 +28,7 @@ describe("sessionTitle", () => {
     expect(sessionTitle("Ada", "#general", "0123456789abcdef")).toBe(
       "Ada · #general · 01234567",
     );
-    expect(sessionTitle(undefined, "DM")).toBe("Buzz agent · DM");
+    expect(sessionTitle(undefined, "DM")).toBe("Zion agent · DM");
   });
 
   it("keeps the root when a long name is cut", () => {
@@ -1066,7 +1066,7 @@ describe("GooseRuntime", () => {
     await team.deliver(message("1", "@Gander hi"), { named: vi.fn() });
     await flush(100);
     expect(team.goose()?.opened[0]?._meta).toMatchObject({
-      sessionTitle: "Buzz agent · #general · 11111111",
+      sessionTitle: "Zion agent · #general · 11111111",
     });
   });
 

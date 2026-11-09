@@ -81,7 +81,7 @@ it("publishes a description-only edit to an existing community profile", async (
   );
   // Continue contacts the destination with the viewer's identity before joining.
   expect(screen.getByLabelText("Community URL")).toHaveAccessibleDescription(
-    "Paste your community link. Continue shares your Buzz identity with the community so you can preview it before joining.",
+    "Paste your community link. Continue shares your Zion identity with the community so you can preview it before joining.",
   );
   await user.type(
     screen.getByLabelText("Community URL"),

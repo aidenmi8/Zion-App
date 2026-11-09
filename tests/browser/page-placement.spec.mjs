@@ -434,9 +434,9 @@ test("a page sidebar uses the shell slot, generic toggle, theme, and narrow draw
   await expect(
     page.getByRole("heading", { name: "Sidebar playground", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Search Buzz", exact: true }).click();
-  const search = page.getByRole("dialog", { name: "Search Buzz", exact: true });
-  const input = search.getByRole("combobox", { name: "Search Buzz" });
+  await page.getByRole("button", { name: "Search Zion", exact: true }).click();
+  const search = page.getByRole("dialog", { name: "Search Zion", exact: true });
+  const input = search.getByRole("combobox", { name: "Search Zion" });
   await input.fill("drafts");
   await expect(pageChoice(search, "Drafts & sent")).toHaveCount(1);
   await selectPage(page, "Drafts & sent");
@@ -592,7 +592,7 @@ test("dock destinations and titlebar controls remain reachable through scale and
         await page.setViewportSize({ width, height: 950 });
         await expect(dock).toBeVisible();
         const search = page.getByRole("button", {
-          name: "Search Buzz",
+          name: "Search Zion",
           exact: true,
         });
         await expect(search).toBeInViewport({ ratio: 1 });
@@ -683,11 +683,11 @@ test("dock destinations and titlebar controls remain reachable through scale and
         await expect(messages).toHaveAttribute("aria-selected", "true");
         await search.click();
         const dialog = page.getByRole("dialog", {
-          name: "Search Buzz",
+          name: "Search Zion",
           exact: true,
         });
         await expect(
-          dialog.getByRole("combobox", { name: "Search Buzz" }),
+          dialog.getByRole("combobox", { name: "Search Zion" }),
         ).toBeFocused();
         await page.keyboard.press("Escape");
         await expect(search).toBeFocused();

@@ -1,10 +1,10 @@
 import { expect } from "@playwright/test";
 
 export async function pageChoices(page, query = "") {
-  await page.getByRole("button", { name: "Search Buzz", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Search Buzz", exact: true });
+  await page.getByRole("button", { name: "Search Zion", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Search Zion", exact: true });
   await dialog
-    .getByRole("combobox", { name: "Search Buzz", exact: true })
+    .getByRole("combobox", { name: "Search Zion", exact: true })
     .fill(query);
   return dialog.locator(
     '[role="group"][aria-label="Pages"], [role="rowgroup"][aria-label="Pages"]',
@@ -57,8 +57,8 @@ export async function sendOnlyTo(page, pill, agent) {
 
 // Select from an already-open palette, including tests that inspect page order.
 export async function selectPage(page, name, { connected = true } = {}) {
-  const dialog = page.getByRole("dialog", { name: "Search Buzz", exact: true });
-  const input = dialog.getByRole("combobox", { name: "Search Buzz" });
+  const dialog = page.getByRole("dialog", { name: "Search Zion", exact: true });
+  const input = dialog.getByRole("combobox", { name: "Search Zion" });
   // Until the community connects, the palette is a placeholder. The connected
   // palette replaces it, which resets selection and option ids, so select only
   // in the final palette. Pass `connected: false` when the test holds or fails

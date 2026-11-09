@@ -117,7 +117,7 @@ export function CommunityMesh({
         }
       />
       {!isTauri() ? (
-        <p role="status">Open Buzz desktop to see community mesh.</p>
+        <p role="status">Open Zion desktop to see community mesh.</p>
       ) : error ? (
         <p role="alert">{error}</p>
       ) : !inventory ? (

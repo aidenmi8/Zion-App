@@ -28,7 +28,7 @@ export function BestieChooser({
   community,
   agents,
   title = "Choose your bestie agent",
-  description = "This is your primary agent in Buzz. They’ll get special placement and extra capabilities in the app.",
+  description = "This is your primary agent in Zion. They’ll get special placement and extra capabilities in the app.",
 }: {
   session: RelaySession;
   scope: string;

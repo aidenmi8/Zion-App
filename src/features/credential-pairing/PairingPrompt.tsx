@@ -65,7 +65,7 @@ export function PairingPrompt({
     <AlertDialog
       title={
         <>
-          <strong>{request.client}</strong> wants to use Buzz as you on{" "}
+          <strong>{request.client}</strong> wants to use Zion as you on{" "}
           <strong>{request.relay}</strong>
         </>
       }

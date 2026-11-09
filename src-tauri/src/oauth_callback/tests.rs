@@ -679,11 +679,11 @@ async fn federated_handoff_uses_return_to_without_legacy_oauth_fields_and_keeps_
 
 fn assert_federated_callback(response: &str, message: &str) {
     let (headers, body) = response.split_once("\r\n\r\n").unwrap();
-    assert!(body.contains("<title>Buzz sign-in</title>"));
+    assert!(body.contains("<title>Zion sign-in</title>"));
     assert!(body.contains("data-provider=\"Buzz\""));
-    assert!(body.contains("role=\"img\" aria-label=\"Buzz\""));
+    assert!(body.contains("role=\"img\" aria-label=\"Zion\""));
     assert!(body.contains(include_str!("../../../public/buzz-mark.svg")));
-    assert!(body.contains("<span>Buzz</span>"));
+    assert!(body.contains("<span>Zion</span>"));
     assert!(body.contains(&format!("<p>{message}</p>")));
     assert!(body.contains("<main aria-labelledby=\"heading\">"));
     assert!(body.contains("name=\"viewport\""));

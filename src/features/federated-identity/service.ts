@@ -176,7 +176,7 @@ export class FederatedIdentityService
   };
   private async operation(command: string, args?: InvokeArgs) {
     if (!nativeIdentityEnabled() || this.shared.closed)
-      throw new Error("Federated identity requires Buzz desktop");
+      throw new Error("Federated identity requires Zion desktop");
     const epoch = this.shared.epoch;
     try {
       const snapshot = await (args
@@ -201,7 +201,7 @@ export class FederatedIdentityService
   }
   async cancelSignIn() {
     if (!nativeIdentityEnabled() || this.shared.closed)
-      throw new Error("Federated identity requires Buzz desktop");
+      throw new Error("Federated identity requires Zion desktop");
     await invoke("federated_identity_cancel_sign_in");
     await this.operation("federated_identity_snapshot");
   }
@@ -364,7 +364,7 @@ class CommunitySession implements FederatedIdentity {
   };
   private async operation(command: string, args?: { revision?: string }) {
     if (!nativeIdentityEnabled())
-      throw new Error("Federated identity requires Buzz desktop");
+      throw new Error("Federated identity requires Zion desktop");
     const epoch = this.epoch;
     try {
       const snapshot = await invoke<SessionSnapshot>(command, {

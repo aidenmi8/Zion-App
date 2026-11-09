@@ -8,7 +8,7 @@ use buzz_agent_controller::{bounded, framed, CANVAS_MAX_EVENT_BYTES};
 use serde_json::json;
 use std::net::SocketAddr;
 
-const STARTING: &str = "Buzz is still starting; retry shortly";
+const STARTING: &str = "Zion is still starting; retry shortly";
 
 impl CredentialService {
     /// The human paired tools act as, once the key and NIP-FI are settled.
@@ -29,7 +29,7 @@ impl CredentialService {
                 fi_account,
             }),
             None if self.0.session.expired() => {
-                Human::Pending("Your Builderlab sign-in expired; sign in again in Buzz")
+                Human::Pending("Your Builderlab sign-in expired; sign in again in Zion")
             }
             None => Human::Pending(STARTING),
         }

@@ -91,7 +91,7 @@ it("takes only exact values, without aliases, trimming, case or clamping", () =>
       "an integer from 80 to 200 in steps of 10",
     );
   expect(() => settings.set("example.missing", "two")).toThrow(
-    /No Buzz setting/,
+    /No Zion setting/,
   );
   const flag = createDeviceSettings([
     {
@@ -152,7 +152,7 @@ it("reports a write the owner did not take, and one it could not save", () => {
 it("changes nothing once the setting's owner has stopped", () => {
   const { setting, write } = fake({ live: () => false });
   expect(() => createDeviceSettings([setting]).set(setting.key, "two")).toThrow(
-    "Buzz is closing; the setting was not changed.",
+    "Zion is closing; the setting was not changed.",
   );
   expect(write).not.toHaveBeenCalled();
 });

@@ -11,10 +11,9 @@ const EDGE = 70;
 const PICTURE = { x: 110, y: 170, size: 600, radius: 48 };
 const INK = "#121214";
 const MUTED = "#6e6e76";
-/** `public/buzz-mark.svg`, traced here since an SVG image may not draw on a
+/** Approved Zion geometry, traced here since an SVG image may not draw on a
  * canvas everywhere. */
-const MARK =
-  "M18 9a8 8 0 0 1 8-8h12a8 8 0 0 1 8 8v3h4a12 12 0 1 1 0 24h-4v3a8 8 0 0 1-8 8H26a8 8 0 0 1-8-8v-3h-4a12 12 0 1 1 0-24h4V9Z";
+const MARK = "M16 30 32 12h20L36 30H16Z M12 52 28 34h20L32 52H12Z";
 /** The foil's colours. Artwork, so the same in either theme; the preview's
  * sheen reuses them so it matches what is drawn. */
 const FOIL = ["#ff9ad5", "#ffd27a", "#a8f0a0", "#7fd4ff", "#b69cff"] as const;
@@ -202,13 +201,6 @@ function picture(
 
 function mark(context: CanvasRenderingContext2D) {
   const shape = new Path2D(MARK);
-  // Its eyes and mouth, cut out by the even-odd fill.
-  for (const x of [25, 39]) {
-    shape.moveTo(x + 4, 14);
-    shape.arc(x, 14, 4, 0, Math.PI * 2);
-  }
-  shape.rect(23, 24, 18, 5);
-  shape.rect(23, 35, 18, 5);
   context.save();
   context.translate(EDGE, EDGE);
   context.scale(52 / 64, 52 / 64);
@@ -283,7 +275,7 @@ export async function drawShareCard(card: {
   spaced(context, "1.5px");
   context.textAlign = "right";
   context.textBaseline = "middle";
-  context.fillText("BUZZ AGENT", CARD_WIDTH - EDGE, EDGE + 20);
+  context.fillText("ZION AGENT", CARD_WIDTH - EDGE, EDGE + 20);
   picture(context, card.name, card.picture);
   context.fillStyle = INK;
   context.font = `600 60px ${FONT}`;

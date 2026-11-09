@@ -41,6 +41,25 @@ function recipe(name, ...args) {
         new URL(`../../scripts/${file}`, import.meta.url),
         path.join(directory, "scripts", file),
       );
+    mkdirSync(path.join(directory, "src-tauri"));
+    const tauriConfig = settings.tauriConfig ?? {
+      productName: settings.productName ?? "Zion",
+    };
+    writeFileSync(
+      path.join(directory, "src-tauri/tauri.conf.json"),
+      typeof tauriConfig === "string"
+        ? tauriConfig
+        : JSON.stringify(tauriConfig),
+    );
+    if (settings.macOSProductName !== undefined)
+      writeFileSync(
+        path.join(directory, "src-tauri/tauri.macos.conf.json"),
+        JSON.stringify({ productName: settings.macOSProductName }),
+      );
+    if (settings.staleBuzz)
+      mkdirSync(path.join(directory, "target/debug/bundle/macos/Buzz.app"), {
+        recursive: true,
+      });
     // Record the bundled goose-acp build instead of compiling it.
     writeFileSync(
       path.join(directory, "scripts/build-goose-acp.mjs"),
@@ -77,6 +96,12 @@ function recipe(name, ...args) {
       `#!${process.execPath}\nrequire("node:fs").appendFileSync(process.env.BUZZ_TEST_CALLS, JSON.stringify(process.argv.slice(2)) + "\\n");
 if (process.argv[2] === "tauri" && process.argv[3] === "dev") console.log("VIEWER:" + JSON.stringify(process.env.BUZZ_DEV_VIEWER));
 if (process.argv[2] === "tauri") console.log("ENV:" + JSON.stringify({ fi: process.env.BUZZ_BUILD_FEDERATED_IDENTITY_CONFIG, other: process.env.LOCAL_ONLY_SECRET, updater: process.env.BUZZ_UPDATER_ENDPOINT }));
+if (process.argv[2] === "tauri" && process.argv[3] === "build" && process.env.BUZZ_TEST_ARTIFACT) {
+  const fs = require("node:fs");
+  fs.mkdirSync(require("node:path").dirname(process.env.BUZZ_TEST_ARTIFACT), { recursive: true });
+  if (process.env.BUZZ_TEST_ARTIFACT_TYPE === "file") fs.writeFileSync(process.env.BUZZ_TEST_ARTIFACT, "not an app bundle");
+  else fs.mkdirSync(process.env.BUZZ_TEST_ARTIFACT, { recursive: true });
+}
 \n`,
       { mode: 0o755 },
     );
@@ -111,6 +136,15 @@ if (process.argv[2] === "tauri") console.log("ENV:" + JSON.stringify({ fi: proce
           BUZZ_TEST_AGENT_COMMAND: commandFile,
           BUZZ_TEST_BUZZ_CLI: cliFile,
           BUZZ_TEST_OPEN: openFile,
+          BUZZ_TEST_ARTIFACT:
+            settings.artifact === false
+              ? undefined
+              : path.join(
+                  directory,
+                  "target/debug/bundle/macos",
+                  `${settings.macOSProductName ?? settings.productName ?? "Zion"}.app`,
+                ),
+          BUZZ_TEST_ARTIFACT_TYPE: settings.artifact,
           // Do not inherit the operator's public pin in isolated launcher tests.
           BUZZ_DEV_VIEWER: undefined,
           BUZZ_DEV_SIGNING_IDENTITY: undefined,
@@ -401,9 +435,79 @@ test("desktop-bundle --launch builds and opens the macOS app bundle", {
     "app",
     ...bundled,
   ]);
-  const app = path.join(result.root, "target/debug/bundle/macos/Buzz.app");
+  const app = path.join(result.root, "target/debug/bundle/macos/Zion.app");
   assert.deepEqual(result.opened, [[app]]);
   assert.match(result.stderr, /bundle is ad-hoc signed/);
+});
+
+test("desktop-bundle --launch derives names with spaces from Tauri config", {
+  skip: process.platform !== "darwin",
+}, () => {
+  const result = launched(
+    "desktop-bundle",
+    { productName: "Zion Preview" },
+    "--launch",
+  );
+  assert.deepEqual(result.opened, [
+    [path.join(result.root, "target/debug/bundle/macos/Zion Preview.app")],
+  ]);
+});
+
+test("desktop-bundle --launch follows the macOS productName override", {
+  skip: process.platform !== "darwin",
+}, () => {
+  const result = launched(
+    "desktop-bundle",
+    { macOSProductName: "Zion Mac Preview" },
+    "--launch",
+  );
+  assert.deepEqual(result.opened, [
+    [path.join(result.root, "target/debug/bundle/macos/Zion Mac Preview.app")],
+  ]);
+});
+
+test("desktop-bundle --launch refuses a missing renamed bundle despite stale Buzz.app", {
+  skip: process.platform !== "darwin",
+}, () => {
+  const result = recipe(
+    "desktop-bundle",
+    { artifact: false, staleBuzz: true },
+    "--launch",
+  );
+  assert.notEqual(result.status, 0);
+  assert.equal(result.calls[1]?.[1], "build");
+  assert.match(result.stderr, /Cannot launch built macOS app bundle/);
+  assert.match(result.stderr, /Zion\.app/);
+  assert.deepEqual(result.opened, []);
+});
+
+test("desktop-bundle --launch requires a bundle directory, not a same-named file", {
+  skip: process.platform !== "darwin",
+}, () => {
+  const result = recipe("desktop-bundle", { artifact: "file" }, "--launch");
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Cannot launch built macOS app bundle/);
+  assert.deepEqual(result.opened, []);
+});
+
+test("desktop-bundle --launch fails closed for missing, invalid or malformed productName", {
+  skip: process.platform !== "darwin",
+}, () => {
+  for (const tauriConfig of [
+    {},
+    { productName: "" },
+    { productName: "../Buzz" },
+    "{",
+  ]) {
+    const result = recipe(
+      "desktop-bundle",
+      { tauriConfig, artifact: false, staleBuzz: true },
+      "--launch",
+    );
+    assert.notEqual(result.status, 0, JSON.stringify(tauriConfig));
+    assert.match(result.stderr, /Cannot launch built macOS app bundle/);
+    assert.deepEqual(result.opened, []);
+  }
 });
 
 test("desktop-bundle --launch does not warn for configured certificate signing", {

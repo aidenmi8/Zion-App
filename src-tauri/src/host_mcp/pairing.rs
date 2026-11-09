@@ -16,7 +16,7 @@ pub(super) fn revision() -> u64 {
 pub(super) fn begin(shared: &Shared, expected_revision: u64) -> Result<(), String> {
     let _lock = LOCK.lock().map_err(|_| "Pairing storage is busy")?;
     if revision() != expected_revision || shared.stop.is_cancelled() {
-        return Err("Buzz approval is cancelled".into());
+        return Err("Zion approval is cancelled".into());
     }
     shared.pairing_pending.store(true, Ordering::SeqCst);
     Ok(())
@@ -25,7 +25,7 @@ pub(super) fn begin(shared: &Shared, expected_revision: u64) -> Result<(), Strin
 fn publish(shared: &Shared, grant: Grant, expected_revision: u64) -> Result<(), String> {
     // The caller holds LOCK so revoke cannot split the save from publication.
     if revision() != expected_revision || shared.stop.is_cancelled() {
-        return Err("Buzz approval is cancelled".into());
+        return Err("Zion approval is cancelled".into());
     }
     *shared
         .pairing
@@ -85,14 +85,14 @@ impl Grant {
         self.check_current(load(&self.account)?.as_ref(), now()?)
     }
     fn check_current(&self, current: Option<&Grant>, now: u64) -> Result<(), String> {
-        let current = current.ok_or("Buzz approval is revoked")?;
+        let current = current.ok_or("Zion approval is revoked")?;
         if current.id != self.id
             || current.secret != self.secret
             || current.expires_at < self.expires_at
             || current.approval != self.approval
             || current.expires_at <= now
         {
-            return Err("Buzz approval is revoked or expired".into());
+            return Err("Zion approval is revoked or expired".into());
         }
         Ok(())
     }
@@ -120,7 +120,7 @@ impl Grant {
             || self.counter != resume.counter
             || self.state != request.state
         {
-            return Err("Buzz approval does not match this connection".into());
+            return Err("Zion approval does not match this connection".into());
         }
         let expires_at = now
             .checked_add(LIFETIME)
@@ -149,7 +149,7 @@ impl Grant {
             .decode(&resume.proof)
             .map_err(|_| "Invalid pairing proof")?;
         if self.id != resume.id || self.expires_at <= now {
-            return Err("Buzz approval is revoked or expired".into());
+            return Err("Zion approval is revoked or expired".into());
         }
         self.mac(serde_json::json!([
             "buzz-resume-request-v1",
@@ -248,7 +248,7 @@ fn load(account: &Path) -> Result<Option<Grant>, String> {
             Ok(Some(grant))
         }
         Err(buzz_credential_store::Error::Absent) => Ok(None),
-        Err(_) => Err("Cannot read the saved Buzz approval".into()),
+        Err(_) => Err("Cannot read the saved Zion approval".into()),
     }
 }
 fn save(account: &Path, grant: &Grant) -> Result<(), String> {
@@ -257,15 +257,15 @@ fn save(account: &Path, grant: &Grant) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     return security_framework::os::macos::keychain::SecKeychain::default()
         .and_then(|keychain| keychain.set_generic_password(SERVICE, &account_id(account), &bytes))
-        .map_err(|_| "Cannot save the Buzz approval".into());
+        .map_err(|_| "Cannot save the Zion approval".into());
     #[cfg(not(target_os = "macos"))]
     buzz_credential_store::replace(SERVICE, &account_id(account), &bytes)
-        .map_err(|_| "Cannot save the Buzz approval".into())
+        .map_err(|_| "Cannot save the Zion approval".into())
 }
 fn clear(account: &Path) -> Result<(), String> {
     match buzz_credential_store::delete(SERVICE, &account_id(account)) {
         Ok(()) | Err(buzz_credential_store::Error::Absent) => Ok(()),
-        Err(_) => Err("Cannot revoke the saved Buzz approval".into()),
+        Err(_) => Err("Cannot revoke the saved Zion approval".into()),
     }
 }
 
@@ -277,7 +277,7 @@ pub(super) fn authorize<R: tauri::Runtime>(
 ) -> Result<Option<Grant>, String> {
     let _lock = LOCK.lock().map_err(|_| "Pairing storage is busy")?;
     if revision() != expected_revision {
-        return Err("Buzz approval is cancelled".into());
+        return Err("Zion approval is cancelled".into());
     }
     let account = account(app)?;
     let _file = lock(&account)?;
@@ -285,7 +285,7 @@ pub(super) fn authorize<R: tauri::Runtime>(
         (None, None) => Ok(None),
         (Some(approval), resume) => {
             if resume.is_some() {
-                let mut grant = load(&account)?.ok_or("Buzz approval is revoked")?;
+                let mut grant = load(&account)?.ok_or("Zion approval is revoked")?;
                 grant.renew(request, now()?)?;
                 save(&account, &grant)?;
                 publish(shared, grant.clone(), expected_revision)?;
@@ -302,7 +302,7 @@ pub(super) fn authorize<R: tauri::Runtime>(
                 || !approval.valid_scopes()
                 || url::Url::parse(&approval.community).is_err()
             {
-                return Err("Invalid Buzz approval".into());
+                return Err("Invalid Zion approval".into());
             }
             let secret = || {
                 let mut bytes = [0; 32];
@@ -322,7 +322,7 @@ pub(super) fn authorize<R: tauri::Runtime>(
             publish(shared, grant.clone(), expected_revision)?;
             Ok(Some(grant))
         }
-        _ => Err("Missing Buzz approval".into()),
+        _ => Err("Missing Zion approval".into()),
     }
 }
 
@@ -352,7 +352,7 @@ pub(super) async fn forward(shared: &Shared, event: McpEvent) -> Result<(), Stri
             .map_err(|_| "The page is unavailable".into())
     })
     .await
-    .map_err(|_| "Cannot check Buzz approval")?
+    .map_err(|_| "Cannot check Zion approval")?
 }
 
 #[tauri::command]
@@ -406,7 +406,7 @@ pub(crate) async fn plugin_host_mcp_pairing<R: tauri::Runtime>(
         Ok(Some(grant.public()))
     })
     .await
-    .map_err(|_| "Cannot check Buzz approval")?
+    .map_err(|_| "Cannot check Zion approval")?
 }
 
 #[cfg(test)]

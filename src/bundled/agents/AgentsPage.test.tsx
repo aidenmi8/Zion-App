@@ -1110,7 +1110,7 @@ it("saves a reviewed provider change with the destination settings", async () =>
     "ThinkingDropped",
   );
   expect(dialog).toHaveTextContent(
-    "Your agent will continue the conversation in Buzz.",
+    "Your agent will continue the conversation in Zion.",
   );
   expect(dialog).toHaveTextContent("Anything Echo left running will stop.");
   expect(dialog).toHaveTextContent(
@@ -2664,7 +2664,7 @@ it("makes a team of chosen agents and lists it with its members", async () => {
   agents.teamSync.mockReturnValue({ local: "failed" });
   act(() => notify());
   expect(form).toHaveTextContent(
-    "Only on this Mac. Moving it to the community failed; Buzz will try again.",
+    "Only on this Mac. Moving it to the community failed; Zion will try again.",
   );
   await user.click(screen.getByRole("button", { name: "Delete team" }));
   let dialog = await screen.findByRole("alertdialog", { name: "Delete Crew?" });

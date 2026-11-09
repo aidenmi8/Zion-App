@@ -439,7 +439,7 @@ export function harnessKit(sources: Sources): HarnessKit {
           memories: (slug) => {
             const found = reads();
             if (!found)
-              return Promise.reject(new Error("Buzz is not connected"));
+              return Promise.reject(new Error("Zion is not connected"));
             return memoryReads.read(
               found,
               pubkey,

@@ -624,7 +624,7 @@ it("keeps the copy in use when a new release fails its test", async () => {
   expect(state.used).toEqual([]);
   expect(setup.snapshot()).toMatchObject({
     notice:
-      "Claude 2.1.300 failed its test: Killed: 9. Buzz keeps using 2.1.200.",
+      "Claude 2.1.300 failed its test: Killed: 9. Zion keeps using 2.1.200.",
     status: { state: "ready", version: "2.1.200" },
   });
   // A refused release is not downloaded again, unless the person asks.
@@ -646,7 +646,7 @@ it("refuses a release older than Buzz needs", async () => {
   await setup.run("install");
   expect(state.fetched).toEqual([]);
   expect(setup.snapshot().output).toContain(
-    `Claude 2.1.100 is older than Buzz needs (${MIN_VERSION}).`,
+    `Claude 2.1.100 is older than Zion needs (${MIN_VERSION}).`,
   );
 });
 

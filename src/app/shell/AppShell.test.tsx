@@ -459,7 +459,7 @@ it("shows global pages in the side dock and keeps the conversation mounted acros
   expect(screen.getByRole("tabpanel", { name: "Messages" })).toContainElement(
     draft,
   );
-  expect(screen.getByRole("button", { name: "Search Buzz" })).toHaveTextContent(
+  expect(screen.getByRole("button", { name: "Search Zion" })).toHaveTextContent(
     "Search",
   );
   tabs[0]?.focus();

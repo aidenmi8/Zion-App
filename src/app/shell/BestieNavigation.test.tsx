@@ -201,8 +201,8 @@ it("shows the exact choice as Bestie in navigation and search", async () => {
     "squircle",
   );
   expect(pollenRow.querySelector("[data-status]")).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const dialog = screen.getByRole("dialog", { name: "Search Buzz" });
+  await userEvent.click(screen.getByRole("button", { name: "Search Zion" }));
+  const dialog = screen.getByRole("dialog", { name: "Search Zion" });
   const pollenSearch = within(dialog).getByRole("option", {
     name: /Pollen.*Bestie/,
   });
@@ -210,7 +210,7 @@ it("shows the exact choice as Bestie in navigation and search", async () => {
     "src",
     portrait.preview,
   );
-  const search = within(dialog).getByRole("combobox", { name: "Search Buzz" });
+  const search = within(dialog).getByRole("combobox", { name: "Search Zion" });
   await userEvent.type(search, "Pollen");
   expect(
     within(dialog).getByRole("option", { name: /Pollen.*Bestie/ }),

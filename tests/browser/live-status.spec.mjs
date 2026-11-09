@@ -329,9 +329,9 @@ test.describe("public preview recovery", () => {
     const originalHistory = app.histories.get(`primary/${app.openChannelId}`);
     app.histories.set(`primary/${app.openChannelId}`, []);
     await page
-      .getByRole("button", { name: "Search Buzz", exact: true })
+      .getByRole("button", { name: "Search Zion", exact: true })
       .click();
-    await page.getByRole("combobox", { name: "Search Buzz" }).fill("ope");
+    await page.getByRole("combobox", { name: "Search Zion" }).fill("ope");
     await page
       .locator(
         '[role="group"][aria-label="Channels"], [role="rowgroup"][aria-label="Channels"]',
@@ -423,9 +423,9 @@ test.describe("public preview recovery", () => {
     await page.goto(app.origin);
     await expect(page.locator("[data-message-id]").first()).toBeVisible();
     await page
-      .getByRole("button", { name: "Search Buzz", exact: true })
+      .getByRole("button", { name: "Search Zion", exact: true })
       .click();
-    await page.getByRole("combobox", { name: "Search Buzz" }).fill("ope");
+    await page.getByRole("combobox", { name: "Search Zion" }).fill("ope");
     await page
       .locator(
         '[role="group"][aria-label="Channels"], [role="rowgroup"][aria-label="Channels"]',

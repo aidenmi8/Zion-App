@@ -378,15 +378,17 @@ async fn reply(stream: &mut TcpStream, status: u16, message: &str, builderlab: b
     } else {
         (String::new(), String::new())
     };
+    // The provider key is a stylesheet selector, not the visible product name.
     let provider = if builderlab { "Builderlab" } else { "Buzz" };
+    let provider_label = if builderlab { "Builderlab" } else { "Zion" };
     let mark = if builderlab {
         include_str!("../../../public/builderlab-mark.svg")
     } else {
         include_str!("../../../public/buzz-mark.svg")
     };
-    let label = if builderlab { "" } else { "<span>Buzz</span>" };
+    let label = if builderlab { "" } else { "<span>Zion</span>" };
     let brand = include_str!("brand.html")
-        .replace("{{provider}}", provider)
+        .replace("{{providerLabel}}", provider_label)
         .replace("{{mark}}", mark)
         .replace("{{label}}", label);
     // Replace whole HTML comments so the template remains valid on its own.
@@ -411,6 +413,7 @@ async fn reply(stream: &mut TcpStream, status: u16, message: &str, builderlab: b
             },
         )
         .replace("{{provider}}", provider)
+        .replace("{{providerLabel}}", provider_label)
         .replace("{{complete}}", if status == 200 { "true" } else { "false" })
         .replace("{{closeDelay}}", &READABLE_DELAY.as_secs().to_string())
         .replace("{{heading}}", heading)

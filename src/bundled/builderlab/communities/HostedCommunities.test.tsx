@@ -165,7 +165,7 @@ it("connects the Buzz identity when the account has none", async () => {
   routes["/api/builderlab/bind"] = () => ({ identity: { pubkey_hex: local } });
   renderCard();
   fireEvent.click(
-    await screen.findByRole("button", { name: "Connect Buzz identity" }),
+    await screen.findByRole("button", { name: "Connect Zion identity" }),
   );
   routes["/api/builderlab/identity"] = () => ({
     identity: { pubkey_hex: local },
@@ -324,7 +324,7 @@ it("archives and transfers after confirmation, surfacing friendly errors", async
   });
   fireEvent.click(screen.getByRole("button", { name: "Transfer ownership" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "That person needs a connected Buzz identity before you can transfer ownership to them. Correlation ID: corr-1",
+    "That person needs a connected Zion identity before you can transfer ownership to them. Correlation ID: corr-1",
   );
   expect(calls).toContainEqual([
     "/api/builderlab/transfer",
@@ -465,7 +465,7 @@ it("keeps create and copy paused until this device's key is read and matches", a
   });
   renderCard();
   expect(
-    await screen.findByText("Checking this device’s Buzz identity…"),
+    await screen.findByText("Checking this device’s Zion identity…"),
   ).toBeInTheDocument();
   expect(screen.getByPlaceholderText("north-star")).toBeDisabled();
   expect(
@@ -475,7 +475,7 @@ it("keeps create and copy paused until this device's key is read and matches", a
   expect(
     await screen.findByRole("region", { name: "Identity mismatch" }),
   ).toHaveTextContent(
-    "Your Builderlab account is linked to another Buzz key. Creating communities and copying addresses are paused until the identities match.",
+    "Your Builderlab account is linked to another Zion key. Creating communities and copying addresses are paused until the identities match.",
   );
   expect(screen.getByPlaceholderText("north-star")).toBeDisabled();
 });
@@ -486,7 +486,7 @@ it("pauses actions with a retry when this device's key cannot be read", async ()
   };
   renderCard();
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Could not read this device’s Buzz identity",
+    "Could not read this device’s Zion identity",
   );
   expect(screen.getByPlaceholderText("north-star")).toBeDisabled();
   routes["/api/relay/identity"] = () => ({ viewer: local });
@@ -510,7 +510,7 @@ it("ignores an older load that finishes after a newer identity change", async ()
   routes["/api/builderlab/bind"] = () => ({ identity: { pubkey_hex: local } });
   renderCard();
   fireEvent.click(
-    await screen.findByRole("button", { name: "Connect Buzz identity" }),
+    await screen.findByRole("button", { name: "Connect Zion identity" }),
   );
   expect(await screen.findByText(npubEncode(local))).toBeInTheDocument();
   // The initial read, begun before Connect, reports an older binding.
@@ -547,7 +547,7 @@ it("does not bind after the card is deactivated during Switch", async () => {
   await act(async () => unbind.release({}));
   expect(calls.map(([url]) => url)).not.toContain("/api/builderlab/bind");
   expect(
-    screen.getByRole("button", { name: "Connect Buzz identity" }),
+    screen.getByRole("button", { name: "Connect Zion identity" }),
   ).toBeInTheDocument();
 });
 
@@ -571,7 +571,7 @@ it("never unlinks again after Switch unlinks but its bind fails", async () => {
     }),
   );
   const connect = await screen.findByRole("button", {
-    name: "Connect Buzz identity",
+    name: "Connect Zion identity",
   });
   expect(screen.queryByRole("alertdialog")).toBeNull();
   routes["/api/builderlab/bind"] = () => ({ identity: { pubkey_hex: local } });
@@ -579,7 +579,7 @@ it("never unlinks again after Switch unlinks but its bind fails", async () => {
     identity: { pubkey_hex: local },
   });
   fireEvent.click(connect);
-  await screen.findByText("Buzz identity connected");
+  await screen.findByText("Zion identity connected");
   const unlinks = calls.filter(([url]) => url === "/api/builderlab/unbind");
   expect(unlinks).toHaveLength(1);
 });
@@ -660,7 +660,7 @@ it.each([
     );
     renderCard();
     expect(
-      await screen.findByText(/need the Buzz development broker/),
+      await screen.findByText(/need the Zion development broker/),
     ).toBeInTheDocument();
     expect(screen.queryByText("Checking sign-in…")).not.toBeInTheDocument();
     expect(
@@ -894,7 +894,7 @@ it.each([
       await screen.findByRole("button", {
         name:
           identity === unbound
-            ? "Connect Buzz identity"
+            ? "Connect Zion identity"
             : "Switch to this device’s identity",
       }),
     ).toBeInTheDocument();
@@ -1195,7 +1195,7 @@ it("retains the uncertain UUID through an unpair elsewhere and same-owner rebind
     error: { code: "missing_mapping", setup_needed: true },
   });
   fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
-  await screen.findByRole("button", { name: "Connect Buzz identity" });
+  await screen.findByRole("button", { name: "Connect Zion identity" });
   expect(deletionPosts()).toHaveLength(1);
   expect(JSON.parse(localStorage.getItem(DELETION_PENDING_KEY) ?? "")).toEqual(
     saved,
@@ -1206,7 +1206,7 @@ it("retains the uncertain UUID through an unpair elsewhere and same-owner rebind
   });
   routes["/api/builderlab/list"] = () => ({ communities: [archived] });
   fireEvent.click(
-    screen.getByRole("button", { name: "Connect Buzz identity" }),
+    screen.getByRole("button", { name: "Connect Zion identity" }),
   );
   await screen.findByText(saved.request.request_id);
   await expectSameRequestRecovery(saved);
@@ -1228,15 +1228,15 @@ it.each(["setup-needed", "unauthorized"])(
     });
     fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
     if (failure === "setup-needed")
-      await screen.findByRole("button", { name: "Connect Buzz identity" });
+      await screen.findByRole("button", { name: "Connect Zion identity" });
     else {
       expect(await screen.findByRole("alert")).toHaveTextContent(
         failure === "unauthorized"
-          ? "This Builderlab account can't manage Buzz identities right now. Try signing in again."
-          : "Could not load the connected Buzz identity.",
+          ? "This Builderlab account can't manage Zion identities right now. Try signing in again."
+          : "Could not load the connected Zion identity.",
       );
       expect(
-        screen.queryByRole("button", { name: "Connect Buzz identity" }),
+        screen.queryByRole("button", { name: "Connect Zion identity" }),
       ).not.toBeInTheDocument();
     }
     expect(
@@ -1275,10 +1275,10 @@ it("does not offer Connect or stale owner actions on an initial unauthorized loa
   routes["/api/builderlab/list"] = () => ({ error: { code: "unauthorized" } });
   renderCard();
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "This Builderlab account can't manage Buzz identities right now. Try signing in again.",
+    "This Builderlab account can't manage Zion identities right now. Try signing in again.",
   );
   expect(
-    screen.queryByRole("button", { name: "Connect Buzz identity" }),
+    screen.queryByRole("button", { name: "Connect Zion identity" }),
   ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Delete" }),
@@ -1313,7 +1313,7 @@ it("clears stale blocked-owner and deletion notices on unauthorized Refresh", as
   routes["/api/builderlab/list"] = () => ({ error: { code: "unauthorized" } });
   fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "This Builderlab account can't manage Buzz identities right now. Try signing in again.",
+    "This Builderlab account can't manage Zion identities right now. Try signing in again.",
   );
   expect(screen.queryByText("Deletion started")).not.toBeInTheDocument();
   expect(screen.queryByText(/A deletion request from/)).not.toBeInTheDocument();
@@ -1697,7 +1697,7 @@ it("retains another owner's recovery envelope without showing or dispatching it"
   expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
   expect(
     screen.getByText(
-      `A deletion request from ${npubEncode(other)} is still pending on this device. Switch to that Buzz identity and use Check deletion status before starting another deletion here. If you no longer have that identity, contact support.`,
+      `A deletion request from ${npubEncode(other)} is still pending on this device. Switch to that Zion identity and use Check deletion status before starting another deletion here. If you no longer have that identity, contact support.`,
     ),
   ).toBeVisible();
   expect(
@@ -1887,7 +1887,7 @@ it("explains a same-owner envelope saved for another origin without asking to sw
     ),
   ).toBeVisible();
   expect(
-    screen.queryByText(/Switch to that Buzz identity/),
+    screen.queryByText(/Switch to that Zion identity/),
   ).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
   expect(localStorage.getItem(DELETION_PENDING_KEY)).toBe(original);

@@ -177,7 +177,7 @@ fn read_saved(
         Ok(value) => Ok(Some(value)),
         Err(credentials::Error::Absent) => Ok(None),
         Err(credentials::Error::Denied) => Err("Secure storage access was denied. Allow access and retry; no identity was created.".into()),
-        Err(credentials::Error::Busy) => Err("Another Buzz app is accessing secure storage. Retry shortly.".into()),
+        Err(credentials::Error::Busy) => Err("Another Zion app is accessing secure storage. Retry shortly.".into()),
         Err(credentials::Error::Corrupt) => Err(MALFORMED.into()),
         Err(_) => Err("Your identity could not be accessed in secure storage. Unlock your credential store and retry without changing keys.".into()),
     }
@@ -235,10 +235,10 @@ mod platform {
         match credentials::delete(service, credentials::HUMAN_ACCOUNT) {
             Ok(()) | Err(credentials::Error::Absent) => Ok(()),
             Err(credentials::Error::Busy) => {
-                Err("Another Buzz app is accessing secure storage. Retry shortly.".into())
+                Err("Another Zion app is accessing secure storage. Retry shortly.".into())
             }
             Err(credentials::Error::Denied) => Err(
-                "Keychain access was denied. Allow access and open Buzz again to finish signing out."
+                "Keychain access was denied. Allow access and open Zion again to finish signing out."
                     .into(),
             ),
             Err(_) => Err(
@@ -256,7 +256,7 @@ mod keyring_platform {
         match error {
             Error::Occupied => "An identity is already saved; nothing was overwritten. Restart to restore it.",
             Error::Denied => "Secure storage access was denied. Allow access and retry; no identity was created.",
-            Error::Busy => "Another Buzz app is accessing secure storage. Retry shortly.",
+            Error::Busy => "Another Zion app is accessing secure storage. Retry shortly.",
             Error::Corrupt => MALFORMED,
             _ => "Your identity could not be accessed in secure storage. Unlock your credential store and retry without changing keys.",
         }.into()
@@ -355,7 +355,7 @@ struct Identity {
 impl Identity {
     fn restore(&mut self) -> Result<Option<String>> {
         if matches!(self.state, State::Closed) {
-            return Err("Buzz is signing out".into());
+            return Err("Zion is signing out".into());
         }
         if matches!(self.state, State::Unread) {
             self.state = match self.store.read()? {

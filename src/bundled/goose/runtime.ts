@@ -111,7 +111,7 @@ export function sessionTitle(
   root?: string,
 ) {
   const suffix = root ? ` · ${root.slice(0, 8)}` : "";
-  const title = `${agent?.trim() || "Buzz agent"} · ${place}`
+  const title = `${agent?.trim() || "Zion agent"} · ${place}`
     .replace(/\s+/g, " ")
     .slice(0, TITLE_LIMIT - suffix.length)
     .trim();
@@ -957,7 +957,7 @@ export class GooseRuntime {
   private memories(agent: AgentKey, slug?: string) {
     const pubkey = pubkeyOf(agent);
     const reads = ownerReads(this.relay(agent), pubkey);
-    if (!reads) return Promise.reject(new Error("Buzz is not connected"));
+    if (!reads) return Promise.reject(new Error("Zion is not connected"));
     return this.memoryReads.read(
       reads,
       pubkey,

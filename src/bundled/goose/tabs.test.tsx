@@ -1000,7 +1000,7 @@ it("opens a channel-scoped agent's channel from a thread, following its first sa
     },
   );
   expect(
-    await screen.findByText(/Buzz saved no goose session/),
+    await screen.findByText(/Zion saved no goose session/),
   ).toBeInTheDocument();
   change({ saved: [{ key: "chan", at: 1, sessions: ["s1"] }] });
   expect(
@@ -1081,7 +1081,7 @@ it("says when goose no longer has a conversation's saved sessions", async () => 
       screen.getByRole("button", { name: "View transcript: chan · channel" }),
     );
   expect(
-    await screen.findByText(/goose no longer has the sessions Buzz saved/),
+    await screen.findByText(/goose no longer has the sessions Zion saved/),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Search older sessions" }),

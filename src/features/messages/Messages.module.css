@@ -1059,9 +1059,6 @@ html[data-keyboard-navigation] .attachmentImage:focus-visible {
   width: 100%;
   height: auto;
 }
-:root[data-color-mode="dark"] .threadLoading picture {
-  filter: invert(1);
-}
 @keyframes thread-loading-in {
   from {
     opacity: 0;

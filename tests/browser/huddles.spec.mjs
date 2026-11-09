@@ -117,7 +117,7 @@ test("connected Huddles keep compact controls beside the default window", async 
     (el) => el.getBoundingClientRect().height,
   );
   const searchHeight = await page
-    .getByRole("button", { name: "Search Buzz" })
+    .getByRole("button", { name: "Search Zion" })
     .evaluate((el) => el.getBoundingClientRect().height);
   expect(capsuleHeight).toBe(searchHeight);
   expect(capsuleHeight).toBe(32);
@@ -142,9 +142,9 @@ test("connected Huddles keep compact controls beside the default window", async 
       return values;
     }),
   );
-  for (const name of ["Search Buzz", "Mute"]) {
+  for (const name of ["Search Zion", "Mute"]) {
     expect(
-      await (name === "Search Buzz" ? page : capsule)
+      await (name === "Search Zion" ? page : capsule)
         .getByRole("button", { name, exact: true })
         .locator("svg")
         .evaluate((el) => {
@@ -1434,7 +1434,7 @@ test("window Join and compact Decline operate on the same incoming request", asy
   await expect(request).toHaveCount(0);
   await expect(capsule).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Search Buzz", exact: true }),
+    page.getByRole("button", { name: "Search Zion", exact: true }),
   ).toBeFocused();
   expect(
     await page.evaluate(() => window.huddleFixture.stats.audioOpened),
@@ -1482,7 +1482,7 @@ test("window Join and compact Decline operate on the same incoming request", asy
         await expect(request).toHaveCount(0);
         await expect(capsule).toHaveCount(0);
         await expect(
-          page.getByRole("button", { name: "Search Buzz", exact: true }),
+          page.getByRole("button", { name: "Search Zion", exact: true }),
         ).toBeFocused();
       } else {
         await expect(request.getByRole("alert")).toHaveText(
@@ -1513,7 +1513,7 @@ test("window Join and compact Decline operate on the same incoming request", asy
     .poll(() => page.evaluate(() => window.huddleFixture.stats.opens))
     .toBe(1);
   const elsewhere = page.getByRole("button", {
-    name: "Search Buzz",
+    name: "Search Zion",
     exact: true,
   });
   await elsewhere.focus();

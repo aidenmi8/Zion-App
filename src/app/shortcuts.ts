@@ -145,7 +145,7 @@ export function registerAppShortcuts(
   remove.push(
     shortcuts.registerHost({
       id: "app-reload",
-      title: "Reload Buzz",
+      title: "Reload Zion",
       binding: { key: "r", mod: true },
       order: HOST_SHORTCUT_ORDER.reload,
       allowInEditable: true,

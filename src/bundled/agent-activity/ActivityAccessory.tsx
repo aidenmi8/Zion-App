@@ -709,7 +709,7 @@ function ActivityBubble({
                       <span>
                         {entry.state === "error"
                           ? "This request ended before it could finish. Try again in a new thread, or choose a different model."
-                          : "Buzz couldn’t confirm whether this request finished. Check the conversation before trying again."}
+                          : "Zion couldn’t confirm whether this request finished. Check the conversation before trying again."}
                       </span>
                     </div>
                   ) : (

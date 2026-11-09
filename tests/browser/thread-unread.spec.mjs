@@ -379,13 +379,13 @@ test.describe("mentioned reply priority", () => {
       page.getByRole("textbox", { name: "Message #Beta", exact: true }),
     ).toBeVisible();
     const [newest, other] = (await unread()).items;
-    const dialog = page.getByRole("dialog", { name: "Search Buzz" });
+    const dialog = page.getByRole("dialog", { name: "Search Zion" });
     const row = dialog
       .getByRole("group", { name: "Unread" })
       .getByRole("option")
       .filter({ hasText: /^Alpha/ });
     await page.keyboard.press("ControlOrMeta+k");
-    await dialog.getByRole("combobox", { name: "Search Buzz" }).fill("");
+    await dialog.getByRole("combobox", { name: "Search Zion" }).fill("");
     await expect(row).toContainText(`Alice Fixture: ${newest.preview}`);
     await expect(row).toHaveAttribute("aria-selected", "true");
     await page.keyboard.press("Enter");
@@ -410,7 +410,7 @@ test.describe("mentioned reply priority", () => {
       .toEqual([other.rootId]);
     await page.locator('button[data-channel-id="beta"]').click();
     await page.keyboard.press("ControlOrMeta+k");
-    await dialog.getByRole("combobox", { name: "Search Buzz" }).fill("");
+    await dialog.getByRole("combobox", { name: "Search Zion" }).fill("");
     await expect(row).toContainText(`Alice Fixture: ${other.preview}`);
   });
 });

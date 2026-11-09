@@ -194,7 +194,7 @@ export function PluginMenu({
       {confirmDelete && (
         <AlertDialog
           title={`Delete ${plugin.manifest.name}?`}
-          description="Removes this plugin and its rollback history from Buzz. You can install it again later."
+          description="Removes this plugin and its rollback history from Zion. You can install it again later."
           pending={busy || deleting}
           finalFocus={deleteTrigger}
           initialFocus={cancelDelete}

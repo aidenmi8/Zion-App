@@ -328,7 +328,7 @@ pub(crate) async fn huddle_window_open<R: tauri::Runtime>(
             LABEL,
             tauri::WebviewUrl::App("huddle.html".into()),
         )
-        .title("Huddle — Buzz")
+        .title("Huddle — Zion")
         .inner_size(520.0, 560.0)
         .min_inner_size(360.0, 400.0)
         .center()

@@ -1,6 +1,8 @@
 mod archive;
 #[cfg(test)]
 mod build_resources;
+#[path = "../../crates/distribution.rs"]
+mod distribution;
 mod federated_identity;
 use archive::relay_archive;
 mod browser;
@@ -1053,7 +1055,7 @@ pub fn run() {
                     .map_err(Clone::clone),
                 // `just desktop` builds and debug bundles step aside for the
                 // installed app.
-                !tauri::is_dev() && app.config().identifier == sign_out::legacy_identifier::CURRENT,
+                installed_agent_host(&app.config().identifier, tauri::is_dev()),
                 tokens,
             );
             let notices = app.handle().clone();
@@ -1278,8 +1280,31 @@ fn app_context<R: tauri::Runtime>() -> tauri::Context<R> {
     tauri::generate_context!()
 }
 
+fn installed_agent_host(identifier: &str, development: bool) -> bool {
+    !development && identifier == distribution::RELEASE_IDENTIFIER
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn only_the_zion_release_has_installed_agent_host_priority() {
+        for (identifier, development, expected) in [
+            ("xyz.block.buzz.app", false, true),
+            ("xyz.block.buzz.app", true, false),
+            ("xyz.block.buzz.desktop.dev", false, false),
+            (
+                "dev.local.buzz.foundation.nexus-test-012345abcdef",
+                false,
+                false,
+            ),
+            ("xyz.block.buzz.desktop", false, false),
+        ] {
+            assert_eq!(
+                super::installed_agent_host(identifier, development),
+                expected
+            );
+        }
+    }
     /// Tauri refuses a registered command its app manifest does not list, so
     /// every handler must be in `build.rs` and allowed by a capability.
     #[test]

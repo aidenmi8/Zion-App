@@ -447,7 +447,7 @@ export function CommunityDialog({
               ? "Opening your local identity…"
               : client.status === "ready"
                 ? "Your identity is ready, but connecting to communities is not available in this build yet. You can manage your local profile and identity in Settings."
-                : "Live identity access is unavailable. For development, set BUZZ_DEV_VIEWER to your Buzz public key in .env.local, then restart just web or just desktop. See docs/contributing.md for requirements."}
+                : "Live identity access is unavailable. For development, set BUZZ_DEV_VIEWER to your Zion public key in .env.local, then restart just web or just desktop. See docs/contributing.md for requirements."}
           </p>
         ) : (
           <>
@@ -461,7 +461,7 @@ export function CommunityDialog({
                   description={
                     connectionFrom
                       ? undefined
-                      : "Paste your community link. Continue shares your Buzz identity with the community so you can preview it before joining."
+                      : "Paste your community link. Continue shares your Zion identity with the community so you can preview it before joining."
                   }
                 >
                   <Input

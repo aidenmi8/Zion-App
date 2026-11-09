@@ -82,7 +82,7 @@ it("shows progress, then applies a downloaded update", async () => {
   expect(await screen.findByText("Downloading update…")).toBeVisible();
   finishDownload();
   expect(
-    await screen.findByText("Ready to install. Buzz will restart."),
+    await screen.findByText("Ready to install. Zion will restart."),
   ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Update now" }));
   await vi.waitFor(() => expect(relaunch).toHaveBeenCalledOnce());

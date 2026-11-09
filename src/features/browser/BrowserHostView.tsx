@@ -533,7 +533,7 @@ export function BrowserHostView({
           <div role="alert" className="page-status">
             <EmptyState
               icon={<CloudOffIcon />}
-              title="Buzz couldn’t load this app"
+              title="Zion couldn’t load this app"
               description={
                 openFailed
                   ? "Couldn’t open it in your browser. Try again in a moment."

@@ -60,7 +60,7 @@ it("offers the retained prefabs and custom, disclosing tool access before creati
   ).toBeEnabled();
   expect(screen.queryByText("Emoji maker")).not.toBeInTheDocument();
   expect(
-    screen.getAllByText(/shell and files on this machine, plus Buzz access/),
+    screen.getAllByText(/shell and files on this machine, plus Zion access/),
   ).toHaveLength(2);
   expect(screen.getAllByText(/Chat: no tools/)).toHaveLength(2);
   expect(

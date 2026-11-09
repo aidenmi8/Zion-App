@@ -580,7 +580,7 @@ export class GooseSetup {
       const session = await goose.open({
         cwd,
         // A titled session spares the provider a naming call.
-        title: "Buzz connection test",
+        title: "Zion connection test",
         systemPrompt: "",
         choice: () => choice,
       });

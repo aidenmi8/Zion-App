@@ -329,10 +329,10 @@ it("creating or importing a key refuses while another key is on this device, bef
     importKey: importNsec,
   } as unknown as Identity;
   await expect(createKey(identity).run()).rejects.toThrow(
-    "already has a different Buzz key",
+    "already has a different Zion key",
   );
   await expect(importKey(identity, "nsec1")).rejects.toThrow(
-    "already has a different Buzz key",
+    "already has a different Zion key",
   );
   expect(create).not.toHaveBeenCalled();
   expect(importNsec).not.toHaveBeenCalled();

@@ -354,7 +354,7 @@ export function createAttentionComponents({
             )}
             <PreferenceRow
               title="Attention"
-              subtitle={`Let ${agent.name} watch for updates and check in on a schedule. Runs while Buzz is open on this device.`}
+              subtitle={`Let ${agent.name} watch for updates and check in on a schedule. Runs while Zion is open on this device.`}
               trailing={
                 <AttentionStatus
                   name={agent.name}

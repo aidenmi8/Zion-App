@@ -950,7 +950,7 @@ it("offline, says older messages can be loaded once Buzz reconnects instead of o
       onOpenLink={() => false}
     />
   );
-  const waiting = "You can load older messages once Buzz reconnects.";
+  const waiting = "You can load older messages once Zion reconnects.";
   try {
     const view = render(timeline(offline));
     expect(screen.getByText(waiting)).toBeVisible();

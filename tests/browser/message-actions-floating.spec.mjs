@@ -829,11 +829,11 @@ test("keyboard search covers a toolbar under the pointer and restores its action
     };
     await page.keyboard.press(`${modifier}+k`);
     const dialog = page.getByRole("dialog", {
-      name: "Search Buzz",
+      name: "Search Zion",
       exact: true,
     });
     await expect(
-      dialog.getByRole("combobox", { name: "Search Buzz" }),
+      dialog.getByRole("combobox", { name: "Search Zion" }),
     ).toBeFocused();
 
     await hidden(actions);
@@ -890,7 +890,7 @@ test("menus keep their actions showing; pickers and dialogs cover them", async (
   // A modal opened over that menu still covers the bar.
   await page.keyboard.press("ControlOrMeta+k");
   const searchDialog = page.getByRole("dialog", {
-    name: "Search Buzz",
+    name: "Search Zion",
     exact: true,
   });
   await expect(searchDialog).toBeVisible();

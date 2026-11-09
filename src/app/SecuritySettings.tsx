@@ -54,7 +54,7 @@ export function SecuritySettings() {
       <Header
         id="security-settings-title"
         title="Security"
-        subtitle="Tools you allowed to use Buzz as you on this device."
+        subtitle="Tools you allowed to use Zion as you on this device."
       />
       <InlineHeader id="paired-tools-title" title="Paired command-line tools" />
       {error && (
@@ -66,7 +66,7 @@ export function SecuritySettings() {
         <EmptyState
           icon={<LockIcon />}
           title="No paired tools"
-          description="Run buzz auth desktop pair in a terminal to let a command-line tool use Buzz as you."
+          description="Run buzz auth desktop pair in a terminal to let a command-line tool use Zion as you."
         />
       ) : (
         tools && (

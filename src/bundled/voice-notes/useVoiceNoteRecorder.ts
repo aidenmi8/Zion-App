@@ -182,7 +182,7 @@ export function useVoiceNoteRecorder() {
                 mountedRef.current &&
                 sessionRef.current === session
               ) {
-                setError("Buzz could not prepare this voice note for upload.");
+                setError("Zion could not prepare this voice note for upload.");
               }
             }
           }
@@ -245,8 +245,8 @@ export function useVoiceNoteRecorder() {
         (cause.name === "NotAllowedError" || cause.name === "SecurityError");
       setError(
         denied
-          ? "Allow Buzz to access your microphone to record a voice note."
-          : "Buzz could not start the voice recorder.",
+          ? "Allow Zion to access your microphone to record a voice note."
+          : "Zion could not start the voice recorder.",
       );
     }
   }, [cancel]);

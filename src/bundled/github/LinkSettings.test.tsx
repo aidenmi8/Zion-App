@@ -21,7 +21,7 @@ it("defaults to Buzz and persists browser opening across settings remounts", asy
   const user = userEvent.setup();
   const view = render(<LinkSettings active={() => true} />);
   const toggle = screen.getByRole("switch", {
-    name: "Open GitHub links in Buzz",
+    name: "Open GitHub links in Zion",
   });
   expect(toggle).toBeChecked();
   await user.click(toggle);
@@ -110,7 +110,7 @@ it("groups links and comment authors under a single GitHub heading", async () =>
     screen.getByRole("heading", { level: 3, name: "Comment authors" }),
   ).toBeInTheDocument();
   await userEvent.click(
-    screen.getByRole("switch", { name: "Open GitHub links in Buzz" }),
+    screen.getByRole("switch", { name: "Open GitHub links in Zion" }),
   );
   expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 });
@@ -119,7 +119,7 @@ it("shows the signed-in account alongside the link setting", async () => {
   const gh = (async () => ({ viewer: { login: "octocat" } })) as GitHubCli;
   render(<GitHubSettings active={() => true} gh={gh} />);
   expect(
-    screen.getByRole("switch", { name: "Open GitHub links in Buzz" }),
+    screen.getByRole("switch", { name: "Open GitHub links in Zion" }),
   ).toBeInTheDocument();
   expect(
     await screen.findByText("Signed in to GitHub as octocat through gh."),

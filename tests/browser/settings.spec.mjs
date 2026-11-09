@@ -235,7 +235,7 @@ for (const action of ["Remove from this device", "Leave community"]) {
     });
     if (action === "Remove from this device")
       await expect(dialog).toContainText(
-        "The community connection and any saved drafts or data will be removed from Buzz on this device.",
+        "The community connection and any saved drafts or data will be removed from Zion on this device.",
       );
     await dialog.getByRole("button", { name: action, exact: true }).focus();
     await page.keyboard.press("Enter");
@@ -468,7 +468,7 @@ confirmedPresence(
           .and(page.locator('[tabindex="0"]')),
       ).toBeFocused();
       await tab(true);
-      await expect(button(page, "Search Buzz")).toBeFocused();
+      await expect(button(page, "Search Zion")).toBeFocused();
     }
     await page.setViewportSize({ width: 1280, height: 844 });
     await avatar.focus();

@@ -7,7 +7,7 @@ import { nativeBuilderlab, type BuilderlabSession } from "../session";
 const kept = () =>
   brokerBuilderlab()
     ? "Your sign-in stays on the development server through app reloads, until you sign out or the session expires."
-    : "Buzz keeps your sign-in in your system keychain until you sign out.";
+    : "Zion keeps your sign-in in your system keychain until you sign out.";
 
 export function Login({
   session,
@@ -15,7 +15,7 @@ export function Login({
   active,
   showHeading = true,
   cancelOnUnmount = true,
-  unavailableReason = "Open the Buzz desktop app to sign in with Builderlab.",
+  unavailableReason = "Open the Zion desktop app to sign in with Builderlab.",
   openIdentity,
 }: {
   session: BuilderlabSession;
@@ -71,7 +71,7 @@ export function Login({
             {state.checking
               ? "Checking your Builderlab sign-in…"
               : state.status === "pending"
-                ? "Finish sign-in in your browser, then return to Buzz."
+                ? "Finish sign-in in your browser, then return to Zion."
                 : state.account
                   ? state.account.email
                     ? `Signed in as ${state.account.email}.`

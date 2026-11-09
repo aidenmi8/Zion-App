@@ -414,7 +414,7 @@ describe("update, enable and remove requests", () => {
     ],
     [
       { action: "update", id: "buzz.channels" },
-      "Bundled plugins update with Buzz",
+      "Bundled plugins update with Zion",
     ],
     [
       { action: "update", id: "example.missing" },
@@ -485,7 +485,7 @@ describe("owner-held boundaries", () => {
   ])("never read a Buzz-hosted repository as the owner: %s", async (url) => {
     const { agent, checkGit } = harness();
     const message =
-      "Ask your owner to add plugins from Buzz-hosted repositories";
+      "Ask your owner to add plugins from Zion-hosted repositories";
     await expect(agent.discover(url)).rejects.toThrow(message);
     await expect(
       agent.request({ action: "install", repository: url, reason }),

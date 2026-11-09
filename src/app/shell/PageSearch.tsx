@@ -184,7 +184,7 @@ export function PageSearch({
     () =>
       services?.shortcuts.registerHost({
         id: SEARCH_ID,
-        title: "Search Buzz",
+        title: "Search Zion",
         binding: SEARCH_BINDINGS,
         order: HOST_SHORTCUT_ORDER.search,
         allowInEditable: true,
@@ -284,8 +284,8 @@ export function PageSearch({
         variant="inverted"
         size="sm"
         shape="capsule"
-        aria-label="Search Buzz"
-        title={`Search Buzz (${formatBinding(binding, apple).text})`}
+        aria-label="Search Zion"
+        title={`Search Zion (${formatBinding(binding, apple).text})`}
         onClick={() => {
           trigger.current?.focus();
           begin();
@@ -306,7 +306,7 @@ export function PageSearch({
           escaped.current = true;
           return false;
         }}
-        title={scopedChannelId ? "Search this conversation" : "Search Buzz"}
+        title={scopedChannelId ? "Search this conversation" : "Search Zion"}
         footerGap="none"
         motion="default"
         dismissOnOutsideClick
@@ -508,7 +508,7 @@ function CommunitySearch({
         query={query}
         onQueryChange={onQueryChange}
         input={input}
-        label={scopedChannelId ? "Search this conversation" : "Search Buzz"}
+        label={scopedChannelId ? "Search this conversation" : "Search Zion"}
         scope={
           scopedChannelId
             ? { label: "This conversation", onRemove: () => onScopeChange() }

@@ -186,7 +186,7 @@ test("update checks recover from failure, download, and restart from the toast",
   await expect(notices.getByText("Ready to update!")).toHaveCount(0);
 
   await page.evaluate(() => window.finishDownload());
-  await expect(status).toHaveText("Ready to install. Buzz will restart.");
+  await expect(status).toHaveText("Ready to install. Zion will restart.");
   await button(page, "Appearance").click();
   await expect(notices.getByText("Ready to update!")).toBeVisible();
   await expect(notices.getByText("Click to update")).toBeVisible();
@@ -270,7 +270,7 @@ test("the ready toast yields to Settings → Updates, which offers the same acti
     .getByRole("region", { name: "App notifications" })
     .getByText("Ready to update!");
   await page.evaluate(() => window.finishDownload());
-  await expect(status).toHaveText("Ready to install. Buzz will restart.");
+  await expect(status).toHaveText("Ready to install. Zion will restart.");
   await expect(toast).toHaveCount(0);
 
   await button(page, "Appearance").click();

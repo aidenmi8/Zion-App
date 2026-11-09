@@ -199,7 +199,7 @@ export function Welcome({
         return connect
           ? connect(signal, { signup: create, forceLogin: switching.current })
           : Promise.reject(
-              new Error("This Buzz build has no Builderlab sign-in."),
+              new Error("This Zion build has no Builderlab sign-in."),
             );
       },
       federatedIdentity &&
@@ -473,7 +473,7 @@ export function Welcome({
             onDevice && communities.snapshot().memberships.length > 0
               ? [
                   {
-                    label: "Opening Buzz…",
+                    label: "Opening Zion…",
                     run: async () => {
                       enterApp();
                       return { status: "idle" };
@@ -526,7 +526,7 @@ export function Welcome({
         throw new Error(signOutFailure(reason));
       }
       await new Promise((settle) => setTimeout(settle, RESTART_WAIT_MS));
-      throw new Error("Buzz didn’t restart. Quit and reopen Buzz to finish.");
+      throw new Error("Zion didn’t restart. Quit and reopen Zion to finish.");
     },
   };
   /** Starts sign-in in a fresh browser tab, replacing one still waiting. */
@@ -915,7 +915,7 @@ export function Welcome({
             <SetupProgress label="Signing in…" />
             <AlertDialog
               title="A different account is saved on this computer"
-              description="Replacing it removes that account from this computer to continue with the one you just signed in to. It may not be backed up. Buzz restarts to finish."
+              description="Replacing it removes that account from this computer to continue with the one you just signed in to. It may not be backed up. Zion restarts to finish."
               onClose={switchAccount}
               actions={
                 <>
@@ -1034,7 +1034,7 @@ export function Welcome({
               tabIndex={-1}
               className="text-heading text-standard"
             >
-              Your Buzz identity
+              Your Zion identity
             </h1>
             {state.status === "loading" ? (
               <p role="status">Opening your saved identity…</p>

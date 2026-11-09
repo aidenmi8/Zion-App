@@ -42,10 +42,6 @@
   height: 4.5rem;
 }
 
-:root[data-color-mode="dark"] .buzz-launch img {
-  filter: invert(1);
-}
-
 @media (prefers-reduced-motion: reduce) {
   #buzz-launch {
     transition-duration: 120ms;

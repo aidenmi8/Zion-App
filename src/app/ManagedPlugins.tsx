@@ -76,7 +76,7 @@ export function ManagedPlugins({
           title="Recommended plugins unavailable"
         />
         <p role="status" className="m-0 text-body-sm text-muted break-words">
-          Buzz couldn’t use the managed plugin file {managed.path}.{" "}
+          Zion couldn’t use the managed plugin file {managed.path}.{" "}
           {managed.reason}
         </p>
       </section>
@@ -491,7 +491,7 @@ export function ManagedPluginReview({
           </p>
           {existing?.source === "bundled" ? (
             <p className="m-0">
-              This plugin is included with Buzz. Update Buzz to get its latest
+              This plugin is included with Zion. Update Zion to get its latest
               version.
             </p>
           ) : (

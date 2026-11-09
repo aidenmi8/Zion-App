@@ -224,7 +224,7 @@ export const apply: PluginModule["apply"] = (ctx) => {
             unavailableReason={
               dev || browserLoginAvailable()
                 ? unavailable
-                : "Open the Buzz desktop app to sign in with Builderlab."
+                : "Open the Zion desktop app to sign in with Builderlab."
             }
             active={active}
             openIdentity={openIdentity}

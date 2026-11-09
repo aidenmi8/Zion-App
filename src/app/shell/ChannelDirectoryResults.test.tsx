@@ -250,10 +250,10 @@ function connected(
 }
 
 const openSearch = async () => {
-  await userEvent.click(screen.getByRole("button", { name: "Search Buzz" }));
-  return screen.findByRole("dialog", { name: "Search Buzz" });
+  await userEvent.click(screen.getByRole("button", { name: "Search Zion" }));
+  return screen.findByRole("dialog", { name: "Search Zion" });
 };
-const field = () => screen.getByRole("combobox", { name: "Search Buzz" });
+const field = () => screen.getByRole("combobox", { name: "Search Zion" });
 const rows = () =>
   Array.from(
     screen
@@ -517,7 +517,7 @@ it("reopens where it was left after opening a channel, and fresh after Escape or
     await waitFor(() => expect(rows()).toEqual(["design-crit1 member"]));
     await userEvent.keyboard("{Enter}");
     await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
     );
     // Back within a few minutes: same tab, same text, same rows.
     await openSearch();
@@ -541,7 +541,7 @@ it("reopens where it was left after opening a channel, and fresh after Escape or
     ).toBeVisible();
     await userEvent.keyboard("{Enter}");
     await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
     );
     t.navigate.mockClear();
     await openSearch();
@@ -558,13 +558,13 @@ it("reopens where it was left after opening a channel, and fresh after Escape or
       ),
     );
     await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
     );
     await openSearch();
     // Escape means done: the next opening starts fresh.
     await userEvent.keyboard("{Escape}");
     await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
     );
     await openSearch();
     expect(
@@ -578,7 +578,7 @@ it("reopens where it was left after opening a channel, and fresh after Escape or
       await screen.findByRole("option", { name: /design-crit/ }),
     );
     await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
     );
     now.mockReturnValue(Date.now() + 6 * 60_000);
     await openSearch();
@@ -610,7 +610,7 @@ it("reopens an empty All view fresh, so it leads with what is unread now", async
     );
     await userEvent.keyboard("{Enter}");
     await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
     );
     await openSearch();
     const reopened = await screen.findByRole("group", {
@@ -638,7 +638,7 @@ it("keeps an empty All view's place only while unread does not lead it", async (
   };
   const closed = () =>
     waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
     );
   try {
     setUnreadFirstPreference(false);

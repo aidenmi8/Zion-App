@@ -572,7 +572,7 @@ it("opens each plugin's existing metadata and controls in a detail aside", () =>
   fireEvent.error(artwork);
   expect(bundledCard.querySelector("img")).toBeNull();
   expect(bundledCard.querySelectorAll("svg")).toHaveLength(3);
-  expect(within(bundledCard).queryByText("Buzz")).toBeNull();
+  expect(within(bundledCard).queryByText("Zion")).toBeNull();
   expect(
     within(bundledCard).getByText("Channels").nextElementSibling,
   ).toHaveAttribute("aria-hidden", "true");
@@ -590,7 +590,7 @@ it("opens each plugin's existing metadata and controls in a detail aside", () =>
   expect(bundled.parentElement).toContainElement(
     screen.getByRole("navigation", { name: "Settings sections" }),
   );
-  expect(within(bundled).queryByText("Buzz")).toBeNull();
+  expect(within(bundled).queryByText("Zion")).toBeNull();
   expect(within(bundled).getByText("buzz.channels")).toBeVisible();
   expect(within(bundled).queryByText("Signature")).toBeNull();
   const badge = within(bundled).getByText("Made by Buzz");
@@ -1718,7 +1718,7 @@ it("keeps the plugin Open in Buzz shows when the import's dismissal lands later"
   onPluginImportClosed.mockImplementation(() =>
     setTimeout(() => land("plugins", { entryId: "p1", traversal: true })),
   );
-  fireEvent.click(await screen.findByRole("button", { name: "Open in Buzz" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Open in Zion" }));
   await waitFor(() => expect(entry()).toBe("p1"));
   expect(shown()).toBe("Codex");
   expect(stored("p1")).toBe("buzz.codex");
@@ -1733,7 +1733,7 @@ it("records the plugin Open in Buzz shows on the visit replacing its import", as
   onPluginImportClosed.mockImplementation(() =>
     land("plugins", { entryId: "p2" }),
   );
-  fireEvent.click(await screen.findByRole("button", { name: "Open in Buzz" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Open in Zion" }));
   await waitFor(() => expect(shown()).toBe("Codex"));
   expect(stored("p2")).toBe("buzz.codex");
   visit("appearance", { entryId: "s3" });
@@ -2079,7 +2079,7 @@ it.each(["primary", null])(
       ...(selected
         ? [undefined, "Community", "Community admin"]
         : ["Personal space"]),
-      "Buzz",
+      "Zion",
       "Plugins",
       "Communities",
     ]);

@@ -436,7 +436,7 @@ pub(crate) async fn plugin_host_process_spawn<R: tauri::Runtime>(
         }
         // HMR sources are mutable outside the native-owned application bundle.
         if tauri::is_dev() {
-            return Err("Use a packaged Buzz build for protected workers; development frontends are mutable".into());
+            return Err("Use a packaged Zion build for protected workers; development frontends are mutable".into());
         }
     }
     load_login_shell_path().await;

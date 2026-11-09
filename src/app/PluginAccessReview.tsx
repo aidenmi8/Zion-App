@@ -60,7 +60,7 @@ function hostDeclarations(
       signature: `Agent execution: ${harness}`,
       title: "Agent execution:",
       label: `Run ${types.find((type) => type.key === harness)?.title ?? harness} on another host`,
-      hint: "Can run native agent code and read files on that host. Buzz keeps the agent's identity.",
+      hint: "Can run native agent code and read files on that host. Zion keeps the agent's identity.",
       icon: PlugIcon,
       details: <code className={styles.sourcePath}>{harness}</code>,
     })),
@@ -101,7 +101,7 @@ function hostDeclarations(
       title: "HTTPS origin:",
       name: `HTTPS origin ${origin}`,
       label: `Connect to ${origin}`,
-      hint: "Buzz can make HTTPS requests to this address for the plugin.",
+      hint: "Zion can make HTTPS requests to this address for the plugin.",
       icon: GlobeIcon,
       details: <code className={styles.sourcePath}>{origin}</code>,
     })),
@@ -111,14 +111,14 @@ function hostDeclarations(
         signature: `Federated authority ${manifest.host?.federatedIdentity?.authority}: ${operation.method} ${operation.path}`,
         title: `Federated authority ${manifest.host?.federatedIdentity?.authority}:`,
         label: `${operation.method} ${operation.path}`,
-        hint: "Buzz can call this route with your community session for the plugin.",
+        hint: "Zion can call this route with your community session for the plugin.",
         icon: GlobeIcon,
         details: <code className={styles.sourcePath}>{operation.path}</code>,
       }),
     ),
     ...(manifest.host?.processes ?? []).map((process) => ({
       key: `process:${process.id}`,
-      signature: `Process ${process.id}: ${JSON.stringify([process.program, ...(process.args ?? [])])}${process.bundled ? " (bundled with Buzz)" : ""} · artifact: ${JSON.stringify(process.artifact ?? null)} and any further arguments · stdin, full user access`,
+      signature: `Process ${process.id}: ${JSON.stringify([process.program, ...(process.args ?? [])])}${process.bundled ? " (bundled with Zion)" : ""} · artifact: ${JSON.stringify(process.artifact ?? null)} and any further arguments · stdin, full user access`,
       title: `Process ${process.id}:`,
       label: `Start ${process.program}`,
       hint: "Can start a background process with additional arguments, using your account’s full access.",
@@ -126,7 +126,7 @@ function hostDeclarations(
       details: (
         <>
           <ProgramDetails program={process.program} args={process.args ?? []} />
-          {process.bundled && <p className="mb-0 mt-2">Bundled with Buzz.</p>}
+          {process.bundled && <p className="mb-0 mt-2">Bundled with Zion.</p>}
           {process.artifact && (
             <div className="mt-2 break-all">
               <p className="m-0">
@@ -158,7 +158,7 @@ function hostDeclarations(
               "MCP servers: tools served to local agents over loopback HTTP",
             title: "MCP servers:",
             label: "Provide tools to local agents",
-            hint: "Exposes plugin tools through Buzz’s local MCP server.",
+            hint: "Exposes plugin tools through Zion’s local MCP server.",
             icon: PlugIcon,
             details: (
               <p className="m-0">
@@ -414,7 +414,7 @@ export function PluginAccessReview({
                     capabilities are listed.
                   </p>
                   <p className="mb-0 mt-3 text-muted">
-                    These declarations describe what the plugin asks Buzz to do.
+                    These declarations describe what the plugin asks Zion to do.
                     They don’t limit what its code can do.
                   </p>
                 </section>

@@ -80,7 +80,7 @@ it.each([
         ],
       ],
       ["administration", "Community admin", ["example/membership"]],
-      ["app", "Buzz", app],
+      ["app", "Zion", app],
       ["plugins", "Plugins", plugins],
       ["group:Communities", "Communities", ["example/hosted"]],
     ],
@@ -91,7 +91,7 @@ it.each([
     "appearance",
     [
       ["personal", "Personal space", ["profile", "buzz.pairing/mobile"]],
-      ["app", "Buzz", app],
+      ["app", "Zion", app],
       ["plugins", "Plugins", plugins],
       ["group:Communities", "Communities", ["example/hosted"]],
     ],

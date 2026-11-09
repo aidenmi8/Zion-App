@@ -99,7 +99,7 @@ const credential: Credential = {
     canUseBuilderlabDecisions: false,
   },
 };
-const welcomeHeading = () => screen.getByRole("heading", { name: "Buzz" });
+const welcomeHeading = () => screen.getByRole("heading", { name: "Zion" });
 const connectButton = () => screen.getByRole("button", { name: CONNECT });
 const landingSignIn = () => screen.getByRole("button", { name: SIGN_IN });
 function titleBar() {
@@ -478,7 +478,7 @@ it("describes a previous identity selection accurately when the current identity
     }),
   );
   expect(
-    screen.getByText("Choose the Buzz identity to restore on this device."),
+    screen.getByText("Choose the Zion identity to restore on this device."),
   ).toBeVisible();
   expect(
     screen.getByText("This won’t change the identity linked to your account."),
@@ -2287,7 +2287,7 @@ it("Sign in with Builderlab runs sign-in, creates the key mid-setup, and lands o
   await user.click(await screen.findByRole("button", { name: SIGN_IN }));
   expect(connect).toHaveBeenCalledTimes(1);
   expect(
-    screen.queryByText("Finish sign-in in your browser, then return to Buzz."),
+    screen.queryByText("Finish sign-in in your browser, then return to Zion."),
   ).toBeNull();
   expect(screen.getByRole("button", { name: SIGN_IN })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Other options" })).toBeEnabled();
@@ -4769,7 +4769,7 @@ it("Enter your private key on Welcome back classifies what is pasted, and Back r
   const user = userEvent.setup();
   await keyImportPage(user, identity);
   expect(
-    screen.getByText(/Paste your private key to sign in to Buzz\./),
+    screen.getByText(/Paste your private key to sign in to Zion\./),
   ).toBeVisible();
   // Masked and focused on arrival; reveal requires an explicit action.
   expect(keyField()).toHaveFocus();
@@ -5214,7 +5214,7 @@ it.each([
     // Back on the landing, signed out of the organization on an FI build; the
     // linked key was never imported or replaced, and its npub is gone with
     // the page.
-    expect(await screen.findByRole("heading", { name: "Buzz" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Zion" })).toBeVisible();
     expect(fi.service.signOut).toHaveBeenCalledTimes(federated ? 1 : 0);
     expect(fi.service.snapshot().status).toBe(
       federated ? "signed-out" : "signed-in",
@@ -5520,7 +5520,7 @@ it("a backup that fails twice after the key is imported offers Try again each ti
     ),
   ).toBeVisible();
   expect(screen.queryByText("Signed in")).toBeNull();
-  expect(screen.queryByRole("heading", { name: "Buzz" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Zion" })).toBeNull();
   identity.dispose();
 });
 
@@ -5753,7 +5753,7 @@ it("importing a linked key backup status already lists discloses automatic backu
   // Saving consent turns automatic backup on, so it is disclosed first.
   expect(
     screen.getByText(
-      /^Buzz will automatically sync this key with your Builderlab account unless you chose to manage it yourself\./,
+      /^Zion will automatically sync this key with your Builderlab account unless you chose to manage it yourself\./,
     ),
   ).toBeVisible();
   await user.paste(ownedNsec);
@@ -6951,7 +6951,7 @@ it("a failed or canceled sign-in returns to the first-launch screen", async () =
   expect(
     screen.getByRole("heading", { name: "Couldn’t sign in" }),
   ).toBeVisible();
-  expect(screen.queryByRole("heading", { name: "Buzz" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Zion" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "Back" }));
   expect(welcomeHeading()).toBeVisible();
   expect(screen.queryByRole("alert")).toBeNull();
@@ -7001,7 +7001,7 @@ it("restore denial does not become first run or generate a replacement", async (
     "Keychain access was denied",
   );
   expect(
-    screen.getByRole("heading", { name: "Your Buzz identity" }),
+    screen.getByRole("heading", { name: "Your Zion identity" }),
   ).toBeVisible();
   expect(screen.queryByRole("button", { name: SIGN_IN })).toBeNull();
   fireEvent.mouseDown(titleBar(), {
@@ -7149,7 +7149,7 @@ it.each(["Linux x86_64", "Win32"])(
       </Welcome>,
     );
     expect(
-      screen.getByRole("heading", { name: "Your Buzz identity" }),
+      screen.getByRole("heading", { name: "Your Zion identity" }),
     ).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent(
       "Opening your saved identity…",
@@ -7179,7 +7179,7 @@ it("unlocks Sign out only after a reveal or copy, the key box, and the wipe phra
   expect(confirm()).toBeEnabled();
   await user.click(
     screen.getByRole("checkbox", {
-      name: "Also erase everything else Buzz stores on this device",
+      name: "Also erase everything else Zion stores on this device",
     }),
   );
   expect(confirm()).toBeDisabled();
@@ -7203,7 +7203,7 @@ it("disables wipe with the native reason when the build can't wipe", async () =>
   const identity = createIdentity();
   await identity.ready;
   vi.mocked(invoke).mockResolvedValueOnce(
-    "Erasing is unavailable in development builds because they share agent keys with the installed Buzz",
+    "Erasing is unavailable in development builds because they share agent keys with the installed Zion",
   );
   render(<SignOutDialog identity={identity} onClose={() => {}} />);
   expect(
@@ -7212,7 +7212,7 @@ it("disables wipe with the native reason when the build can't wipe", async () =>
   expect(invoke).toHaveBeenLastCalledWith("sign_out_wipe_refusal");
   expect(
     screen.getByRole("checkbox", {
-      name: "Also erase everything else Buzz stores on this device",
+      name: "Also erase everything else Zion stores on this device",
     }),
   ).toHaveAttribute("aria-disabled", "true");
   identity.dispose();
@@ -7226,7 +7226,7 @@ it("keeps wipe disabled while the native answer is pending", async () => {
   vi.mocked(invoke).mockReturnValueOnce(answer.promise);
   render(<SignOutDialog identity={identity} onClose={() => {}} />);
   const wipe = screen.getByRole("checkbox", {
-    name: "Also erase everything else Buzz stores on this device",
+    name: "Also erase everything else Zion stores on this device",
   });
   try {
     expect(invoke).toHaveBeenLastCalledWith("sign_out_wipe_refusal");
@@ -7251,7 +7251,7 @@ it("keeps wipe disabled when the native check fails", async () => {
   ).toBeVisible();
   expect(
     screen.getByRole("checkbox", {
-      name: "Also erase everything else Buzz stores on this device",
+      name: "Also erase everything else Zion stores on this device",
     }),
   ).toHaveAttribute("aria-disabled", "true");
   identity.dispose();
@@ -8103,7 +8103,7 @@ it("a sign-out that never restarts Buzz fails setup instead of waiting forever",
     await vi.advanceTimersByTimeAsync(30_000);
     expect(
       await screen.findByText(
-        "Buzz didn’t restart. Quit and reopen Buzz to finish.",
+        "Zion didn’t restart. Quit and reopen Zion to finish.",
       ),
     ).toBeVisible();
     identity.dispose();

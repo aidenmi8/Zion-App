@@ -125,12 +125,12 @@ export function KeyImport({
                 Enter your private key
               </h1>
               <p className="text-body text-subtle">
-                Paste your private key to sign in to Buzz. You can also select
+                Paste your private key to sign in to Zion. You can also select
                 or drop a text file with your key.
               </p>
               {automaticBackup && (
                 <p className="text-body-sm text-subtle">
-                  Buzz will automatically sync this key with your Builderlab
+                  Zion will automatically sync this key with your Builderlab
                   account
                   {automaticBackup === "kept" &&
                     " unless you chose to manage it yourself"}

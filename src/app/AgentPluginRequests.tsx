@@ -245,7 +245,7 @@ function ChangeReview({
     return (
       <AlertDialog
         title={`Delete ${name}?`}
-        description={`Requested by ${request.requester.name}. Removes this plugin and its rollback history from Buzz. You can install it again later.`}
+        description={`Requested by ${request.requester.name}. Removes this plugin and its rollback history from Zion. You can install it again later.`}
         pending={working}
         initialFocus={cancel}
         finalFocus={returnFocus}

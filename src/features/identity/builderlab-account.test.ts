@@ -164,7 +164,7 @@ describe("linkedKey", () => {
     [
       "an account without the USER role",
       refusal(403, "unauthorized"),
-      "This Builderlab account can't manage Buzz identities right now. Try signing in again.",
+      "This Builderlab account can't manage Zion identities right now. Try signing in again.",
     ],
     ["a lapsed session", lapsed, signedOut],
     [
@@ -340,10 +340,10 @@ describe("hosted community creation", () => {
       untouched,
     );
     await expect(account.createCommunity("north-star")).rejects.toThrow(
-      "That Buzz address is already taken.",
+      "That Zion address is already taken.",
     );
     await expect(account.communityAvailable("north-star")).rejects.toThrow(
-      "Connect your Buzz identity before creating a community.",
+      "Connect your Zion identity before creating a community.",
     );
     await expect(account.createCommunity("north-star")).rejects.toThrow(
       "Builderlab community create failed (HTTP 200: no community address).",
@@ -639,18 +639,18 @@ describe("bind", () => {
     [
       "a verify for an account bound to another key",
       [answer(200, challenge), refusal(409, "identity_already_bound")],
-      "This Builderlab account is connected to another Buzz identity.",
+      "This Builderlab account is connected to another Zion identity.",
     ],
     [
       "a verify for a key bound to another account",
       [answer(200, challenge), refusal(409, "pubkey_already_bound")],
-      "This Buzz identity is connected to another Builderlab account.",
+      "This Zion identity is connected to another Builderlab account.",
     ],
     // kgoose's codes the card lacks.
     [
       "a challenge refused for its origin",
       [refusal(403, "invalid_origin")],
-      "Builderlab didn’t accept this request from Buzz.",
+      "Builderlab didn’t accept this request from Zion.",
     ],
     [
       "a challenge refused for too many open challenges",
@@ -736,13 +736,13 @@ describe("bind", () => {
     [
       "identity_already_bound",
       409,
-      "This Builderlab account is connected to another Buzz identity.",
+      "This Builderlab account is connected to another Zion identity.",
       false,
     ],
     [
       "pubkey_already_bound",
       409,
-      "This Buzz identity is connected to another Builderlab account.",
+      "This Zion identity is connected to another Builderlab account.",
       false,
     ],
     // Defensive, not a kgoose reply: its identity routes never send `unknown`,
@@ -797,7 +797,7 @@ describe("bind", () => {
       [
         "pubkey_already_bound",
         409,
-        "This Buzz identity is connected to another Builderlab account.",
+        "This Zion identity is connected to another Builderlab account.",
       ],
     ] as const) {
       warn.mockClear();
@@ -1079,7 +1079,7 @@ describe("unbind", () => {
     [
       "a refused origin",
       refusal(403, "invalid_origin"),
-      "Builderlab didn’t accept this request from Buzz.",
+      "Builderlab didn’t accept this request from Zion.",
       false,
     ],
     // Defensive, not a kgoose reply: its identity routes never send `unknown`,

@@ -11,7 +11,7 @@ export const SIGN_IN_TIMED_OUT = "Sign-in timed out. Try again.";
 export function recoveryMessage(code: string) {
   if (code === "sign-in-timed-out") return SIGN_IN_TIMED_OUT;
   if (code === "storage-busy")
-    return "Secure storage is busy. Close another Buzz instance and try again.";
+    return "Secure storage is busy. Close another Zion instance and try again.";
   if (code.startsWith("storage-"))
     return "Sign-in could not access secure storage. Check your system’s credential permissions and try again.";
   if (code === "sign-in-canceled")
@@ -98,7 +98,7 @@ function Action({
       return (
         <p role="alert" className="text-body-sm text-danger">
           {mismatch
-            ? "This account is linked to a different Buzz identity. Keep this key until you have reviewed the identity link."
+            ? "This account is linked to a different Zion identity. Keep this key until you have reviewed the identity link."
             : "Your account does not have access to this community. Contact its administrator."}
         </p>
       );
@@ -119,8 +119,8 @@ function Action({
   if (ISSUER_REFUSALS.has(refusal))
     return (
       <p role="alert" className="text-body-sm text-danger">
-        Buzz couldn’t confirm your organization sign-in for this community.
-        Restart Buzz to try again. If it keeps happening, contact your
+        Zion couldn’t confirm your organization sign-in for this community.
+        Restart Zion to try again. If it keeps happening, contact your
         administrator.
       </p>
     );
@@ -204,7 +204,7 @@ function SwitchAccount({
     <>
       <p role="alert" className="text-body-sm text-danger">
         {mismatch
-          ? `Your ${server} account (signed in as ${account}) is linked to a different Buzz identity. Keep this key until you have reviewed the link at ${new URL(authority.identityOrigin).host}, or switch to another ${server} account.`
+          ? `Your ${server} account (signed in as ${account}) is linked to a different Zion identity. Keep this key until you have reviewed the link at ${new URL(authority.identityOrigin).host}, or switch to another ${server} account.`
           : `This community didn’t accept your ${server} account (signed in as ${account}).`}
       </p>
       {others.length > 0 && (

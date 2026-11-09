@@ -809,13 +809,13 @@ it("explains that a Buzz link can't be opened without a scope or navigator", asy
   await user.click(screen.getByRole("button", { name: "Open Launch by Carl" }));
   const reader = screen.getByRole("complementary");
   expect(
-    within(reader).queryByText("This Buzz link couldn’t be opened here."),
+    within(reader).queryByText("This Zion link couldn’t be opened here."),
   ).not.toBeInTheDocument();
   await user.click(
     within(reader).getByRole("link", { name: "the release room" }),
   );
   expect(
-    within(reader).getByText("This Buzz link couldn’t be opened here."),
+    within(reader).getByText("This Zion link couldn’t be opened here."),
   ).toBeInTheDocument();
 });
 

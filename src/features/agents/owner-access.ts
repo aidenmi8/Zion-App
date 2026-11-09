@@ -56,7 +56,7 @@ export type OwnerBinding = Readonly<{
 
 const unavailable = () =>
   new Error(
-    "Your owner's Buzz is not connected to this community as them, so owner tools are unavailable now.",
+    "Your owner's Zion is not connected to this community as them, so owner tools are unavailable now.",
   );
 const notOwners = (id: string) =>
   new Error(

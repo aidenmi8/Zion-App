@@ -842,9 +842,9 @@ export function createTabs({
             <div className="grid gap-2">
               <p className="m-0 text-body-sm text-subtle">
                 {row.sessions?.length
-                  ? "goose no longer has the sessions Buzz saved for this conversation."
-                  : "Buzz saved no goose session for this conversation."}{" "}
-                One from an earlier version of Buzz can be found by searching
+                  ? "goose no longer has the sessions Zion saved for this conversation."
+                  : "Zion saved no goose session for this conversation."}{" "}
+                One from an earlier version of Zion can be found by searching
                 goose's history, which can take a while.
               </p>
               <div>

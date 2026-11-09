@@ -63,9 +63,9 @@ it("keeps typing focus while arrows select results and Enter opens the selection
       onSelect={select}
     />,
   );
-  await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const dialog = await screen.findByRole("dialog", { name: "Search Buzz" });
-  const input = within(dialog).getByRole("combobox", { name: "Search Buzz" });
+  await user.click(screen.getByRole("button", { name: "Search Zion" }));
+  const dialog = await screen.findByRole("dialog", { name: "Search Zion" });
+  const input = within(dialog).getByRole("combobox", { name: "Search Zion" });
   const messages = within(dialog).getByRole("option", { name: "Messages" });
   expect(
     within(dialog).queryByRole("option", { name: "Home" }),
@@ -119,8 +119,8 @@ it("clears selection on typing, handles empty results, and retains pointer activ
   const select = vi.fn();
   const user = userEvent.setup();
   render(<PageSearch pages={[]} onSelect={select} />);
-  await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const input = await screen.findByRole("combobox", { name: "Search Buzz" });
+  await user.click(screen.getByRole("button", { name: "Search Zion" }));
+  const input = await screen.findByRole("combobox", { name: "Search Zion" });
   await user.click(input);
   await user.keyboard("{ArrowDown}");
   await user.type(input, "missing");
@@ -142,13 +142,13 @@ it("clears selection on typing, handles empty results, and retains pointer activ
 it("closes search when the backdrop is clicked", async () => {
   const user = userEvent.setup();
   render(<PageSearch pages={[]} onSelect={vi.fn()} />);
-  await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-  expect(screen.getByRole("dialog", { name: "Search Buzz" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Search Zion" }));
+  expect(screen.getByRole("dialog", { name: "Search Zion" })).toBeVisible();
   const backdrop = document.querySelector(".buzz-dialog-backdrop");
   expect(backdrop).not.toBeNull();
   await user.click(backdrop as Element);
   await vi.waitFor(() =>
-    expect(screen.queryByRole("dialog", { name: "Search Buzz" })).toBeNull(),
+    expect(screen.queryByRole("dialog", { name: "Search Zion" })).toBeNull(),
   );
 });
 
@@ -174,9 +174,9 @@ it("keeps result shortcuts without badges and follows the hovered row", async ()
       onSelect={select}
     />,
   );
-  await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const dialog = await screen.findByRole("dialog", { name: "Search Buzz" });
-  const input = within(dialog).getByRole("combobox", { name: "Search Buzz" });
+  await user.click(screen.getByRole("button", { name: "Search Zion" }));
+  const dialog = await screen.findByRole("dialog", { name: "Search Zion" });
+  const input = within(dialog).getByRole("combobox", { name: "Search Zion" });
   const messages = within(dialog).getByRole("option", { name: "Messages" });
   const settings = within(dialog).getByRole("option", { name: "Settings" });
   const apple = isApplePlatform(navigator.platform);
@@ -240,8 +240,8 @@ it("selects the first typed result and keeps it as results change", async () => 
   const first = page("test/first", "Target");
   const second = page("test/second", "Target ahead");
   const { rerender } = render(<PageSearch pages={[first]} onSelect={select} />);
-  await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const input = await screen.findByRole("combobox", { name: "Search Buzz" });
+  await user.click(screen.getByRole("button", { name: "Search Zion" }));
+  const input = await screen.findByRole("combobox", { name: "Search Zion" });
   // An empty query selects nothing, so Enter alone opens nothing.
   expect(input).not.toHaveAttribute("aria-activedescendant");
   await user.type(input, "Target");
@@ -313,19 +313,19 @@ it("shows the live search shortcut in the trigger and its hint, following a rebi
     // The title renders as a focus/hover tooltip rather than a native attribute.
     const user = userEvent.setup();
     await user.tab();
-    const trigger = screen.getByRole("button", { name: "Search Buzz" });
+    const trigger = screen.getByRole("button", { name: "Search Zion" });
     expect(trigger).toHaveFocus();
     expect(within(trigger).getByText("⌘K")).toBeInTheDocument();
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
-      "Search Buzz (⌘K)",
+      "Search Zion (⌘K)",
     );
     act(() =>
       bindings.set("global-search", { key: "p", mod: true, shift: true }),
     );
-    expect(screen.getByRole("tooltip")).toHaveTextContent("Search Buzz (⇧⌘P)");
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Search Zion (⇧⌘P)");
     expect(within(trigger).getByText("⇧⌘P")).toBeInTheDocument();
     act(() => bindings.reset());
-    expect(screen.getByRole("tooltip")).toHaveTextContent("Search Buzz (⌘K)");
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Search Zion (⌘K)");
   } finally {
     Reflect.deleteProperty(navigator, "platform");
     bindings.dispose();
@@ -385,7 +385,7 @@ it("opens conversation-scoped search with Command F and returns to overall searc
         name: "Remove This conversation search scope",
       }),
     );
-    expect(screen.getByRole("dialog", { name: "Search Buzz" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Search Zion" })).toBeVisible();
   } finally {
     cleanup();
     bindings.dispose();
@@ -471,8 +471,8 @@ it("does not open a DM that finishes starting after search closed and reopened",
         services={services}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-    const input = await screen.findByRole("combobox", { name: "Search Buzz" });
+    await user.click(screen.getByRole("button", { name: "Search Zion" }));
+    const input = await screen.findByRole("combobox", { name: "Search Zion" });
     await user.type(input, "bob");
     await user.click(await screen.findByRole("option", { name: /Bob/ }));
     expect(
@@ -483,14 +483,14 @@ it("does not open a DM that finishes starting after search closed and reopened",
     let release!: () => void;
     const finished = new Promise<void>((resolve) => (release = resolve));
     const animations = vi.fn(() => [{ finished }]);
-    const dialog = screen.getByRole("dialog", { name: "Search Buzz" });
+    const dialog = screen.getByRole("dialog", { name: "Search Zion" });
     Object.defineProperty(dialog, "getAnimations", { value: animations });
     try {
       fireEvent.keyDown(input, { key: "Escape" });
       await vi.waitFor(() => expect(animations).toHaveBeenCalled());
       expect(attempt.aborted).toBe(true);
       fireEvent.click(
-        screen.getByRole("button", { name: "Search Buzz", hidden: true }),
+        screen.getByRole("button", { name: "Search Zion", hidden: true }),
       );
       expect(input).toBeInTheDocument();
       expect(input).toHaveValue("");
@@ -510,7 +510,7 @@ it("does not open a DM that finishes starting after search closed and reopened",
   }
 });
 
-it("opens Search Buzz with Command T as well as Command K, as Slack does", async () => {
+it("opens Search Zion with Command T as well as Command K, as Slack does", async () => {
   const root = new Context();
   root.provide("pluginStatus", {
     isActive: () => true,
@@ -538,7 +538,7 @@ it("opens Search Buzz with Command T as well as Command K, as Slack does", async
     const apple = isApplePlatform(navigator.platform);
     fireEvent.keyDown(window, { key: "t", metaKey: apple, ctrlKey: !apple });
     expect(
-      await screen.findByRole("dialog", { name: "Search Buzz" }),
+      await screen.findByRole("dialog", { name: "Search Zion" }),
     ).toBeVisible();
   } finally {
     cleanup();
@@ -591,8 +591,8 @@ it("ranks pages by match when no community is connected", async () => {
         services={services}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-    const input = await screen.findByRole("combobox", { name: "Search Buzz" });
+    await user.click(screen.getByRole("button", { name: "Search Zion" }));
+    const input = await screen.findByRole("combobox", { name: "Search Zion" });
     // "ses" starts Sessions, appears inside Processes, and only fuzzily
     // matches Settings.
     await user.type(input, "ses");
@@ -625,7 +625,7 @@ it.each(["pointer", "keyboard"])(
         </main>
       </>,
     );
-    const trigger = screen.getByRole("button", { name: "Search Buzz" });
+    const trigger = screen.getByRole("button", { name: "Search Zion" });
     await user.click(trigger);
     if (method === "pointer")
       await user.click(screen.getByRole("option", { name: "Settings" }));
@@ -669,8 +669,8 @@ it("shows a plugin page's declared icon on its search row", async () => {
       onSelect={vi.fn()}
     />,
   );
-  await user.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const dialog = await screen.findByRole("dialog", { name: "Search Buzz" });
+  await user.click(screen.getByRole("button", { name: "Search Zion" }));
+  const dialog = await screen.findByRole("dialog", { name: "Search Zion" });
   const beacon = within(dialog).getByRole("option", { name: "Beacon" });
   const plain = within(dialog).getByRole("option", { name: "Plain" });
   const image = beacon.querySelector("img");
@@ -745,13 +745,13 @@ it("opens a Settings section from overall search, never from a conversation's", 
         name: "Remove This conversation search scope",
       }),
     );
-    const dialog = screen.getByRole("dialog", { name: "Search Buzz" });
+    const dialog = screen.getByRole("dialog", { name: "Search Zion" });
     expect(
       within(within(dialog).getByRole("group", { name: "Settings" })).getByRole(
         "option",
         { name: /^Shortcuts/ },
       ),
-    ).toHaveTextContent("Buzz");
+    ).toHaveTextContent("Zion");
     expect(retainVisibility).toHaveBeenCalled();
     await user.keyboard("{Enter}");
     expect(select).toHaveBeenCalledExactlyOnceWith("settings", {
@@ -762,9 +762,9 @@ it("opens a Settings section from overall search, never from a conversation's", 
     expect(release).toHaveBeenCalled();
     // A community section names only its section; select() adds the
     // selected community's scope.
-    await user.click(screen.getByRole("button", { name: "Search Buzz" }));
+    await user.click(screen.getByRole("button", { name: "Search Zion" }));
     // Search reopens on the kept text, selected, so typing replaces it.
-    const field = await screen.findByRole("combobox", { name: "Search Buzz" });
+    const field = await screen.findByRole("combobox", { name: "Search Zion" });
     await vi.waitFor(() => expect(field).toHaveFocus());
     await user.keyboard("local settings");
     await user.click(screen.getByRole("option", { name: /^Local settings/ }));

@@ -3849,7 +3849,7 @@ it("imports a mentioned agent an earlier Buzz runs before sending to it", async 
   h.submit();
   const dialog = await screen.findByRole("dialog", { name: "Import Honey?" });
   expect(dialog).toHaveTextContent(
-    "Honey is set up in the preview version of Buzz. Are you ready to import it to Buzz 1.0?",
+    "Honey is set up in the preview version of Zion. Are you ready to import it to Zion?",
   );
   expect(h.messages.send).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Import and send" }));

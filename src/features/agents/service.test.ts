@@ -538,7 +538,7 @@ it("binds a dedicated native agent and preserves its target when a provider chan
   native.claim.mockResolvedValueOnce(false);
   await expect(
     adapter.agents.bindExecution(agent.key, binding),
-  ).rejects.toThrow("Another copy of Buzz is running this agent");
+  ).rejects.toThrow("Another copy of Zion is running this agent");
   expect(service.executionBinding(agent.key)).toBeUndefined();
   let finishRetirement = () => {};
   const retiring = new Promise<void>((resolve) => {
@@ -4717,7 +4717,7 @@ it("changes an agent's type between turns, carrying what the new type adopts", a
   native.setType.mockClear();
   native.claim.mockResolvedValueOnce(false);
   await expect(service.retype(bot, "other/relay")).rejects.toThrow(
-    "Another copy of Buzz is running this agent",
+    "Another copy of Zion is running this agent",
   );
   expect(native.setType).not.toHaveBeenCalled();
   native.claim.mockRejectedValueOnce(new Error("claim unavailable"));
@@ -5061,7 +5061,7 @@ it("reports a Bestie account cleanup failure after the agent is deleted", async 
     new Error("account offline"),
   );
   await expect(service.remove(bot)).rejects.toThrow(
-    "Echo was deleted, but Buzz couldn't clear it as your Bestie",
+    "Echo was deleted, but Zion couldn't clear it as your Bestie",
   );
   expect(service.find(bot)).toBeUndefined();
   expect(forgetDefaultAgent).toHaveBeenCalledWith(bot);
@@ -15135,7 +15135,7 @@ it("registers Buzz-owned command sources with saved provider keys", async () => 
     pluginOwner: { id: "attention", revision: "old" },
   });
   expect(() => registerAttention({ agents: external.agents })).toThrow(
-    /built into Buzz/,
+    /built into Zion/,
   );
 });
 

@@ -208,7 +208,7 @@ export function NewWorkspaceDialog({
         if (!open) close();
       }}
       title="Create new workspace"
-      description={`Move ${name} into a personal workspace that syncs across Buzz.`}
+      description={`Move ${name} into a personal workspace that syncs across Zion.`}
       initialFocus={input}
       finalFocus={finalFocus}
       actions={

@@ -204,7 +204,7 @@ it("shows the card's name and picture, and its hover card opens Add to Buzz", as
   });
   expect(card).toHaveTextContent("Laggo");
   expect(card).not.toHaveAttribute("href");
-  await user.click(screen.getByRole("button", { name: "Add to Buzz" }));
+  await user.click(screen.getByRole("button", { name: "Add to Zion" }));
   expect(onOpenLink).toHaveBeenCalledExactlyOnceWith(
     "buzz://agent/new?card=av_Q430oIuy2pHC345U08CVjg",
   );
@@ -228,13 +228,13 @@ it("says so when the host can't open Add to Buzz", async () => {
   await user.click(
     within(
       await screen.findByRole("dialog", { name: "Laggo agent card" }),
-    ).getByRole("button", { name: "Add to Buzz" }),
+    ).getByRole("button", { name: "Add to Zion" }),
   );
   expect(onOpenLink).toHaveBeenCalledExactlyOnceWith(
     "buzz://agent/new?card=av_Q430oIuy2pHC345U08CVjg",
   );
   expect(screen.getByRole("status")).toHaveTextContent(
-    "This Buzz link couldn’t be opened here.",
+    "This Zion link couldn’t be opened here.",
   );
 });
 
@@ -259,7 +259,7 @@ it("opens the card for a link still focused when its read finishes", async () =>
   act(() => finish(laggo));
   expect(
     await screen.findByRole("dialog", { name: "Laggo agent card" }),
-  ).toHaveTextContent("Add to Buzz");
+  ).toHaveTextContent("Add to Zion");
   expect(link).toHaveAccessibleName("Laggo");
   expect(link).toHaveFocus();
 });

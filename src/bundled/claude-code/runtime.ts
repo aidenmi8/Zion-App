@@ -245,7 +245,7 @@ export class ClaudeRuntime {
 
   private executionKey(agent: AgentKey, conversation: string) {
     const scope = this.reads(agent)?.scope;
-    if (!scope) throw new Error("Buzz is not connected");
+    if (!scope) throw new Error("Zion is not connected");
     return `buzz.claude-code.sessions.execution.v1:${JSON.stringify([scope, agent, conversation])}`;
   }
   private savedSessions(agent: AgentKey) {
@@ -1514,7 +1514,7 @@ export class ClaudeRuntime {
    * it. `stop` ends the read sooner than its own limit. */
   private memories(agent: AgentKey, slug?: string, stop?: AbortSignal) {
     const reads = this.reads(agent);
-    if (!reads) return Promise.reject(new Error("Buzz is not connected"));
+    if (!reads) return Promise.reject(new Error("Zion is not connected"));
     const limit = AbortSignal.timeout(READ_TIMEOUT_MS);
     return this.memoryReads.read(
       reads,

@@ -477,7 +477,7 @@ test("joined sidebar and workspace surface, real link panel and compact communit
   await selectSettingsSection(page, "Manage plugins");
   // Channels is required; use another page to exercise UI activation.
   const projects = pluginAction(page, "Workflows");
-  const search = page.getByRole("dialog", { name: "Search Buzz", exact: true });
+  const search = page.getByRole("dialog", { name: "Search Zion", exact: true });
   // Header search is inert behind Settings; close it to read the palette.
   const expectWorkflowsChoice = async (count) => {
     await closeSettings(page);
@@ -485,7 +485,7 @@ test("joined sidebar and workspace surface, real link panel and compact communit
     // Messages proves the Pages group rendered before counting Workflows.
     await expect(pageChoice(choices, "Messages")).toBeVisible();
     await page
-      .getByRole("combobox", { name: "Search Buzz", exact: true })
+      .getByRole("combobox", { name: "Search Zion", exact: true })
       .fill("Workflows");
     await expect(pageChoice(choices, "Workflows")).toHaveCount(count);
     await page.keyboard.press("Escape");

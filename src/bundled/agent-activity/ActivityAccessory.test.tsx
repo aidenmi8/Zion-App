@@ -386,7 +386,7 @@ it("previews only live scoped actions and retains profile navigation", () => {
       screen.getByRole("button", { name: /View agent activity/ }),
     );
     expect(
-      screen.getByText(/Buzz couldn’t confirm whether this request finished/),
+      screen.getByText(/Zion couldn’t confirm whether this request finished/),
     ).toBeInTheDocument();
     expect(screen.queryByText("Current thought")).not.toBeInTheDocument();
     expect(
@@ -1003,7 +1003,7 @@ it.each(["failed", "terminated", "unknown"])(
         screen.getByRole("dialog", { name: "Agent activity" }),
       ).toHaveTextContent(
         outcome === "unknown"
-          ? "Buzz couldn’t confirm"
+          ? "Zion couldn’t confirm"
           : "This request ended before it could finish",
       );
       expect(f.props.open).not.toHaveBeenCalled();

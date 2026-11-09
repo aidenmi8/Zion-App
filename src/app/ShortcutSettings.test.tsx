@@ -99,7 +99,7 @@ async function harness() {
   });
   shortcuts.registerHost({
     id: "global-search",
-    title: "Search Buzz",
+    title: "Search Zion",
     binding: [
       { key: "k", mod: true },
       { key: "t", mod: true },
@@ -204,7 +204,7 @@ it("lists live host and plugin shortcuts without search or intro text and follow
     expect(groups).toEqual([
       "Sending messages",
       "Editing messages",
-      "Buzz",
+      "Zion",
       "Shortcut counter",
       "Terminal",
       "Message formatting",
@@ -216,7 +216,7 @@ it("lists live host and plugin shortcuts without search or intro text and follow
       ),
     ).toEqual([
       "Increase interface size",
-      "Search Buzz",
+      "Search Zion",
       "Open Settings",
       "First action",
       "Increment shortcut counter",
@@ -233,7 +233,7 @@ it("lists live host and plugin shortcuts without search or intro text and follow
     // Layout aliases of one key (⌘= ⌘+ ⇧⌘= ⇧⌘+) show once.
     expect(grow.querySelectorAll(".buzz-keyboard-shortcut")).toHaveLength(1);
     // Distinct chords each show, in order.
-    const search = row("Search Buzz");
+    const search = row("Search Zion");
     expect(
       [...search.querySelectorAll(".buzz-keyboard-shortcut")].map((chord) =>
         chord.getAttribute("data-binding"),
@@ -315,7 +315,7 @@ it("presents actual host registrations in navigation, interface sizing, search/s
       "Increase interface size",
       "Decrease interface size",
       "Reset interface size",
-      "Search Buzz",
+      "Search Zion",
       "Search this conversation",
       "Open Settings",
       "Show keyboard shortcuts",
@@ -328,7 +328,7 @@ it("presents actual host registrations in navigation, interface sizing, search/s
       "Reply in thread to selected message",
       "Mark unread from selected message",
       "Delete selected message",
-      "Reload Buzz",
+      "Reload Zion",
     ]);
   } finally {
     cleanup();
@@ -372,7 +372,7 @@ it("orders plugin rows by metadata then contribution key without merging duplica
       ),
     ).toEqual([
       "Increase interface size",
-      "Search Buzz",
+      "Search Zion",
       "Open Settings",
       "First action",
       "Increment shortcut counter",
@@ -454,7 +454,7 @@ it("captures a chord, refuses conflicts and bare keys, applies overrides to the 
     // Conflicts are reported by title and owner; nothing is saved or fired.
     fireEvent.keyDown(input, { key: "k", ctrlKey: true });
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Ctrl+K is already used by Search Buzz (Buzz).",
+      "Ctrl+K is already used by Search Zion (Zion).",
     );
     expect(screen.getByRole("alert")).toHaveClass("text-standard");
     expect(input).toHaveAttribute(
@@ -875,7 +875,7 @@ it("refuses close and quit chords only in the desktop build", async () => {
     for (const key of ["q", "w"]) {
       fireEvent.keyDown(capture(title), { key, metaKey: true });
       expect(screen.getByRole("alert")).toHaveTextContent(
-        `⌘${key.toUpperCase()} is reserved for switching or closing tabs and quitting Buzz. Try another.`,
+        `⌘${key.toUpperCase()} is reserved for switching or closing tabs and quitting Zion. Try another.`,
       );
     }
     expect(h.bindings.snapshot().overrides).toEqual({});
@@ -938,12 +938,12 @@ it("marks rows that share an effective chord once a plugin is re-enabled, and cl
     // A host chord shared with a plugin is marked on both rows as well.
     act(() => h.bindings.set("global-search", { key: "j", mod: true }));
     expect(
-      within(row("Search Buzz")).getByText(/^Also used by/),
+      within(row("Search Zion")).getByText(/^Also used by/),
     ).toHaveTextContent(
       "Also used by Increment shortcut counter (Shortcut counter), Toggle channel terminal (Terminal)",
     );
     act(() => h.bindings.set("global-search", null));
-    expect(within(row("Search Buzz")).queryByText(/Also used by/)).toBeNull();
+    expect(within(row("Search Zion")).queryByText(/Also used by/)).toBeNull();
     await user.click(
       screen.getByRole("button", { name: `Reset shortcut for ${counter}` }),
     );
@@ -983,7 +983,7 @@ it("keeps the host group distinct from a plugin whose manifest id is buzz", asyn
     ).toEqual([
       "Sending messages",
       "Editing messages",
-      "Buzz",
+      "Zion",
       "Buzz plugin",
       "Shortcut counter",
       "Terminal",
@@ -1057,7 +1057,7 @@ it("shows desktop Close as reserved and read-only while other actions remain edi
       />,
     );
     const closeRow = within(row("Close tab"));
-    expect(closeRow.getByText("Reserved by Buzz")).toBeVisible();
+    expect(closeRow.getByText("Reserved by Zion")).toBeVisible();
     expect(closeRow.getByText("Control W")).toBeInTheDocument();
     expect(closeRow.queryByRole("button")).not.toBeInTheDocument();
     expect(change("Open Settings")).toBeEnabled();

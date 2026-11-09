@@ -49,8 +49,7 @@
   width: min(100%, 23rem);
 }
 
-.wordmark img,
-.wordmark canvas {
+.wordmark svg {
   display: block;
   width: 100%;
   height: auto;
@@ -100,29 +99,31 @@
 }
 
 .logoLayers {
-  position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
 }
-.logoLayers canvas {
-  position: absolute;
-  inset: 0;
+.logoLayers svg {
+  width: 8rem;
+  height: auto;
+  color: #a6a6a8;
 }
-.logoLayers[data-animated="true"] img {
-  visibility: hidden;
+.brandWordmark {
+  font-family: var(--font-brand);
+  font-size: var(--text-display);
+  font-weight: var(--text-display--font-weight);
+  line-height: 1.25;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 @media (forced-colors: active) {
   .landing {
     background: Canvas;
   }
-  /* Paint the artwork's shape in the palette's text color, whatever the theme. */
-  .logoLayers {
-    forced-color-adjust: none;
-    background: CanvasText;
-    mask: url("/buzz-wordmark.png") center / 100% 100% no-repeat;
-  }
-  .logoLayers img {
-    visibility: hidden;
+  .logoLayers svg {
+    color: CanvasText;
   }
 }
 
@@ -153,10 +154,13 @@
   margin-inline: auto;
 }
 
-/* Mobile welcome is always the light brand palette, independent of app theme. */
+/* Approved Zion artwork is fixed, independently of the saved app theme. */
 .welcome {
-  background: #d7d72e;
-  color: var(--text-standard);
+  background: #0a0a0a;
+  color: #f5f5f7;
+}
+.welcome .tagline {
+  color: #a6a6a8;
 }
 .welcome .wordmark {
   width: min(100%, 40rem);
@@ -184,15 +188,15 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: #d7e7f5;
-  mask: url("/welcome-bee.svg") center / contain no-repeat;
+  background: #1c1c1e;
+  mask: url("/buzz-mark.svg") center / contain no-repeat;
 }
 .bee:nth-child(2n) > span {
-  background: #dbfa52;
+  background: #2c2c2e;
 }
 /* Builderlab/Auth0 card composition, using the same shared controls and Panel. */
 .step {
-  background: var(--surface-onboarding);
+  background: var(--surface-base);
   --text-heading: var(--text-title);
   --text-heading--line-height: var(--text-title--line-height);
   --text-heading--font-weight: var(--text-title--font-weight);
@@ -266,21 +270,24 @@
 .loadingBee {
   display: block;
   width: 5rem;
-  height: 3.3125rem;
+  height: 5rem;
   background: currentColor;
-  mask: url("/welcome-bee.svg") center / contain no-repeat;
+  mask: url("/buzz-mark.svg") center / contain no-repeat;
 }
 @media (prefers-reduced-motion: no-preference) {
   .loadingBee {
-    animation: bee-breathe 1.8s ease-in-out infinite alternate;
+    animation: zion-motion-loader-breathe 1.8s ease-in-out infinite;
   }
 }
-@keyframes bee-breathe {
-  from {
-    transform: translateY(0.15rem) scale(0.96);
+@keyframes zion-motion-loader-breathe {
+  0%,
+  100% {
+    opacity: 0.76;
+    transform: scale(0.965);
   }
-  to {
-    transform: translateY(-0.15rem) scale(1);
+  50% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 @media (max-width: 35rem) {
@@ -313,7 +320,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: #d7d72e;
+  background: linear-gradient(160deg, #1c1c1e, #0a0a0a);
   z-index: -2;
   pointer-events: none;
 }

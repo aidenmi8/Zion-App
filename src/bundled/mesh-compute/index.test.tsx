@@ -692,7 +692,7 @@ it("shows the failure and native cause in Auto mode without presenting it as an 
   render(<Component />);
   await screen.findByText(/Native model startup failed: fixture cause/);
   expect(screen.getByText(/Mesh needs recovery\./)).toHaveTextContent(
-    "Restart Buzz before starting Mesh again",
+    "Restart Zion before starting Mesh again",
   );
   expect(screen.queryByText(/Saved model:/)).not.toBeInTheDocument();
 });
@@ -859,7 +859,7 @@ it("failed with saved sharing: Off persists the disarm, then On stays blocked un
   await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "false"));
   // Consent is cleared; the unconfirmed runtime is never presented as stopped.
   expect(
-    screen.getByText(/Shutdown could not be confirmed\. Restart Buzz/),
+    screen.getByText(/Shutdown could not be confirmed\. Restart Zion/),
   ).toBeInTheDocument();
   expect(toggle).toHaveAttribute("aria-disabled", "true");
   fireEvent.click(toggle);
@@ -965,7 +965,7 @@ it("unsafe failed runtime with no lease: Off disarms consent without selection o
     expectedViewer: "viewer",
   });
   expect(
-    screen.getByText(/Shutdown could not be confirmed\. Restart Buzz/),
+    screen.getByText(/Shutdown could not be confirmed\. Restart Zion/),
   ).toBeInTheDocument();
   expect(toggle).toHaveAttribute("aria-disabled", "true");
 });

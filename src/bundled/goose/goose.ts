@@ -72,7 +72,7 @@ const databricks = (): Record<string, string> => {
 export const GOOSE: AcpHooks = {
   label: "goose",
   program: "goose",
-  missing: "goose-acp is missing from this Buzz build.",
+  missing: "goose-acp is missing from this Zion build.",
   env: ENV,
   // goose is asked to close every session, advertised or not.
   closeSession: "always",

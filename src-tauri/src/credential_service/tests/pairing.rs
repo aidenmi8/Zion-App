@@ -604,7 +604,7 @@ async fn an_approval_saved_during_a_community_removal_returns_no_token() {
     assert_eq!(status, StatusCode::FORBIDDEN, "{reply}");
     assert_eq!(
         reply["message"],
-        format!("{RELAY} isn't a community in Buzz; add it first")
+        format!("{RELAY} isn't a community in Zion; add it first")
     );
     assert!(reply["result"].is_null() || reply["result"].as_str().unwrap().is_empty());
 }
@@ -901,7 +901,7 @@ async fn an_expired_sign_in_asks_for_a_new_one() {
     assert!(reply.1["message"]
         .as_str()
         .unwrap()
-        .contains("sign in again in Buzz"));
+        .contains("sign in again in Zion"));
 }
 
 #[tokio::test]
@@ -918,7 +918,7 @@ async fn a_community_not_saved_here_is_refused_before_anyone_is_asked() {
         assert_eq!(reply["error"], "denied");
         assert_eq!(
             reply["message"],
-            format!("{relay} isn't a community in Buzz; add it first")
+            format!("{relay} isn't a community in Zion; add it first")
         );
     }
     assert!(fixture.notices.lock().unwrap().is_empty());
@@ -943,7 +943,7 @@ async fn a_saved_community_matches_as_a_whole_normalized_url() {
     fixture.service.0.pairings.answer(&id, false);
     assert_eq!(
         pairing.await.unwrap().1["message"],
-        "Pairing was declined in Buzz"
+        "Pairing was declined in Zion"
     );
 }
 
@@ -967,7 +967,7 @@ async fn removing_the_community_declines_the_waiting_request() {
     assert_eq!(status, StatusCode::FORBIDDEN, "{reply}");
     assert_eq!(
         reply["message"],
-        format!("{RELAY} isn't a community in Buzz; add it first")
+        format!("{RELAY} isn't a community in Zion; add it first")
     );
     // The prompt closed, and a late Allow issues nothing.
     assert!(fixture
@@ -1014,7 +1014,7 @@ async fn a_removal_left_nothing_waiting(fixture: &Fixture, code: &str) {
     fixture.service.0.pairings.answer(&id, false);
     let (status, reply) = next.await.unwrap();
     assert_eq!(status, StatusCode::FORBIDDEN, "{reply}");
-    assert_eq!(reply["message"], "Pairing was declined in Buzz");
+    assert_eq!(reply["message"], "Pairing was declined in Zion");
 }
 
 #[tokio::test]

@@ -130,7 +130,7 @@ export function SearchChoices({
   displayQuery,
   onDisplayQueryChange,
   input,
-  label = "Search Buzz",
+  label = "Search Zion",
   scope,
   scopeAction,
   children,

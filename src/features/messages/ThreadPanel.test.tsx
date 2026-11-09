@@ -492,6 +492,9 @@ it("keeps initial thread loading until available content has been positioned", (
   h.snapshot.root = undefined;
   const section = h.render();
   expect(within(section).getByText("Loading thread…")).toBeVisible();
+  const mark = section.querySelector('img[src="/buzz-loading-mark.svg"]');
+  expect(mark).toHaveAttribute("width", "64");
+  expect(mark).toHaveAttribute("height", "64");
   expect(
     within(section).queryByText("Original message unavailable."),
   ).toBeNull();

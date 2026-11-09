@@ -63,7 +63,7 @@ function backupFeedback(status: BackupStatus) {
   switch (status.status) {
     case "idle":
       // Nothing has run this launch; a copy may still exist from an earlier one.
-      return "Buzz hasn’t checked whether your identity is synced since it opened.";
+      return "Zion hasn’t checked whether your identity is synced since it opened.";
     case "running":
     case "complete":
       return undefined;
@@ -76,7 +76,7 @@ function backupFeedback(status: BackupStatus) {
       const failure: { cause?: string; message: string } =
         BACKUP_FAILURES[status.kind];
       return failure.cause
-        ? `${failure.cause} Buzz tries again when you next sign in to Builderlab.`
+        ? `${failure.cause} Zion tries again when you next sign in to Builderlab.`
         : failure.message;
     }
   }
@@ -433,11 +433,11 @@ export function IdentitySettings({
                   />
                 )}
                 <PreferenceRow
-                  title="Sign out of Buzz"
+                  title="Sign out of Zion"
                   subtitle="Remove your private key from this device. Also signs you out of your organization and ends Builderlab and hosted community logins."
                   trailing={
                     <Button type="button" onClick={() => setSigningOut(true)}>
-                      Sign out of Buzz
+                      Sign out of Zion
                     </Button>
                   }
                 />
@@ -757,7 +757,7 @@ function OrganizationSignIn({
                 <br />
               </>
             )}
-            {`Lets you and your agents into communities that require your ${organization} login. Signing out keeps your Buzz key on this device, but you and your agents can’t connect to those communities again until you sign back in.`}
+            {`Lets you and your agents into communities that require your ${organization} login. Signing out keeps your Zion key on this device, but you and your agents can’t connect to those communities again until you sign back in.`}
           </>
         }
         trailing={

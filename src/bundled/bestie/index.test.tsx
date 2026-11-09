@@ -70,7 +70,7 @@ it("replaces hosted setup with the manual Bestie chooser", async () => {
   ).toBeVisible();
   expect(
     screen.getByText(
-      "This is your primary agent in Buzz. They’ll get special placement and extra capabilities in the app.",
+      "This is your primary agent in Zion. They’ll get special placement and extra capabilities in the app.",
     ),
   ).toBeVisible();
   expect(

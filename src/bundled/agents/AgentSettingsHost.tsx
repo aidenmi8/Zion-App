@@ -507,7 +507,7 @@ export function MigrationPreview({
       </div>
       <p className="m-0 text-body-sm text-secondary">
         The provider changes when you save settings. Your agent will continue
-        the conversation in Buzz.
+        the conversation in Zion.
         {warning && ` ${warning}`}
       </p>
       {discardDraft && (

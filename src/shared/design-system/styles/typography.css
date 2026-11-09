@@ -1,5 +1,15 @@
+/* Display branding is bundled locally; chat, controls, and dense UI remain in Inter. */
+@font-face {
+  font-family: "Michroma";
+  src: url("/fonts/Michroma-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 /* Buzz size ramp and resolved role settings, rendered in Inter and JetBrains Mono. Values use rem to preserve host text scaling. */
 :root {
+  --font-brand: "Michroma", "Inter Variable", Inter, ui-sans-serif, sans-serif;
   --font-emoji:
     "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
   --font-system-mono:

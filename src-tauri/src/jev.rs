@@ -153,7 +153,7 @@ mod platform {
     fn stored(error: credentials::Error) -> String {
         match error {
             credentials::Error::Denied => "Keychain access was denied. Allow access and retry",
-            credentials::Error::Busy => "Another Buzz app is using secure storage. Retry shortly",
+            credentials::Error::Busy => "Another Zion app is using secure storage. Retry shortly",
             _ => "The Keychain is unavailable",
         }
         .into()
@@ -194,7 +194,7 @@ mod platform {
     fn error(error: Error) -> String {
         match error {
             Error::Denied => "Secure storage access was denied. Allow access and retry",
-            Error::Busy => "Another Buzz app is using secure storage. Retry shortly",
+            Error::Busy => "Another Zion app is using secure storage. Retry shortly",
             Error::Corrupt => "The saved key is damaged",
             _ => "Secure storage is unavailable. Unlock it and retry",
         }

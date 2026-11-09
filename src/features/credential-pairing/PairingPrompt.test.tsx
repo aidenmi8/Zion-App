@@ -44,7 +44,7 @@ it("names the tool, community and process, with Deny focused", async () => {
   await ask(request);
   const dialog = await screen.findByRole("alertdialog");
   expect(dialog).toHaveTextContent(
-    "buzz-cli wants to use Buzz as you on wss://relay.example/",
+    "buzz-cli wants to use Zion as you on wss://relay.example/",
   );
   expect(dialog).toHaveTextContent("Requested by /usr/local/bin/buzz");
   await vi.waitFor(() =>
