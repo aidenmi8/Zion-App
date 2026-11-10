@@ -3,10 +3,23 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import { Avatar } from "../../shared/design-system/ui/Avatar";
-import { agentAvatars } from "./avatar-packs";
+import { agentAvatars, avatarPacks } from "./avatar-packs";
 import { AgentAvatarArtworkProvider } from "./AgentAvatarArtworkProvider";
 
 afterEach(cleanup);
+
+it("shows Zion-neutral avatar labels while preserving upstream asset identities", () => {
+  expect(avatarPacks[0]).toMatchObject({
+    id: "buzzies",
+    label: "Characters",
+  });
+  expect(agentAvatars[0]).toMatchObject({
+    id: "buzzies-1",
+    label: "Character 1",
+    collectionId: "buzzies",
+  });
+  expect(agentAvatars[0]?.url).toContain("/buzzies/buzzies-1.png");
+});
 
 it("uses bundled static portraits for recognized pack URLs across avatar sizes", () => {
   const pack = agentAvatars[0];

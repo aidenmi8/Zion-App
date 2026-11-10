@@ -2719,7 +2719,7 @@ export class AgentsService extends Service implements Agents {
       typeof tool.call !== "function"
     )
       throw new Error(
-        "Agent tools need a lowercase name no Buzz tool has, a description, a JSON object inputSchema and call",
+        "Agent tools need a lowercase name no Zion tool has, a description, a JSON object inputSchema and call",
       );
     // Reserved from registration, not activation: plugins starting together
     // are not active yet, and the second to take a name must fail.

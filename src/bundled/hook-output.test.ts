@@ -20,23 +20,23 @@ it("attributes native hook explanations without rewriting decisions or tool payl
   const original = structuredClone(output);
   expect(nativeHookOutput(output, "berd-call")).toEqual({
     ...output,
-    reason: "[Buzz plugin: berd-call] Reply first",
-    stopReason: "[Buzz plugin: berd-call] Stop here",
-    systemMessage: "[Buzz plugin: berd-call] Policy notice",
+    reason: "[Zion plugin: berd-call] Reply first",
+    stopReason: "[Zion plugin: berd-call] Stop here",
+    systemMessage: "[Zion plugin: berd-call] Policy notice",
     hookSpecificOutput: {
       ...output.hookSpecificOutput,
-      permissionDecisionReason: "[Buzz plugin: berd-call] Reply first",
-      additionalContext: "[Buzz plugin: berd-call] Policy context",
+      permissionDecisionReason: "[Zion plugin: berd-call] Reply first",
+      additionalContext: "[Zion plugin: berd-call] Policy context",
       decision: {
         behavior: "deny",
-        message: "[Buzz plugin: berd-call] Permission denied",
+        message: "[Zion plugin: berd-call] Permission denied",
       },
     },
   });
   expect(output).toEqual(original);
   expect(nativeHookOutput({ decision: "block" }, "policy")).toEqual({
     decision: "block",
-    reason: "[Buzz plugin: policy]",
+    reason: "[Zion plugin: policy]",
   });
   expect(
     nativeHookOutput(
@@ -46,22 +46,22 @@ it("attributes native hook explanations without rewriting decisions or tool payl
   ).toEqual({
     hookSpecificOutput: {
       permissionDecision: "deny",
-      permissionDecisionReason: "[Buzz plugin: policy]",
+      permissionDecisionReason: "[Zion plugin: policy]",
     },
   });
   expect(nativeHookOutput({ continue: false }, "policy")).toEqual({
     continue: false,
-    stopReason: "[Buzz plugin: policy]",
+    stopReason: "[Zion plugin: policy]",
   });
   expect(nativeHookOutput({}, "policy")).toEqual({});
 });
 
 it("attributes Pi blocks and replacement output without changing arguments or image data", () => {
   expect(piHookOutput({ block: "Reply first" }, "berd-call")).toEqual({
-    block: "[Buzz plugin: berd-call] Reply first",
+    block: "[Zion plugin: berd-call] Reply first",
   });
   expect(piHookOutput({ block: "" }, "policy")).toEqual({
-    block: "[Buzz plugin: policy]",
+    block: "[Zion plugin: policy]",
   });
   const args = { arguments: { text: "literal text", block: "literal block" } };
   expect(piHookOutput(args, "policy")).toEqual(args);
@@ -74,7 +74,7 @@ it("attributes Pi blocks and replacement output without changing arguments or im
   };
   expect(piHookOutput(output, "policy")).toEqual({
     ...output,
-    output: [{ type: "text", text: "[Buzz plugin: policy]" }, ...output.output],
+    output: [{ type: "text", text: "[Zion plugin: policy]" }, ...output.output],
   });
   expect(piHookOutput(null, "policy")).toBeNull();
 });

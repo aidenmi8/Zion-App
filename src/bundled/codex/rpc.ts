@@ -95,7 +95,7 @@ export class AppServer {
       {
         clientInfo: {
           name: "buzz_codex_plugin",
-          title: "Buzz Codex",
+          title: "Zion Codex",
           version: "0.1.0",
         },
         capabilities: {
@@ -177,7 +177,7 @@ export class AppServer {
             error: {
               code: -32601,
               message:
-                "Buzz Codex runs with approvalPolicy=never; interactive requests are unsupported",
+                "Zion Codex runs with approvalPolicy=never; interactive requests are unsupported",
             },
           }).catch((error) => this.fail(error));
         } else this.emit(message);

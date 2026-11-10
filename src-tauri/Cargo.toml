@@ -79,8 +79,8 @@ tempfile = "3"
 fs2 = "0.4"
 arboard = { version = "3", features = ["wayland-data-control"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
-# 0.40: mesh-llm's log store requires it, and only one libsqlite3-sys may link sqlite3.
-rusqlite = { version = "0.40", features = ["bundled"] }
+# Match the patched Mesh log store; only one libsqlite3-sys may link sqlite3.
+rusqlite = { version = "0.41", features = ["bundled"] }
 
 [dev-dependencies]
 hex = "0.4"

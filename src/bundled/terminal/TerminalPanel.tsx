@@ -87,7 +87,7 @@ function Content({
       <PanelHeader
         title={
           <PanelHeaderLabel
-            title="BuzzTerm"
+            title="Terminal"
             icon={<TerminalWindowIcon size="1rem" />}
           >
             <div className={styles.identity}>

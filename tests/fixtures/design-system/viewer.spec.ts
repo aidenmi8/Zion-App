@@ -1,7 +1,6 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { watchPageErrors } from "../../browser/page-errors.mjs";
 import { COMPONENTS } from "../../../src/shared/design-system/ui/registry";
-import { TABLER_ICONS } from "../../../src/shared/design-system/icons/inventory";
 
 const viewer = "/tests/fixtures/design-system.html";
 
@@ -217,8 +216,10 @@ test("icon inventory is routed, complete, decorative, and responsive", async ({
   const tablerList = page.getByRole("list", {
     name: "Available Tabler icons",
   });
-  await expect(tablerList.getByRole("listitem")).toHaveCount(
-    TABLER_ICONS.length,
+  // Keep the pinned foundation's 177 rendered Tabler choices available. Additional
+  // upstream icons are welcome; silently dropping existing choices is not.
+  expect(await tablerList.getByRole("listitem").count()).toBeGreaterThanOrEqual(
+    177,
   );
   await expect(page.getByRole("img")).toHaveCount(0);
   await expect(page.locator("main svg:not([aria-hidden='true'])")).toHaveCount(
@@ -230,8 +231,6 @@ test("icon inventory is routed, complete, decorative, and responsive", async ({
   await expect(
     page.getByText("Microsoft OneDrive link", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("22 × 22px", { exact: true })).toBeVisible();
-  await expect(page.getByText("14 × 14px", { exact: true })).toBeVisible();
   // CSS visibility alone misses captions hidden from assistive technology.
   for (const [meaning, caption] of [
     ["Open GitHub issue", "22 × 22px"],
@@ -542,14 +541,14 @@ test("built component references retain anatomy and fallback identity", async ({
     .locator("tbody tr")
     .filter({ hasText: "Unselected tab" })
     .first();
-  await expect(selectedTabRow).toContainText("text-subtle");
-  await expect(selectedTabRow.locator("td")).toHaveCount(6);
+  await expect(selectedTabRow).toContainText("text-chrome-subtle");
+  await expect(selectedTabRow.locator("td")).toHaveCount(5);
 
   await page.goto(`${viewer}#/design/components/avatar`);
   await expect(page.getByRole("img", { name: "Cynthia Chen" })).toHaveCount(3);
-  // Five original image examples plus six status/cutout specimens.
+  // The avatar reference includes the added image, status, and cutout variants.
   await expect(page.getByRole("img", { name: "Morgan Martin" })).toHaveCount(
-    11,
+    13,
   );
 });
 
@@ -1129,7 +1128,8 @@ test("built Messages gallery renders isolated product states and follows viewer 
   page.on("websocket", (socket) => sockets.push(socket.url()));
   await page.goto(`${viewer}#/design/messages`);
   const gallery = page.frameLocator('iframe[title="Message types and states"]');
-  await expect(gallery.locator(".message-gallery-example")).toHaveCount(33);
+  // The gallery includes all current message categories, not the older subset.
+  await expect(gallery.locator(".message-gallery-example")).toHaveCount(67);
   await expect(
     gallery.getByRole("heading", { name: "Member removed", exact: true }),
   ).toBeVisible();
@@ -1206,13 +1206,15 @@ test("built Messages gallery renders isolated product states and follows viewer 
     )
     .toBeLessThanOrEqual(390);
   await expect(
-    gallery.getByRole("button", { name: "View Sam Rivera profile" }),
+    gallery
+      .getByRole("region", { name: "Person mention", exact: true })
+      .getByRole("button", { name: "View Sam Rivera profile" }),
   ).toBeVisible();
   await expect(
     gallery.getByRole("img", { name: ":landscape:", exact: true }),
   ).toBeVisible();
   await page.reload();
-  await expect(gallery.locator(".message-gallery-example")).toHaveCount(33);
+  await expect(gallery.locator(".message-gallery-example")).toHaveCount(67);
   expect([...pageErrors.unexplained(), ...failures]).toEqual([]);
   expect(sockets).toEqual([]);
 });
@@ -1229,9 +1231,13 @@ test("Messages gallery fullscreen stays reachable and returns focus to its trigg
       await gallery
         .getByRole("button", { name: category, exact: true })
         .click();
-      const trigger = gallery
-        .getByRole("button", { name: "Open video fullscreen", exact: true })
-        .first();
+      const preview = gallery.locator("[data-video-preview]").first();
+      const trigger = preview.getByRole("button", {
+        name: "Open video fullscreen",
+        exact: true,
+      });
+      await preview.scrollIntoViewIfNeeded();
+      await preview.hover();
       await trigger.click();
       const dialog = gallery.getByRole("dialog", {
         name: "Video attachment",
@@ -1465,7 +1471,7 @@ test("popover placements and rich choices fit narrow screens and enlarged text",
       .getByRole("button", { name: "Choose workspace", exact: true })
       .click();
     const list = page.getByRole("menu", {
-      name: "Choose workspace",
+      name: "Workspaces",
       exact: true,
     });
     await expect(list).toHaveCSS("transform", "none");
@@ -1671,7 +1677,7 @@ test("empty states preserve grouping and contain translated copy at 200 percent"
 }, info) => {
   await page.goto(`${viewer}#/design/components/empty-state`);
   const cards = page.locator(".buzz-empty-state");
-  await expect(cards).toHaveCount(2);
+  await expect(cards).toHaveCount(3);
   await page.evaluate(() => document.fonts.ready);
   for (const width of [1440, 800, 390]) {
     await page.setViewportSize({ width, height: 1000 });

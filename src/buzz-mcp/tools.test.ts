@@ -181,7 +181,7 @@ it.each([false, true])(
         content: [
           {
             type: "text",
-            text: expect.stringContaining("# Buzz quick guide"),
+            text: expect.stringContaining("# Zion quick guide"),
           },
         ],
       },
@@ -2617,7 +2617,7 @@ it("creates nothing from a template it cannot name exactly", async () => {
       template,
     });
   await expect(create("a")).rejects.toThrow(
-    "Channel templates are kept in Buzz Desktop and are unavailable here.",
+    "Channel templates are kept in Zion Desktop and are unavailable here.",
   );
   client.templates = vi.fn(async () => [
     { name: "Team", canvas: "", agents: [] },
@@ -3159,7 +3159,7 @@ it("lists, opens and closes tabs for the working channel's threads", async () =>
   ]);
   await expect(
     callTool(client, { channel: "chan" }, "tabs", {}),
-  ).rejects.toThrow("Tabs are kept in Buzz Desktop and are unavailable here.");
+  ).rejects.toThrow("Tabs are kept in Zion Desktop and are unavailable here.");
   const tabs = {
     list: vi.fn(() => [
       { root, pane: "side", shown: true },
@@ -3944,7 +3944,7 @@ it("refuses Git where the host holds no key", async () => {
   ]);
   await expect(
     callTool(client, { channel: "chan" }, "repo", {}),
-  ).rejects.toThrow("Git access needs Buzz Desktop.");
+  ).rejects.toThrow("Git access needs Zion Desktop.");
 });
 
 it("validates creation inputs and reports hosts without agent creation", async () => {

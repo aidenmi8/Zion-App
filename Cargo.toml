@@ -2,3 +2,9 @@
 members = ["crates/agent-command", "crates/pairing", "crates/plugin-manager", "crates/agent-controller", "crates/credential-store", "src/bundled/mesh-compute/compute", "crates/ifc-core", "crates/buzz-ifc", "crates/nsec-backup", "src-tauri"]
 default-members = ["crates/plugin-manager"]
 resolver = "2"
+exclude = ["vendor/mesh-llm-log-store"]
+
+# Keep the pinned Mesh bridge while replacing only its log-store crate with
+# the locally preserved upstream source using patched bundled SQLite.
+[patch."https://github.com/Mesh-LLM/mesh-llm.git"]
+mesh-llm-log-store = { path = "vendor/mesh-llm-log-store" }

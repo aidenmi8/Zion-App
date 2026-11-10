@@ -715,7 +715,7 @@ it("hands over promptly and runs conversations independently on one server", asy
     approvalPolicy: "never",
   });
   expect(started.baseInstructions).toBeUndefined();
-  expect(started.developerInstructions).toContain("coding agent in Buzz");
+  expect(started.developerInstructions).toContain("coding agent in Zion");
   expect(started.developerInstructions).toContain(
     "Never publish a bare acknowledgement.",
   );
@@ -3159,7 +3159,7 @@ it("restores a persisted binding after reload and starts fresh in a different wo
   // and its first turn's context.
   const [[thread, parts] = []] = savedPrompts(f.storage);
   expect(parts).toEqual([
-    ["base", expect.stringContaining("a coding agent in Buzz")],
+    ["base", expect.stringContaining("a coding agent in Zion")],
     ["each-turn", expect.stringContaining("<agent-instructions>")],
   ]);
   const restored = fixture();
@@ -4633,7 +4633,7 @@ it("offers the tools plugins add, runs them as the agent here, and starts a new 
   );
   expect(names(1)?.map((tool) => tool.name)).not.toContain("tasks_create");
   const gone = await f.tool("tasks_create", { title: "Late" });
-  expect(JSON.stringify(gone)).toContain("No active Buzz tool");
+  expect(JSON.stringify(gone)).toContain("No active Zion tool");
   expect(call).toHaveBeenCalledTimes(1);
   await f.complete();
 });
@@ -4706,7 +4706,7 @@ it("runs a watch or timer as a one-off ephemeral turn with the attention tools, 
   expect([...f.storage.values()].join()).not.toContain("thread-1");
   // After the turn, its tools no longer answer.
   const late = await f.tool("interest_show", { id: "ops" }, 0);
-  expect(JSON.stringify(late)).toContain("No active Buzz tool");
+  expect(JSON.stringify(late)).toContain("No active Zion tool");
   // A timer runs the same way, on a thread of its own.
   const timer = {
     type: "timer",

@@ -417,7 +417,23 @@ test.describe("public search destination", () => {
       .toBe(true);
     // The reveal can leave the reply at the end without following it. Scroll
     // away and back as a reader does, so the thread follows its end.
-    await history.hover();
+    // A centered hover can reveal the top-layer message toolbar, which owns
+    // wheel input rather than scrolling history. Aim at a clear reading lane.
+    const probe = await history.evaluate((el) => ({
+      x: el.clientWidth - 48,
+      y: 80,
+    }));
+    await history.hover({ position: probe });
+    expect(
+      await history.evaluate((el, point) => {
+        const bounds = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          bounds.left + point.x,
+          bounds.top + point.y,
+        );
+        return !!hit && el.contains(hit) && !hit.closest("[popover]");
+      }, probe),
+    ).toBe(true);
     await page.mouse.wheel(0, -2000);
     await expect.poll(() => history.evaluate((el) => el.scrollTop)).toBe(0);
     await page.mouse.wheel(0, 2000);

@@ -1,6 +1,6 @@
 # Codex
 
-Create agents that run Codex on your computer and answer you in Buzz. Each agent works in its own **Workspace** folder and can run commands and edit files on its own.
+Create agents that run Codex on your computer and answer you in Zion. Each agent works in its own **Workspace** folder and can run commands and edit files on its own.
 
 ## Getting started
 

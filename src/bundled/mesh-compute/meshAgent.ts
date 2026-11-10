@@ -28,7 +28,7 @@ export type MeshAgentConfig = Readonly<{
   preset?: string;
 }>;
 export const DEFAULT_PROMPT =
-  "You are a helpful assistant in a Buzz community. Answer the latest message directly and concisely. Use your tools when the request needs them, and never claim to have run something you did not.";
+  "You are a helpful assistant in a Zion community. Answer the latest message directly and concisely. Use your tools when the request needs them, and never claim to have run something you did not.";
 export const DEFAULT_WORKSPACE = "~/.buzz";
 export const DEFAULT_MESH_AGENT_CONFIG: MeshAgentConfig = Object.freeze({
   prompt: DEFAULT_PROMPT,
@@ -180,7 +180,7 @@ export function instructions(
 ): string {
   const prompt = config.prompt.trim() || DEFAULT_PROMPT;
   if (config.mode !== "agent") return prompt;
-  return `Your final prose response is automatically delivered to the person in the current conversation. Return the answer itself, not a report that you replied. You do not need to use Buzz send to answer. If you do use Buzz send in the current conversation, that message is your answer and your final prose is not posted. When sending in the current conversation, omit channel and reply to use the host's destination.
+  return `Your final prose response is automatically delivered to the person in the current conversation. Return the answer itself, not a report that you replied. You do not need to use Zion's send tool to answer. If you do use Zion's send tool in the current conversation, that message is your answer and your final prose is not posted. When sending in the current conversation, omit channel and reply to use the host's destination.
 
 ${coreMemorySection(memory)}
 

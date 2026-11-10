@@ -291,7 +291,7 @@ describe("GooseProcess", () => {
     await expect(settled).resolves.toEqual({
       ok: false,
       error:
-        "Buzz stopped this session's tools: another program used their token",
+        "Zion stopped this session's tools: another program used their token",
     });
     expect(session.open).toBe(false);
     await flush();

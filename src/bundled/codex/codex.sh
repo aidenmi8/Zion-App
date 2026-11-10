@@ -77,7 +77,7 @@ case "$command" in run | adopt | home | login | review)
     esac
   fi
   [ "$home" != "$shared" ] ||
-    { echo "Buzz's Codex home must differ from the shared one" >&2; exit 1; }
+    { echo "Zion's Codex home must differ from the shared one" >&2; exit 1; }
   # Codex can't make its skills folder through a link to nothing. Something
   # else in the way is left for Codex to handle, as it would in the shared home.
   mkdir -p "$shared/skills" "$shared/rules" 2>/dev/null || true
@@ -94,7 +94,7 @@ case "$command" in run | adopt | home | login | review)
       # whole file, and on macOS (-h) never moves it into a linked folder.
       [ "$shared/auth.json" -nt "$home/auth.json" ] ||
         mv -f $nofollow "$home/auth.json" "$shared/auth.json" || {
-        echo "Buzz couldn't save the Codex sign-in to $shared/auth.json" >&2
+        echo "Zion couldn't save the Codex sign-in to $shared/auth.json" >&2
         exit 1
       }
       rm -f "$home/auth.json"
@@ -105,7 +105,7 @@ case "$command" in run | adopt | home | login | review)
     [ -e "$home/$name" ] || [ -L "$home/$name" ] ||
       ln -sn "$shared/$name" "$home/$name" 2>/dev/null || true
     [ "$(readlink "$home/$name")" = "$shared/$name" ] ||
-      { echo "Buzz's Codex setup conflicts with $home/$name" >&2; exit 1; }
+      { echo "Zion's Codex setup conflicts with $home/$name" >&2; exit 1; }
   done
   export CODEX_HOME="$home"
   ;;

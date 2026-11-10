@@ -464,7 +464,7 @@ it("switches contrast through the shared select and restores it", async () => {
   expect(
     screen.queryByRole("option", { name: "Hummin’" }),
   ).not.toBeInTheDocument();
-  await user.click(await screen.findByRole("option", { name: "Buzzin’" }));
+  await user.click(await screen.findByRole("option", { name: "Vibrant" }));
   expect(appearance.snapshot().contrast).toBe("high");
   expect(localStorage.getItem("buzz-contrast.v1")).toBe("high");
   const restored = createAppearance();

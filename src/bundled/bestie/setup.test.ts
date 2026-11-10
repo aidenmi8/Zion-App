@@ -54,6 +54,8 @@ it("keeps the kernel within Builderlab's instruction limit", () => {
   const kernel = bestieInstructions("ab".repeat(32), HOME);
   expect(kernel.length).toBeLessThanOrEqual(MAX_INSTRUCTIONS_LENGTH);
   expect(kernel).toContain(HOME);
+  expect(kernel).toContain("personal companion in Zion");
+  expect(kernel).not.toContain("personal companion in Buzz");
   expect(promptVersion(kernel)).toBe(promptVersion(kernel));
   expect(promptVersion(kernel)).not.toBe(promptVersion(`${kernel} `));
 });

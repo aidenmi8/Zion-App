@@ -348,7 +348,7 @@ export class Pi {
           try {
             handle(JSON.parse(line));
           } catch (error) {
-            console.warn("Pi sent a message Buzz could not read", error);
+            console.warn("Pi sent a message Zion could not read", error);
           }
         }
       },

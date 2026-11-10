@@ -29,21 +29,21 @@ const tool = (
 export const SETTINGS_TOOLS: readonly Tool[] = [
   tool(
     "settings_list",
-    "Buzz's settings on this device that you can change for your owner when they ask: each key, its allowed values, current value and whether it is saved.",
+    "Zion's settings on this device that you can change for your owner when they ask: each key, its allowed values, current value and whether it is saved.",
     {},
     [],
     { readOnlyHint: true },
   ),
   tool(
     "settings_get",
-    "One Buzz setting, as settings_list gives it.",
+    "One Zion setting, as settings_list gives it.",
     { key },
     ["key"],
     { readOnlyHint: true },
   ),
   tool(
     "settings_set",
-    "Change one Buzz setting on this device, for your owner, at once. value must be exactly one of its allowed values. The answer is the setting as it now is; saved false means it is active but could not be saved.",
+    "Change one Zion setting on this device, for your owner, at once. value must be exactly one of its allowed values. The answer is the setting as it now is; saved false means it is active but could not be saved.",
     {
       key,
       value: {
@@ -74,7 +74,7 @@ export function callSettingsTool(
     throw new Error(`${extra.join(", ")} cannot be used with ${name}.`);
   const { settings } = client;
   if (!settings)
-    throw new Error("Buzz settings can't be changed from this connection.");
+    throw new Error("Zion settings can't be changed from this connection.");
   const reply =
     name === "settings_list"
       ? settings.list()

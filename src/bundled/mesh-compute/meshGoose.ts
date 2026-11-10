@@ -189,7 +189,7 @@ export class MeshGoose {
         content: [
           {
             type: "text",
-            text: text || "(answered with Buzz tools)",
+            text: text || "(answered with Zion tools)",
           },
         ],
       });

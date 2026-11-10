@@ -8,7 +8,7 @@ import {
 
 const required = { "buzz/requiredScopes": ["agent"] };
 const instructions =
-  "Act as the agent selected by the owner in Buzz, with all of its Buzz tools. There is no current conversation: supply explicit channel or message IDs. Keys stay in Buzz. Use saved approval to restore a closed connection. Revoked or expired approval needs owner consent. Never repeat a post after a lost response. Read its destination first.";
+  "Act as the agent selected by the owner in Zion, with all of its Zion tools. There is no current conversation: supply explicit channel or message IDs. Keys stay in Zion. Use saved approval to restore a closed connection. Revoked or expired approval needs owner consent. Never repeat a post after a lost response. Read its destination first.";
 
 /** An approved external app acts as the selected agent: it lists and calls
  * the tools that agent's sessions get, plugins' included, through the same

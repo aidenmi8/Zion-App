@@ -1396,7 +1396,6 @@ for (const [control, key] of [
   ["link", "PageUp"],
   ["button", "PageUp"],
   ["link", process.platform === "darwin" ? "Meta+ArrowUp" : "Control+Home"],
-  ...(process.platform === "darwin" ? [["link", "Alt+ArrowUp"]] : []),
 ]) {
   readingTest(
     `${key} from a message ${control} preserves native scroll ownership`,
@@ -1469,6 +1468,35 @@ for (const [control, key] of [
     },
   );
 }
+
+// Option+Up is the app's previous-conversation shortcut, not a native
+// message-history scroll. Keep its focused-link routing covered in the browser.
+readingTest(
+  "Option+Up from a message link opens the previous conversation",
+  async ({ page, app }) => {
+    await open(page, app);
+    const sidebar = page.getByRole("navigation", {
+      name: "Subscribed channels",
+    });
+    const alpha = sidebar.locator('button[data-channel-id="alpha"]');
+    const beta = sidebar.locator('button[data-channel-id="beta"]');
+    await beta.click();
+    await expect(beta).toHaveAttribute("aria-current", "page");
+    const target = "https://example.com/keyboard-reading";
+    const added = app.append("primary", "beta", `Read ${target}`);
+    const link = page
+      .locator(`[data-message-id="${added.id}"]`)
+      .getByRole("link", { name: target, exact: true });
+    await expect(link).toBeVisible();
+    await link.focus();
+    await expect(link).toBeFocused();
+    await page.keyboard.press("Alt+ArrowUp");
+    await expect(alpha).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("textbox", { name: "Message #Alpha", exact: true }),
+    ).toBeVisible();
+  },
+);
 
 // Exercise both propagation and no-op lifecycle against the same engine's
 // native baseline, rather than imposing macOS behavior on Linux WebKit.

@@ -1,0 +1,74 @@
+diff --git a/dist/driver/plugin-commands.js b/dist/driver/plugin-commands.js
+index 0142654d9abca25a9c1f1402dd6cbcefbc25b654..0f32f2c6a9d2a4c3e1f4a788ed68f4a027e18e62 100644
+--- a/dist/driver/plugin-commands.js
++++ b/dist/driver/plugin-commands.js
+@@ -152,7 +152,7 @@ export async function getIPCEvents(filter, appIdentifier) {
+ }
+ export const EmitTestEventSchema = z.object({
+     eventName: z.string(),
+-    payload: z.unknown(),
++    payload: z.unknown().optional(),
+     appIdentifier: z.union([z.string(), z.number()]).optional().describe('App port or bundle ID to target. Defaults to the only connected app or the default app if multiple are connected.'),
+ });
+ export async function emitTestEvent(eventName, payload, appIdentifier) {
+diff --git a/dist/server.js b/dist/server.js
+index cada45c0296e71fed100a1dc8b48bb6a4ae61299..68101c6ef42ec5e42bbd4adf4cd89138ddc57b62 100644
+--- a/dist/server.js
++++ b/dist/server.js
+@@ -1,18 +1,33 @@
+ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+ import { CallToolRequestSchema, ListToolsRequestSchema, ListPromptsRequestSchema, GetPromptRequestSchema, } from '@modelcontextprotocol/sdk/types.js';
+-import { zodToJsonSchema } from 'zod-to-json-schema';
++import { z } from 'zod';
+ import { TOOLS, TOOL_MAP } from './tools-registry.js';
+ import { PROMPTS, PROMPT_MAP } from './prompts-registry.js';
+ import { createMcpLogger } from './logger.js';
+ /* eslint-disable no-process-exit */
+ const serverLogger = createMcpLogger('SERVER');
++// Preserve the published input contract, including optional defaulted fields.
++function inputSchema(schema) {
++    const result = z.toJSONSchema(schema, { target: 'draft-7', io: 'input' });
++    const visit = (value) => {
++        if (!value || typeof value !== 'object') return;
++        Object.values(value).forEach(visit);
++        if (Array.isArray(value.anyOf) && value.anyOf.every((item) => Object.keys(item).length === 1 && typeof item.type === 'string')) {
++            value.type = value.anyOf.map((item) => item.type);
++            delete value.anyOf;
++        }
++    };
++    visit(result);
++    result.additionalProperties = false;
++    return result;
++}
+ export function getCliToolDefinitions() {
+     return TOOLS.map((tool) => {
+         return {
+             name: tool.name,
+             description: tool.description,
+-            inputSchema: zodToJsonSchema(tool.schema),
++            inputSchema: inputSchema(tool.schema),
+         };
+     });
+ }
+@@ -57,7 +72,7 @@ export function createMcpServer(info) {
+                 return {
+                     name: tool.name,
+                     description: tool.description,
+-                    inputSchema: zodToJsonSchema(tool.schema),
++                    inputSchema: inputSchema(tool.schema),
+                     annotations: tool.annotations,
+                 };
+             }),
+@@ -69,7 +84,10 @@ export function createMcpServer(info) {
+             if (!tool) {
+                 throw new Error(`Unknown tool: ${request.params.name}`);
+             }
+-            const output = await tool.handler(request.params.arguments);
++            // Stop invalid collections at the first error, before a handler
++            // can accumulate one diagnostic per attacker-supplied element.
++            const args = tool.schema.parse(request.params.arguments ?? {}, { abortEarly: true });
++            const output = await tool.handler(args);
+             return { content: toolResultToContent(output) };
+         }
+         catch (error) {

@@ -1671,12 +1671,12 @@ their neutral appearance. Solo card drop destinations use the sidebar hover tint
 other drag indicators stay neutral. Status colors, focus, categorical
 purple, shadows, and media-specific roles stay independent.
 
-**Chillin’** (the default) uses soft accent fills for your messages; **Buzzin’**
+**Chillin’** (the default) uses soft accent fills for your messages; **Vibrant**
 uses solid accent fills with the family's reading ink. Received bubbles stay
 neutral at both levels. Vibe changes bubble
 contrast only: sidebar rows keep a solid selected fill with paired ink and a
 quieter hover at both levels, and Send keeps a strong accent fill.
-Saved low or retired quiet contrast maps to Chillin’; high remains Buzzin’.
+Saved low or retired quiet contrast maps to Chillin’; high remains Vibrant.
 
 Keep appearance decisions with the existing owners. `SidebarNavigation` scopes
 `surface-sidebar-selected`, `text-sidebar-selected`, `affordance-sidebar-hover`,
@@ -1841,7 +1841,7 @@ separate WCAG 3:1 non-text ratio; decorative separators and hover fills do not.
 Text selection uses `surface-text-selection` with `text-on-selection`, including
 composer tokens. Its neutral fill must remain distinct from app, panel, and
 received/own bubble backgrounds at both vibe levels and in both themes. Own
-bubbles use the `-own` pair, reversing the solid bubble’s ink and fill at Buzzin’.
+bubbles use the `-own` pair, reversing the solid bubble’s ink and fill at Vibrant.
 
 ### Link contrast
 
@@ -1866,7 +1866,7 @@ A mention of you asks for your attention and joins the strong group in both
 modes: `text-mention-self` on `affordance-mention-self`, the prominent fill and
 its ink, with the accent's own hover step rather than an overlay, which would
 muddy it. Inside your own bubble the `-own` pair wins; on the solid accent
-bubble (at Buzzin’) it overlays the bubble's fill with the bubble's ink. That is
+bubble (at Vibrant) it overlays the bubble's fill with the bubble's ink. That is
 a shade on every accent except Mono in light mode, whose near-black bubble takes
 a tint. Magenta, Iris and Cobalt carry white text there, so they take the
 strong shade. System notices name people as quiet text, never as chips.
@@ -1879,7 +1879,7 @@ they keep the standard ink and overlay of the panel they sit on. A reaction you
 made stays marked as yours: `affordance-reaction-self` (accent step 3) with a
 1px inset `border-reaction-self` ring in the accent link ink, which clears 3:1 on
 the tint and its host where step 9 would not (Citrus, Bee). Inside your bubble
-it takes the `-own` pair, which at Buzzin’ is the accent's strong overlay ringed
+it takes the `-own` pair, which at Vibrant is the accent's strong overlay ringed
 in the bubble's ink, since an accent ring would vanish on the accent fill.
 
 When message actions show, both received and own bubbles use their

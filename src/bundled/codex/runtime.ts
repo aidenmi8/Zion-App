@@ -1466,7 +1466,7 @@ export class CodexRuntime {
           )
             .map((item) => item.value)
             .join("\n") +
-          `\nVoice work acts for owner ${agent.owner}. Buzz tools default to room ${channelId} at top level. This is the room's existing conversation. A turn that starts with <realtime_delegation> is a spoken request: the voice model speaks only your final answer, so put the result there in a few plain spoken sentences, not in a send. When you delegate, say only a short acknowledgement, then wait: never state a fact the delegated work has not returned yet.`;
+          `\nVoice work acts for owner ${agent.owner}. Zion tools default to room ${channelId} at top level. This is the room's existing conversation. A turn that starts with <realtime_delegation> is a spoken request: the voice model speaks only your final answer, so put the result there in a few plain spoken sentences, not in a send. When you delegate, say only a short acknowledgement, then wait: never state a fact the delegated work has not returned yet.`;
         loaded = await this.loadThread(
           request,
           entry,
@@ -2168,7 +2168,7 @@ export class CodexRuntime {
       call.namespace !== "buzz" ||
       !sessionTools(this.added(), true).some((tool) => tool.name === call.tool)
     )
-      throw new Error("No active Buzz tool for this thread and turn");
+      throw new Error("No active Zion tool for this thread and turn");
     const check = () => {
       turn.signal.throwIfAborted();
       if (turn.finished) throw new Error("The Codex turn has ended");
@@ -2179,7 +2179,7 @@ export class CodexRuntime {
       typeof call.arguments !== "object" ||
       Array.isArray(call.arguments)
     )
-      throw new Error("Buzz tool arguments must be an object");
+      throw new Error("Zion tool arguments must be an object");
     const args = call.arguments as Record<string, unknown>;
     const request = active?.reply;
     const answering = active ? [...active.requests] : [];

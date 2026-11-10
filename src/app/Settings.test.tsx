@@ -252,7 +252,7 @@ it.each([false, true])("groups plugins (Essentials=%s)", async (essentials) => {
               id: "buzz.channels",
               name: "Channels",
               apiVersion: 1,
-              description: "Navigate channels and hold conversations in Buzz.",
+              description: "Navigate channels and hold conversations in Zion.",
               discovery: {
                 category: "communication",
                 ...(essentials ? { tags: ["Essentials"] } : {}),
@@ -270,7 +270,7 @@ it.each([false, true])("groups plugins (Essentials=%s)", async (essentials) => {
               id: "buzz.codex",
               name: "Codex",
               apiVersion: 1,
-              description: "Run local Codex coding agents in Buzz.",
+              description: "Run local Codex coding agents in Zion.",
               discovery: {
                 category: "agents",
                 ...(essentials ? { tags: ["Essentials"] } : {}),
@@ -417,9 +417,9 @@ it.each([false, true])("groups plugins (Essentials=%s)", async (essentials) => {
     }),
   ).toBeEnabled();
   expect(content).toHaveTextContent(
-    "Navigate channels and hold conversations in Buzz.",
+    "Navigate channels and hold conversations in Zion.",
   );
-  expect(content).toHaveTextContent("Run local Codex coding agents in Buzz.");
+  expect(content).toHaveTextContent("Run local Codex coding agents in Zion.");
   expect(
     within(content).getByRole("button", { name: "View Voice Notes details" }),
   ).toHaveAttribute("data-enabled", "true");
@@ -593,7 +593,7 @@ it("opens each plugin's existing metadata and controls in a detail aside", () =>
   expect(within(bundled).queryByText("Zion")).toBeNull();
   expect(within(bundled).getByText("buzz.channels")).toBeVisible();
   expect(within(bundled).queryByText("Signature")).toBeNull();
-  const badge = within(bundled).getByText("Made by Buzz");
+  const badge = within(bundled).getByText("Made by Sentra");
   expect(badge).toBeVisible();
   expect(badge.parentElement?.parentElement).toContainElement(
     within(bundled).getByRole("heading", { name: "Channels" }),
@@ -671,7 +671,7 @@ it("opens each plugin's existing metadata and controls in a detail aside", () =>
     expect(within(external).getByText(value)).toBeVisible();
   expect(within(external).getAllByText("publisher-public-key")).toHaveLength(2);
   expect(within(external).getByText("Installed")).toBeVisible();
-  expect(within(external).queryByText("Made by Buzz")).toBeNull();
+  expect(within(external).queryByText("Made by Sentra")).toBeNull();
   expect(within(external).getByText("tasks")).toBeVisible();
   expect(within(external).queryByText("Essentials")).toBeNull();
 
@@ -2152,7 +2152,7 @@ it("renders a bundled plugin's README below its status, never an external one's"
   const summary = within(bundled).getByText("One-line description.");
   expect(summary).toBeVisible();
   expect(summary.parentElement).toContainElement(
-    within(bundled).getByText("Made by Buzz"),
+    within(bundled).getByText("Made by Sentra"),
   );
   expect(within(about).getByText("Hold conversations.")).toBeVisible();
   expect(

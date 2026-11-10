@@ -556,7 +556,7 @@ export function createRemoteBestie(
     if (!record.welcomeId) {
       record.welcomeId = session.messages.send(
         record.channelId,
-        "🤖 Sent by Bestie setup: @Bestie, introduce yourself and help me get started with Buzz.",
+        "🤖 Sent by Bestie setup: @Bestie, introduce yourself and help me get started with Zion.",
         [pubkey],
         [],
         { key: `bestie-welcome:${record.channelId}`, value: pubkey },

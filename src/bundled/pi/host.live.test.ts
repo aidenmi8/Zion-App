@@ -600,7 +600,7 @@ describe.skipIf(!DEPS)("the Pi host on Pi durable", () => {
       expect(await mode(database)).toBe(0o600);
     }
     expect(out.unknown).toBe(
-      "databricks isn't one of Pi's built-in providers, and no Pi package Buzz loaded adds it. Buzz loads the packages in Pi's settings when it starts. Choose another provider in the agent's Identity tab.",
+      "databricks isn't one of Pi's built-in providers, and no Pi package Zion loaded adds it. Zion loads the packages in Pi's settings when it starts. Choose another provider in the agent's Identity tab.",
     );
     expect(out.a).toMatchObject({ status: "done", calls: 1 });
     expect(out.a.tools).toEqual([
@@ -618,7 +618,7 @@ describe.skipIf(!DEPS)("the Pi host on Pi durable", () => {
       conversation: out.a.conversation,
     });
     expect(JSON.stringify(out.blocked.messages)).toContain(
-      "[Buzz plugin: fixture-policy] Fixture blocks the command",
+      "[Zion plugin: fixture-policy] Fixture blocks the command",
     );
     expect(out.cleanupFailure).toMatchObject({
       status: "done",
@@ -672,7 +672,7 @@ describe.skipIf(!DEPS)("the Pi host on Pi durable", () => {
     // What a Buzz tool answered is what the model reads.
     expect(out.c.rewritten).toMatchObject({ text: "Rewritten arguments" });
     expect(out.c.results.at(-1)).toEqual([
-      { type: "text", text: "[Buzz plugin: fixture-policy]" },
+      { type: "text", text: "[Zion plugin: fixture-policy]" },
       { type: "text", text: "Replaced result" },
     ]);
     expect(out.stopped).toEqual({ status: "closed" });
@@ -803,7 +803,7 @@ describe.skipIf(!DEPS)("the Pi host on Pi durable", () => {
     const signIn = { type: "oauth", access: "a", refresh: "r", expires: 1 };
     expect(out.auth).toEqual({ result: signIn, stored: signIn });
     expect(out.command).toMatch(
-      /^Buzz doesn't use `!command` or `\$NAME` keys/,
+      /^Zion doesn't use `!command` or `\$NAME` keys/,
     );
     expect(out.environment).toBe(out.command);
     expect(out.whileWritten).toEqual(signIn);
@@ -874,7 +874,7 @@ describe.skipIf(!DEPS)("the Pi host on Pi durable", () => {
     expect(out.errors).toEqual([
       {
         source: "npm:pi-example",
-        error: "Buzz loads only Pi packages in a local folder",
+        error: "Zion loads only Pi packages in a local folder",
       },
       { source: "../broken", error: "No token" },
       { source: "../clash", error: "Another extension is named coding-tools" },
@@ -889,7 +889,7 @@ describe.skipIf(!DEPS)("the Pi host on Pi durable", () => {
       {
         source: "../fetches",
         error:
-          "Provider fetched lists no models, and Buzz doesn't fetch a provider's models",
+          "Provider fetched lists no models, and Zion doesn't fetch a provider's models",
       },
       {
         source: "../not-a-list",
@@ -919,7 +919,7 @@ describe.skipIf(!DEPS)("the Pi host on Pi durable", () => {
       ["shout", false, [{ type: "text", text: "HI" }]],
     ]);
     expect(out.unknown).toContain(
-      "nope isn't one of Pi's built-in providers, and no Pi package Buzz loaded adds it. Pi could not load the package npm:pi-example: Buzz loads only Pi packages in a local folder. Pi could not load the package ../broken: No token.",
+      "nope isn't one of Pi's built-in providers, and no Pi package Zion loaded adds it. Pi could not load the package npm:pi-example: Zion loads only Pi packages in a local folder. Pi could not load the package ../broken: No token.",
     );
   }, 90_000);
 });

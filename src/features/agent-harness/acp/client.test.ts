@@ -225,7 +225,7 @@ describe("starting a harness", () => {
         capabilities: { mcpCapabilities: { http } },
       });
       await expect(start(harness)).rejects.toThrow(
-        "This Harness cannot reach Buzz tools (no HTTP MCP support)",
+        "This Harness cannot reach Zion tools (no HTTP MCP support)",
       );
       expect(harness.started[0]?.killed).toBe(true);
     }
@@ -251,7 +251,7 @@ describe("starting a harness", () => {
     await vi.advanceTimersByTimeAsync(1);
     await starting;
     expect(failure).toEqual(
-      new Error("This Harness cannot reach Buzz tools (no HTTP MCP support)"),
+      new Error("This Harness cannot reach Zion tools (no HTTP MCP support)"),
     );
     expect(given?.running).toBe(true);
   });

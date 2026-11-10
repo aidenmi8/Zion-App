@@ -9,6 +9,8 @@ import { realpath, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { sep } from "node:path";
 import { finalizeEvent } from "nostr-tools";
+// Keep fetch and multipart bodies on the same patched client implementation.
+import { fetch as undiciFetch, FormData } from "undici";
 
 const API = "https://app.builderlab.xyz/api/goose";
 // Builderlab checks Origin on identity binding; it also seeds the challenge origin.
@@ -54,6 +56,7 @@ function callbackPage(status) {
       )
       .replace("<!-- {{closeHint}} -->", read("close-hint.html").toString())
       .replaceAll("{{provider}}", "Builderlab")
+      .replaceAll("{{providerLabel}}", "Builderlab")
       .replaceAll("{{complete}}", status === 200 ? "true" : "false")
       .replaceAll("{{closeDelay}}", "3")
       .replace(
@@ -62,7 +65,7 @@ function callbackPage(status) {
       )
       .replace(
         "{{message}}",
-        status === 200 ? "" : "Return to Buzz to retry sign-in.",
+        status === 200 ? "" : "Return to Zion to retry sign-in.",
       ),
     policy: `default-src 'none'; img-src data:; font-src data:; style-src 'sha256-${hash(style)}'; script-src 'sha256-${hash(script)}'; base-uri 'none'; frame-ancestors 'none'`,
   };
@@ -229,7 +232,7 @@ function awaitCallback(signal, open, api, verifier) {
 
 export function createBuilderlab({
   key,
-  fetch = globalThis.fetch,
+  fetch = undiciFetch,
   open = openBrowser,
   api = API,
   appsBase,

@@ -1,6 +1,6 @@
 # Bestie
 
-Bestie is the account-saved agent pinned in Buzz's left navigation. The
+Bestie is the account-saved agent pinned in Zion's left navigation. The
 selection is the private `main-agent` record shared with Solo's default-agent
 owner; this plugin adds presentation and a conversation destination, not another
 selection store.
@@ -33,7 +33,7 @@ ordinary row and clears any old device-local hidden-DM intent. Replacing or
 deleting the Bestie, disabling the plugin, changing communities, or losing the
 exact roster match releases the promotion and restores the ordinary DM row.
 
-The pinned row and Search Buzz destination show the agent's name and avatar.
+The pinned row and Search Zion destination show the agent's name and avatar.
 Search adds **Bestie** as supporting text and matches either name, so the pinned
 DM remains recognizable without presenting a placeholder identity. Agent rows
 remain separate **New chat** actions; namesakes stay distinct by exact public key
@@ -112,7 +112,7 @@ that DM and in the private channels Bestie was added to, and reports only in
 the DM. On also turns on the agent's Attention,
 which the Watching tab shows. Off removes the section and the timer and leaves
 Attention on, since the agent's other watches may need it. The timer runs while
-Buzz is open and the Watching plugin is on: this plugin doesn't call
+Zion is open and the Watching plugin is on: this plugin doesn't call
 `controlAttention()`, so turning Watching off still turns Attention off for
 every agent. While the timer can't run, the row says it is paused, and a
 timer paused on its own in the Attention tab says to turn the switch off and on

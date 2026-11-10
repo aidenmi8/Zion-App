@@ -62,7 +62,7 @@ const firstLine = () =>
     };
     const end = () => {
       done();
-      reject(new Error("Buzz sent Pi nothing to run"));
+      reject(new Error("Zion sent Pi nothing to run"));
     };
     process.stdin.on("readable", read).on("end", end);
   });

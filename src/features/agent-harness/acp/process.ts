@@ -21,7 +21,7 @@ import type {
  * failed, still leaves the harness's text to post. */
 const ANSWERS = new Set<string>([...MESSAGE_TOOLS, "edit", "react"]);
 const STOPPED =
-  "Buzz stopped this session's tools: another program used their token";
+  "Zion stopped this session's tools: another program used their token";
 
 /** How long a harness has to answer a request that starts it or opens or
  * closes a session. One that does not is stopped. A turn's prompt is never
@@ -186,7 +186,7 @@ export class AcpProcess {
       acp.capabilities = init.agentCapabilities ?? {};
       if (init.agentCapabilities?.mcpCapabilities?.http !== true)
         throw new Error(
-          `This ${hooks.label} cannot reach Buzz tools (no HTTP MCP support)`,
+          `This ${hooks.label} cannot reach Zion tools (no HTTP MCP support)`,
         );
     } catch (error) {
       if (signal?.aborted) {
@@ -263,7 +263,7 @@ export class AcpProcess {
     const { tools } = launch;
     if (tools) {
       if (!this.serve)
-        throw new Error(`This ${hooks.label} serves no Buzz tools`);
+        throw new Error(`This ${hooks.label} serves no Zion tools`);
       server = await this.serve((message) => this.mcp(tools, session, message));
     }
     const buzz: McpServer | undefined = server && {
@@ -506,7 +506,7 @@ export class AcpProcess {
       reply = {
         jsonrpc: "2.0",
         id,
-        error: { code: -32601, message: `Buzz does not handle ${method}` },
+        error: { code: -32601, message: `Zion does not handle ${method}` },
       };
     return this.write(reply).catch(() => undefined);
   }

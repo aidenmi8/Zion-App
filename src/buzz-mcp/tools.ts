@@ -136,7 +136,7 @@ export async function captureToolBody(
 export const TOOLS: readonly Tool[] = [
   tool(
     "buzz_help",
-    "Read the bundled guide to using Buzz: chats, communities, identity, agents, and settings.",
+    "Read the bundled guide to using Zion: chats, communities, identity, agents, and settings.",
     {},
   ),
   tool(
@@ -229,7 +229,8 @@ export const TOOLS: readonly Tool[] = [
       thread: str,
       message_url: {
         type: "string",
-        description: "Buzz message link; replaces channel and thread.",
+        description:
+          "Zion message link (`buzz://`); replaces channel and thread.",
       },
       q: str,
       author: {
@@ -394,7 +395,7 @@ export const TOOLS: readonly Tool[] = [
   ),
   tool(
     "media_get",
-    "Get a file of any type from a Buzz media URL: saves it locally and gives its path; an image is also shown.",
+    "Get a file of any type from a Zion media URL: saves it locally and gives its path; an image is also shown.",
     { url: str },
     ["url"],
   ),
@@ -710,7 +711,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
           ? parseBuzzLink(args.message_url)
           : null;
       if (link?.format !== "legacy" || !link.messageId)
-        throw new Error("message_url must be a Buzz message link.");
+        throw new Error("message_url must be a Zion message link (`buzz://`).");
       args = { ...args, channel: link.channelId, thread: link.messageId };
     }
     const limit = typeof args.limit === "number" ? args.limit : undefined;
@@ -1446,7 +1447,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
   async repo(tools, args) {
     const { client } = tools;
     const { gitAuth } = client;
-    if (!gitAuth) throw new Error("Git access needs Buzz Desktop.");
+    if (!gitAuth) throw new Error("Git access needs Zion Desktop.");
     const channel = target(tools, args);
     const create = optional(args, "create");
     if (create !== undefined) {
@@ -1512,7 +1513,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
     const tabs = client.tabs;
     if (!tabs)
       throw new Error(
-        "Tabs are kept in Buzz Desktop and are unavailable here.",
+        "Tabs are kept in Zion Desktop and are unavailable here.",
       );
     // Only the channel the agent works in, so it never pulls the owner
     // toward another conversation.
@@ -1830,7 +1831,7 @@ class Tools {
   async template(name: string) {
     if (!this.client.templates)
       throw new Error(
-        "Channel templates are kept in Buzz Desktop and are unavailable here.",
+        "Channel templates are kept in Zion Desktop and are unavailable here.",
       );
     const templates = await this.client.templates();
     const found = templates.filter(

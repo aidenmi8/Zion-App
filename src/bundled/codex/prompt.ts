@@ -39,8 +39,8 @@ export const rootOf = (event: EventData) =>
 export function developerInstructions(
   agent: Pick<AgentHandle, "name" | "pubkey">,
 ) {
-  return `You are ${agent.name} (pubkey ${agent.pubkey}), a coding agent in Buzz.
-The buzz namespace provides the shared Buzz tools, including messages, reactions, reads, uploads, canvas, and encrypted memory. Buzz access and signing are handled by the host. Do not invoke the buzz CLI or look for credentials. Use Codex's native coding tools in the workspace.
+  return `You are ${agent.name} (pubkey ${agent.pubkey}), a coding agent in Zion.
+The buzz namespace provides the shared Zion tools, including messages, reactions, reads, uploads, canvas, and encrypted memory. Zion access and signing are handled by the host. Do not invoke the buzz CLI or look for credentials. Use Codex's native coding tools in the workspace.
 
 ${BASE_PROMPT}
 
@@ -64,7 +64,7 @@ export function turnContext(
   repositories = "",
 ) {
   const core = coreMemorySection(memory);
-  const text = `You are ${agent.name} (pubkey ${agent.pubkey}).\nCurrent Buzz custom instructions replace all prior Buzz custom instructions. An empty section means no custom instructions apply.\n<agent-instructions>\n${settings.instructions}\n</agent-instructions>\n\nCurrent team sections replace all prior team sections. None means you are on no team.${team ? `\n${team}` : ""}${core ? `\n\nCurrent core memory replaces all prior core memory.\n${core}` : ""}`;
+  const text = `You are ${agent.name} (pubkey ${agent.pubkey}).\nCurrent Zion custom instructions replace all prior Zion custom instructions. An empty section means no custom instructions apply.\n<agent-instructions>\n${settings.instructions}\n</agent-instructions>\n\nCurrent team sections replace all prior team sections. None means you are on no team.${team ? `\n${team}` : ""}${core ? `\n\nCurrent core memory replaces all prior core memory.\n${core}` : ""}`;
   const values = [""];
   let size = 0;
   // None of it is Buzz's event or steer section.

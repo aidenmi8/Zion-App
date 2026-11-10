@@ -833,7 +833,7 @@ it("allows tool use and acknowledges hooks it is asked about", async () => {
     {
       subtype: "error",
       request_id: "r3",
-      error: "Buzz does not handle mcp_message",
+      error: "Zion does not handle mcp_message",
     },
   ]);
 });

@@ -936,7 +936,7 @@ it("unsafe failed runtime with no lease: Off disarms consent without selection o
   native.invoke.mockImplementation((command, args) => {
     // Native select must confirm shutdown first; a sticky failure always rejects.
     if (command === "mesh_compute_select")
-      return Promise.reject("Mesh shutdown timed out; restart Buzz");
+      return Promise.reject("Mesh shutdown timed out; restart Zion");
     if (command === "mesh_compute_disarm") {
       expect(args).toEqual({
         community: "https://fixture.example",
@@ -1039,7 +1039,7 @@ for (const retire of ["identity", "dispose"] as const) {
     const retired = shareActionSettled();
     try {
       await act(async () => {
-        rejectRetry("Mesh shutdown timed out; restart Buzz");
+        rejectRetry("Mesh shutdown timed out; restart Zion");
         // Wait for the retired Off action itself to finish, not a timer tick.
         await retired;
       });

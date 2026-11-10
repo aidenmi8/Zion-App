@@ -348,7 +348,7 @@ impl Lifecycle {
             // A timeout is not proof of shutdown: retain Failed and reject replacement.
             let result = match tokio::time::timeout(stop_budget, node.stop()).await {
                 Ok(result) => result,
-                Err(_) => Err(anyhow::anyhow!("Mesh shutdown timed out; restart Buzz before starting another runtime")),
+                Err(_) => Err(anyhow::anyhow!("Mesh shutdown timed out; restart Zion before starting another runtime")),
             };
             let mut slot = shared.lock().expect("mesh slot poisoned");
             slot.phase = match result {
@@ -417,7 +417,7 @@ impl Lifecycle {
             }
         })
         .await
-        .map_err(|_| anyhow::anyhow!("Finishing stop; restart Buzz if this persists"))?
+        .map_err(|_| anyhow::anyhow!("Finishing stop; restart Zion if this persists"))?
     }
 
     pub fn stop(&self) {

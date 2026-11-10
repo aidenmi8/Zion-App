@@ -47,7 +47,7 @@ export function appearanceSettings(appearance: Appearance): DeviceSetting[] {
     },
     {
       key: "appearance.vibe",
-      description: "Vibe level: low is Chillin’, high is Buzzin’.",
+      description: "Vibe level: low is Chillin’, high is Vibrant.",
       schema: { type: "string", enum: ["low", "high"] },
       read: () => ({ value: now().contrast, unsaved: now().contrastError }),
       write: (value) => appearance.setContrast(value as Contrast),

@@ -14,6 +14,8 @@ use std::{
 };
 
 pub mod access;
+#[path = "../../distribution.rs"]
+mod distribution;
 pub mod imports;
 pub mod managed;
 mod migrate_agent_flag;
@@ -819,13 +821,17 @@ pub enum InstallationResult {
     },
 }
 /// The desktop app data folder a CLI targets by default: a debug CLI the
-/// development app's, a release CLI the installed app's. Each refuses while the
-/// app has yet to fill that folder from the installed app's older one: creating
-/// it would stop the development copy, or leave both and stop the release move.
+/// development app's, a release CLI Zion's owner-approved namespace. Only the
+/// upstream development profile participates in legacy seeding; Zion starts
+/// fresh and must not adopt another app's folders.
 fn default_home() -> Result<PathBuf> {
     let data =
         dirs::data_dir().ok_or("Cannot determine application data directory; set BUZZODZ_HOME")?;
-    let (home, older, open): (_, &[_], _) = if cfg!(debug_assertions) {
+    default_home_at(data, cfg!(debug_assertions))
+}
+
+fn default_home_at(data: PathBuf, development: bool) -> Result<PathBuf> {
+    let (home, older, open): (_, &[_], _) = if development {
         (
             "xyz.block.buzz.desktop.dev",
             &["xyz.block.buzz.desktop", "dev.local.buzz.foundation"],
@@ -833,9 +839,9 @@ fn default_home() -> Result<PathBuf> {
         )
     } else {
         (
-            "xyz.block.buzz.desktop",
-            &["dev.local.buzz.foundation"],
-            "Buzz has not moved its storage to its 1.0 folder yet. Open Buzz once",
+            distribution::RELEASE_IDENTIFIER,
+            &[],
+            "Open Zion once to initialize its application storage",
         )
     };
     let home = data.join(home);
@@ -1628,6 +1634,26 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn zion_release_cli_uses_its_own_storage_without_adopting_other_apps() {
+        let root = tempfile::tempdir().unwrap();
+        for old in ["xyz.block.buzz.desktop", "dev.local.buzz.foundation"] {
+            std::fs::create_dir(root.path().join(old)).unwrap();
+            std::fs::write(root.path().join(old).join("keep"), old).unwrap();
+        }
+        assert_eq!(
+            super::default_home_at(root.path().to_owned(), false).unwrap(),
+            root.path().join("xyz.block.buzz.app")
+        );
+        assert!(!root.path().join("xyz.block.buzz.app").exists());
+        for old in ["xyz.block.buzz.desktop", "dev.local.buzz.foundation"] {
+            assert_eq!(
+                std::fs::read_to_string(root.path().join(old).join("keep")).unwrap(),
+                old
+            );
+        }
+    }
+
     use super::{
         artifact_from_text, bundled_manifests, enabled_by_default, validate_candidate_path,
         Manager, Manifest, Release, MAX_HOST_COMMAND_OUTPUT_BYTES,
