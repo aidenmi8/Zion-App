@@ -9,6 +9,12 @@ const config = JSON.parse(
     "utf8",
   ),
 );
+const macosConfig = JSON.parse(
+  readFileSync(
+    new URL("../../src-tauri/tauri.macos.conf.json", import.meta.url),
+    "utf8",
+  ),
+);
 
 test("Zion shipping metadata keeps the approved installed-app identity", () => {
   assert.equal(config.productName, "Zion");
@@ -21,6 +27,11 @@ test("Zion shipping metadata keeps the approved installed-app identity", () => {
     undefined,
     "do not enable an upstream updater feed",
   );
+});
+
+test("the macOS platform override keeps the visible Zion window title", () => {
+  for (const window of macosConfig.app.windows)
+    assert.equal(window.title, "Zion");
 });
 
 test("the installer selects the Zion candidate background and approved drag layout", () => {
