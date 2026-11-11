@@ -506,6 +506,27 @@ test("Vitest shards preserve every selected filter for ten independent repetitio
   assert.throws(() => vitestShard(filters, 0, 10));
 });
 
+test("CI repeats every Vitest shard ten times in bounded two-run jobs", () => {
+  const workflow = readFileSync(
+    new URL("../../.github/workflows/ci.yml", import.meta.url),
+    "utf8",
+  );
+  const lane = workflow
+    .split("  flake_vitest:\n")[1]
+    ?.split("\n  flake_browser:")[0];
+  assert.ok(lane, "Vitest flake lane exists");
+  assert.ok(lane.includes("batch: [1, 2, 3, 4, 5]"));
+  assert.match(
+    lane,
+    /shard: \$\{\{ fromJSON\(needs\.flake_select\.outputs\.vitest_shards\) \}\}/,
+  );
+  assert.match(lane, /vitest --iterations=2 --shard=\$\{\{ matrix\.shard \}\}/);
+  assert.match(
+    lane,
+    /name: flake-vitest-\$\{\{ matrix\.shard \}\}-\$\{\{ matrix\.batch \}\}/,
+  );
+});
+
 test("source, helper, fixture and patch changes can reach tests; configuration and docs cannot", () => {
   for (const file of [
     "src/bundled/emoji/CustomEmoji.tsx",
