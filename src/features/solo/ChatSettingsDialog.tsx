@@ -1,10 +1,9 @@
-import { useState, type ComponentProps, type ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Button } from "../../shared/design-system/ui/Button";
 import { Dialog } from "../../shared/design-system/ui/Dialog";
 import { Field } from "../../shared/design-system/ui/Field";
 import { Textarea } from "../../shared/design-system/ui/Textarea";
-import { DiscardChanges } from "../agents/AgentSaveButton";
-import { workspaceCanvas, type Workspace } from "./workspace";
+import type { Workspace } from "./workspace";
 import { WorkspaceFields } from "./WorkspaceFields";
 import styles from "./WorkspaceSettings.module.css";
 
@@ -18,7 +17,6 @@ export function ChatSettingsDialog({
   saveDisabled = false,
   saveLoading = false,
   dismissOnOutsideClick = true,
-  dirty = false,
   onSave,
   children,
 }: {
@@ -31,20 +29,15 @@ export function ChatSettingsDialog({
   saveDisabled?: boolean;
   saveLoading?: boolean;
   dismissOnOutsideClick?: boolean;
-  /** Escape, Close and outside clicks ask before dropping edits; Cancel discards. */
-  dirty?: boolean;
   onSave(): void;
   children: ReactNode;
 }) {
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
   return (
     <Dialog
       open
       finalFocus={finalFocus}
       onOpenChange={(open) => {
-        if (open) return;
-        if (dirty) setConfirmDiscard(true);
-        else close();
+        if (!open) close();
       }}
       preventClose={busy}
       dismissOnOutsideClick={dismissOnOutsideClick}
@@ -69,27 +62,8 @@ export function ChatSettingsDialog({
       <div className={styles.sections} inert={busy}>
         {children}
       </div>
-      {confirmDiscard && (
-        <DiscardChanges
-          description="Your settings have unsaved changes."
-          onKeep={() => setConfirmDiscard(false)}
-          onDiscard={close}
-        />
-      )}
     </Dialog>
   );
-}
-
-/** The Canvas ChatInstructions would save; undefined while it's invalid. */
-export function instructionsCanvas(
-  workspace: Workspace,
-  raw: string | undefined,
-) {
-  try {
-    return raw ?? workspaceCanvas(workspace);
-  } catch {
-    return undefined;
-  }
 }
 
 /** Structured workspace fields, or the raw Canvas when it can't be parsed. */

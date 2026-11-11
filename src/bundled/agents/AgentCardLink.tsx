@@ -192,7 +192,7 @@ function AgentCardLinkPreview({ card, onAdd }: { card: Card; onAdd(): void }) {
         <span className={styles.kind}>Agent card</span>
       </span>
       <Button variant="primary" size="sm" onClick={onAdd}>
-        Add to Buzz
+        Add to Zion
       </Button>
     </div>
   );

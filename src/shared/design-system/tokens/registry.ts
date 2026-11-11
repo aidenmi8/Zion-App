@@ -356,7 +356,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "bg-surface-message-own",
         variable: "--surface-message-own",
-        pointsAt: "accent 4 at Chillin’; accent 9 at Buzzin’",
+        pointsAt: "accent 4 at Chillin’; accent 9 at Vibrant",
         use: "Own message bubbles; pair with --text-message-own.",
         status: "core",
       },
@@ -380,7 +380,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
         token: "--affordance-message-own-hover",
         variable: "--affordance-message-own-hover",
         pointsAt:
-          "black 4% on light bubbles / white 8% on dark ones; at Buzzin’, black 4% on the accent fill (white 8% on Mono in light mode)",
+          "black 4% on light bubbles / white 8% on dark ones; at Vibrant, black 4% on the accent fill (white 8% on Mono in light mode)",
         use: "Overlay across your own bubble while its actions show. It follows the bubble's lightness, as its chips do.",
         status: "core",
       },
@@ -395,7 +395,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
         token: "--affordance-message-own-highlight",
         variable: "--affordance-message-own-highlight",
         pointsAt:
-          "affordance-message-highlight; at Buzzin’, the accent's regular overlay step on its fill (black 10%, white 16% on Mono in light mode)",
+          "affordance-message-highlight; at Vibrant, the accent's regular overlay step on its fill (black 10%, white 16% on Mono in light mode)",
         use: "Temporary arrival cue across your own bubble. It follows the bubble's lightness, as its chips do.",
         status: "core",
       },
@@ -410,23 +410,23 @@ export const ROLE_GROUPS: RoleGroup[] = [
         token: "--affordance-reaction-own",
         variable: "--affordance-reaction-own",
         pointsAt:
-          "affordance-reaction; at Buzzin’, black 6% on the accent fill (white 10% on Mono in light mode)",
+          "affordance-reaction; at Vibrant, black 6% on the accent fill (white 10% on Mono in light mode)",
         use: "Reaction strip inside your own bubble. It follows the bubble's lightness, as its chips do.",
         status: "core",
       },
       {
         token: "--affordance-reaction-self",
         variable: "--affordance-reaction-self",
-        pointsAt: "surface-message-own at Buzzin’; accent-9 at Chillin’",
-        use: "A reaction you made, on received bubbles and the panel: your own bubble's fill, paired with text-reaction-self.",
+        pointsAt: "accent step 3",
+        use: "A reaction you made, on received bubbles and the panel, paired with --border-reaction-self.",
         status: "core",
       },
       {
         token: "--affordance-reaction-self-own",
         variable: "--affordance-reaction-self-own",
         pointsAt:
-          "surface-message at Buzzin’; neutral-1 at Chillin’ (neutral-7 in dark mode)",
-        use: "A reaction you made inside your own bubble: the received bubble's fill, paired with text-reaction-self-own.",
+          "affordance-reaction-self; at Vibrant, the accent's strong overlay on its fill",
+        use: "A reaction you made inside your own bubble, paired with --border-reaction-self-own.",
         status: "core",
       },
       {
@@ -563,7 +563,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "text-on-selection-own",
         variable: "--text-on-selection-own",
-        pointsAt: "neutral-1 / own bubble fill at Buzzin’",
+        pointsAt: "neutral-1 / own bubble fill at Vibrant",
         use: "Selected text inside outgoing bubbles, paired with surface-text-selection-own.",
         status: "core",
       },
@@ -634,7 +634,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "icon-subtle-own",
         variable: "--icon-subtle-own",
-        pointsAt: "icon-subtle; the own bubble's link ink at Buzzin’",
+        pointsAt: "icon-subtle; the own bubble's link ink at Vibrant",
         use: "Neutral state icons inside your own bubble, where the solid fill clears no grey.",
         status: "core",
       },
@@ -648,7 +648,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "icon-success-own",
         variable: "--icon-success-own",
-        pointsAt: "icon-success; the own bubble's link ink at Buzzin’",
+        pointsAt: "icon-success; the own bubble's link ink at Vibrant",
         use: "Success state icons inside your own bubble, where the solid fill clears no green.",
         status: "core",
       },
@@ -670,22 +670,8 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "text-message-link-own",
         variable: "--text-message-link-own",
-        pointsAt: "accent link at Chillin’; accent ink at Buzzin’",
+        pointsAt: "accent link at Chillin’; accent ink at Vibrant",
         use: "Links on the selected outgoing message surface.",
-        status: "core",
-      },
-      {
-        token: "text-reaction-self",
-        variable: "--text-reaction-self",
-        pointsAt: "text-message-own at Buzzin’; accent ink at Chillin’",
-        use: "Count of a reaction you made on received bubbles and the panel, paired with bg-affordance-reaction-self.",
-        status: "core",
-      },
-      {
-        token: "text-reaction-self-own",
-        variable: "--text-reaction-self-own",
-        pointsAt: "text-standard",
-        use: "Count of a reaction you made inside your own bubble, paired with bg-affordance-reaction-self-own.",
         status: "core",
       },
       {
@@ -698,7 +684,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "text-mention-own",
         variable: "--text-mention-own",
-        pointsAt: "text-mention; the own bubble's ink at Buzzin’",
+        pointsAt: "text-mention; the own bubble's ink at Vibrant",
         use: "Mention labels inside your own bubble, paired with bg-affordance-mention-own.",
         status: "core",
       },
@@ -727,7 +713,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
         token: "icon-categorical-purple-own",
         variable: "--icon-categorical-purple-own",
         pointsAt:
-          "icon-categorical-purple; the own bubble's link ink at Buzzin’",
+          "icon-categorical-purple; the own bubble's link ink at Vibrant",
         use: "Categorical state icons inside your own bubble, where the solid fill clears no purple.",
         status: "core",
       },
@@ -921,6 +907,20 @@ export const ROLE_GROUPS: RoleGroup[] = [
         variable: "--border-accent",
         pointsAt: "border-focus (neutral compatibility role)",
         use: "An identity accent boundary.",
+        status: "core",
+      },
+      {
+        token: "border-reaction-self",
+        variable: "--border-reaction-self",
+        pointsAt: "accent-link",
+        use: "Ring around a reaction you made, on received bubbles and the panel. It clears 3:1 on the tint and its host.",
+        status: "core",
+      },
+      {
+        token: "border-reaction-self-own",
+        variable: "--border-reaction-self-own",
+        pointsAt: "border-reaction-self; at Vibrant, text-message-own",
+        use: "Ring around a reaction you made inside your own bubble, where the accent ring would vanish at Vibrant.",
         status: "core",
       },
     ],
@@ -1127,21 +1127,21 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "bg-affordance-floating-control",
         variable: "--affordance-floating-control",
-        pointsAt: "neutral-3 light / neutral-6 dark",
+        pointsAt: "affordance-subtle light / neutral-6 dark",
         use: "Secondary action at rest on floating surfaces.",
         status: "proposed",
       },
       {
         token: "bg-affordance-floating-control-hover",
         variable: "--affordance-floating-control-hover",
-        pointsAt: "neutral-4 light / neutral-7 dark",
+        pointsAt: "affordance-subtle-hover light / neutral-7 dark",
         use: "Secondary action hover on floating surfaces; pair with standard text.",
         status: "proposed",
       },
       {
         token: "bg-affordance-floating-control-pressed",
         variable: "--affordance-floating-control-pressed",
-        pointsAt: "neutral-5 light / neutral-8 dark",
+        pointsAt: "affordance-subtle-pressed light / neutral-8 dark",
         use: "Pressed action on floating surfaces; pair with standard text.",
         status: "proposed",
       },
@@ -1292,7 +1292,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
       {
         token: "bg-surface-text-selection-own",
         variable: "--surface-text-selection-own",
-        pointsAt: "neutral-12 / accent ink at Buzzin’",
+        pointsAt: "neutral-12 / accent ink at Vibrant",
         use: "Neutral selection fill that contrasts with the outgoing bubble at either vibe.",
         status: "core",
       },
@@ -1321,7 +1321,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
         token: "bg-affordance-mention-own",
         variable: "--affordance-mention-own",
         pointsAt:
-          "affordance-mention; at Buzzin’, black 10% on the accent fill (16% on Magenta, Iris and Cobalt; white 16% on Mono in light mode)",
+          "affordance-mention; at Vibrant, black 10% on the accent fill (16% on Magenta, Iris and Cobalt; white 16% on Mono in light mode)",
         use: "Mention chip fill inside your own bubble, paired with text-mention-own.",
         status: "core",
       },
@@ -1329,7 +1329,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
         token: "bg-affordance-mention-own-hover",
         variable: "--affordance-mention-own-hover",
         pointsAt:
-          "affordance-mention-hover; at Buzzin’, black 14% on the accent fill (22% on Magenta, Iris and Cobalt; white 20% on Mono in light mode)",
+          "affordance-mention-hover; at Vibrant, black 14% on the accent fill (22% on Magenta, Iris and Cobalt; white 20% on Mono in light mode)",
         use: "Own-bubble mention chip under the pointer.",
         status: "core",
       },
@@ -1666,7 +1666,7 @@ export const TYPE_ROLES: TypeRole[] = [
   },
   {
     token: "text-body",
-    pointsAt: "body/body-medium (Buzz 14px override)",
+    pointsAt: "body/body-medium (Zion 14px override)",
     size: "14px",
     lineHeight: "20px",
     tracking: "-0.005em",

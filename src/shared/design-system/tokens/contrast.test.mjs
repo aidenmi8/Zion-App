@@ -426,7 +426,7 @@ describe("semantic contrast contract", () => {
   // tinted own bubbles, through the -own pair. Purple-10 passes the whole
   // guard (3.01–3.22:1 on the dark bubbles), so purple-9 is the first step it
   // can see; purple-9 also fails the dark popover, but the pinned pairing is
-  // the dark received bubble. At Buzzin’ the own bubble is solid accent-9,
+  // the dark received bubble. At Vibrant the own bubble is solid accent-9,
   // which the base role never clears: pointing the -own pair back at it fails
   // the own-bubble pairing on the high level. Subtle grey falls short of that
   // fill on most families in both modes (1.04–2.98:1); the dark pairing from

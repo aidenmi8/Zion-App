@@ -22,7 +22,7 @@ export class PluginDevelopmentService extends Service {
 
   plugins(): PluginManager {
     if (this.ctx.pluginOwner?.id !== PLUGIN_DEVELOPMENT)
-      throw new Error("Only Buzz's Plugin development plugin manages plugins.");
+      throw new Error("Only Zion's Plugin development plugin manages plugins.");
     return this.manager();
   }
 }

@@ -53,7 +53,7 @@ export function ExternalIdentityAuthorization({ viewer }: { viewer: string }) {
       if (attempt.signal.aborted) return;
       if (tag[1] !== viewer)
         throw new Error(
-          "Your Buzz identity changed. Reopen Security settings before authorizing.",
+          "Your Zion identity changed. Reopen Identity settings before authorizing.",
         );
       setProof(JSON.stringify(tag));
     } catch (failure) {
@@ -155,18 +155,19 @@ export function ExternalIdentityAuthorization({ viewer }: { viewer: string }) {
       {confirmKey && (
         <AlertDialog
           title="Authorize this identity?"
-          description="The holder of this key can act as your agent, including directing your Buzz coding agents to run commands as you. This permission has no time or event-kind limits."
+          description="The holder of this key can act as your agent, including directing your Zion coding agents to run commands as you. This permission has no time or event-kind limits."
           initialFocus={cancelButton}
           onClose={() => setConfirmKey(null)}
           actions={
             <>
-              <Button ref={cancelButton} onClick={() => setConfirmKey(null)}>
+              <Button
+                ref={cancelButton}
+                variant="prominent"
+                onClick={() => setConfirmKey(null)}
+              >
                 Cancel
               </Button>
-              <Button
-                variant="prominent"
-                onClick={() => void authorize(confirmKey)}
-              >
+              <Button onClick={() => void authorize(confirmKey)}>
                 Authorize this key
               </Button>
             </>

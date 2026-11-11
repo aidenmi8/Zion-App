@@ -1,7 +1,3 @@
-import type { Agents } from "../../features/agents/service";
-import { useAgentsSnapshot } from "../../features/agents/react";
-import { useAgentChoices } from "../../features/agents/use-choices";
-import { dmVoiceAgent } from "../../features/huddle/dm-agent";
 import type { ChatMenuProps } from "../../features/conversation/service";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ChannelLauncherProps } from "../../features/panels/service";
@@ -39,7 +35,6 @@ type Props = Pick<
   huddles: Huddles;
   showWindow(): Promise<void>;
   menu?: boolean;
-  agents?: Agents;
 };
 const focusPlayer = () => document.getElementById("huddle-capsule")?.focus();
 
@@ -91,7 +86,6 @@ export function SoloHuddleMenu({
 
 export function HuddleLauncher(props: Props) {
   const { context, available, huddles } = props;
-  useAgentsSnapshot(props.agents);
   const call = useSyncExternalStore(huddles.subscribe, huddles.snapshot);
   const connection = useRelayConnection(props.relay);
   const incoming = useIncomingHuddle(
@@ -118,10 +112,6 @@ export function HuddleLauncher(props: Props) {
     call.destination?.scope === context.scope &&
     call.destination.viewer === context.viewer &&
     call.destination.channelId === context.channelId;
-  // Load archive evidence so an archived agent is never offered or invited.
-  useAgentChoices(connection.session, false, true);
-  const voiceAgent =
-    props.agents && dmVoiceAgent(connection, context, props.agents);
   if (parent?.archived) return null;
   if (props.menu && active) return null;
   if (here && call.id)
@@ -137,11 +127,9 @@ export function HuddleLauncher(props: Props) {
           ? parent?.channelType === "solo"
             ? "Join huddle"
             : `Join active huddle (${incoming.participants} ${incoming.participants === 1 ? "participant" : "participants"})`
-          : voiceAgent
-            ? `Talk with ${voiceAgent.name}`
-            : parent?.channelType === "solo"
-              ? "Start a huddle"
-              : "Start or join a huddle";
+          : parent?.channelType === "solo"
+            ? "Start a huddle"
+            : "Start or join a huddle";
   const activate = () => {
     if (!available()) return;
     if (call.phase === "connecting") void huddles.leave();
@@ -178,11 +166,7 @@ export function HuddleLauncher(props: Props) {
       {confirming === target && (
         <AlertDialog
           title="Start a huddle?"
-          description={
-            voiceAgent
-              ? `Your microphone will turn on and ${voiceAgent.name} will join automatically.`
-              : "Your microphone will turn on, and others in this conversation can join."
-          }
+          description="Your microphone will turn on, and others in this conversation can join."
           initialFocus={proceed}
           onClose={close}
           actions={

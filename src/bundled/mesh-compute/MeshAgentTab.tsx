@@ -23,7 +23,7 @@ const MODES = options([
 ]);
 const MODE_DESCRIPTIONS: Record<MeshMode, string> = {
   chat: "Answers from the conversation alone, with no tools. Suits small models.",
-  agent: "Works with shell, project skills and Buzz tools.",
+  agent: "Works with shell, project skills and Zion tools.",
 };
 const SCOPES = options([
   ["thread", "One session per thread"],

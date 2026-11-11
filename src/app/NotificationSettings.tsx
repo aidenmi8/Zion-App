@@ -319,7 +319,7 @@ export function NotificationSettings({
         )}
         {active && state.error && (
           <ToastNotice
-            title="Buzz couldn’t send the notification"
+            title="Zion couldn’t send the notification"
             description={state.error}
           />
         )}

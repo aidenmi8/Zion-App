@@ -97,7 +97,7 @@ it("observes live Solo completions through community restoration without replayi
     for (const listener of listeners) listener();
   });
   expect(
-    screen.getByRole("status", { name: "Opening Buzz" }),
+    screen.getByRole("status", { name: "Opening Zion" }),
   ).toBeInTheDocument();
 
   act(() => live.finish({ ok: true }));

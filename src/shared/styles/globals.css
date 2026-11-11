@@ -290,14 +290,13 @@
   .shell-pages {
     @apply flex min-w-0 flex-col gap-1;
   }
-  /* Matches ChannelSidebarRow's icon box and centers larger avatars around the
-     same icon slot without moving the label column. */
+  /* Matches ChannelSidebarRow's icon box so page rows share its icon and label
+     columns. */
   .shell-page-icon {
     display: inline-grid;
     width: 1.25rem;
     height: 1.25rem;
     flex: 0 0 1.25rem;
-    place-content: center;
     place-items: center;
   }
   .shell-navigation,

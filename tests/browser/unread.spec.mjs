@@ -7,7 +7,6 @@ import {
   holdReadingFocus,
   releaseReadingFocus,
 } from "./reading.mjs";
-import { channelUnread } from "./unread-state.mjs";
 
 const alphaId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 test.use({
@@ -138,11 +137,10 @@ test("built sidebar → visible dwell → durable journal → encrypted broker p
     )
     .toBe(true);
   // Wait for the bounded roster-wide repair, not merely the first 20-row head.
-  // The open channel's row is quiet; the engine keeps the unread.
-  await expect
-    .poll(async () => (await channelUnread(page, alphaId)).observedCount)
-    .toBe(500);
-  await expect(alpha(page).getByRole("img")).toHaveCount(0);
+  await expect(alpha(page).getByRole("img")).toHaveAttribute(
+    "aria-label",
+    /^500 observed unread messages/,
+  );
   await park(page);
   await releaseReadingFocus(page);
   // Install after startup and focus cancellation have settled on the real
@@ -429,12 +427,10 @@ test.describe("explicit mark-through with membership activity", () => {
           history(page).locator("[data-membership-row]"),
         ).toHaveCount(1);
         if (!activityOnly) {
-          // The open channel's row is quiet; the engine keeps the unread.
-          await expect
-            .poll(
-              async () => (await channelUnread(page, alphaId)).observedCount,
-            )
-            .toBe(2);
+          await expect(alpha(page).getByRole("img")).toHaveAttribute(
+            "aria-label",
+            /^2 observed unread messages/,
+          );
         }
         await options(page);
         await page
@@ -518,10 +514,7 @@ test.describe("a join burst longer than a history page", () => {
     // Startup focus would read Alpha before the unread baseline is observed.
     await holdReadingFocus(page);
     await open(page, app);
-    // The open channel's row is quiet; the engine keeps the unread.
-    await expect
-      .poll(async () => (await channelUnread(page, alphaId)).observedCount)
-      .toBeGreaterThan(0);
+    await expect(alpha(page).locator("[data-channel-unread]")).toHaveCount(1);
     await releaseReadingFocus(page);
     await composer(page).focus();
     const latest = app.histories
@@ -533,9 +526,7 @@ test.describe("a join burst longer than a history page", () => {
           (await journal(page))?.state.frontiers[`activity:${alphaId}`],
       )
       .toBe(latest.created_at);
-    await expect
-      .poll(async () => (await channelUnread(page, alphaId)).observedCount)
-      .toBe(0);
+    await expect(alpha(page).locator("[data-channel-unread]")).toHaveCount(0);
   });
 });
 

@@ -256,9 +256,8 @@ test("section labels fade on overflow and recover when widened", async ({
         const rect = title.getBoundingClientRect();
         const labelRect = label.getBoundingClientRect();
         const actions = element
-          .closest(".navigation-section-heading")
-          .querySelector(".navigation-section-heading-actions")
-          .getBoundingClientRect();
+          .closest("details")
+          .nextElementSibling.getBoundingClientRect();
         return {
           wrapped:
             rect.height > Number.parseFloat(getComputedStyle(title).lineHeight),
@@ -289,9 +288,8 @@ test("section labels fade on overflow and recover when widened", async ({
           const chevron = element.lastElementChild.getBoundingClientRect();
           const buttons = [
             ...element
-              .closest(".navigation-section-heading")
-              .querySelector(".navigation-section-heading-actions")
-              .querySelectorAll("button"),
+              .closest("details")
+              .nextElementSibling.querySelectorAll("button"),
           ].map((button) => button.getBoundingClientRect());
           return {
             centered: [chevron, ...buttons].every(
@@ -321,8 +319,6 @@ test("section labels fade on overflow and recover when widened", async ({
 
   // Enlarging a narrow saved section must preserve useful text space without
   // changing this same single-line fading contract.
-  // At rest: revealed actions take their width back from the label.
-  await page.mouse.move(0, 0);
   await page.evaluate(() => {
     localStorage.setItem("buzz-font-scale.v1", "2");
     window.dispatchEvent(

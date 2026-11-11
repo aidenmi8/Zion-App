@@ -27,7 +27,7 @@ export function KeyLost({
           Lost your key?
         </h1>
         <p className="mt-2 text-body text-subtle">
-          Check another device where you’re signed in to Buzz, or look for a
+          Check another device where you’re signed in to Zion, or look for a
           backup. Without a copy or a usable backup, we can’t recover your key.
         </p>
         <p className="mt-2 text-body text-subtle">

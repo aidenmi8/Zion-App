@@ -29,6 +29,8 @@ import {
   testCalls,
   vitestFilters,
   vitestLaneSeconds,
+  vitestShard,
+  vitestShards,
 } from "../../scripts/flake-check.mjs";
 
 // A hunk writing new-side lines start..end; by default it removed nothing.
@@ -271,6 +273,33 @@ test("the selection executes every case of a multiline Vitest parameterized test
   );
 });
 
+test("Vitest listing handles more than one MiB of test metadata", (t) => {
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+  process.env.BUZZ_FLAKE_CHECK_FIXTURE = "1";
+  t.after(() => delete process.env.BUZZ_FLAKE_CHECK_FIXTURE);
+  const dir = mkdtempSync(
+    join(root, "tests/fixtures/design-system/flake-selection-large-"),
+  );
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const file = join(dir, "large.test.tsx");
+  writeFileSync(
+    file,
+    [
+      'import { it } from "vitest";',
+      'it.each(Array.from({ length: 1600 }, (_, index) => ["case-" + index + "-" + "x".repeat(700)]))(',
+      '  "%s",',
+      "  () => {},",
+      ");",
+      "",
+    ].join("\n"),
+  );
+  const locations = listVitest([relative(root, file)]).get(
+    relative(root, file),
+  );
+  assert.equal(locations.length, 1600);
+  assert.ok(locations.every((line) => line === 2));
+});
+
 test("hunks inside tests select those tests; shared code, new or unlisted files select the whole file", () => {
   const bodies = [
     { start: 10, end: 22, line: 10 },
@@ -451,10 +480,50 @@ test("measurement specs list no engine journeys, alone or beside functional spec
   assert.ok(repeatableLines(journeys).length < journeys.length);
 });
 
-test("browser repetitions get one shard per five journeys, at most sixteen", () => {
+test("browser repetitions get one shard per five journeys, at most sixty-four", () => {
   assert.deepEqual(
-    [0, 1, 5, 6, 18, 40, 41, 80, 81, 200].map(browserShards),
-    [1, 1, 1, 2, 4, 8, 9, 16, 16, 16],
+    [0, 1, 5, 6, 18, 40, 41, 80, 81, 200, 535].map(browserShards),
+    [1, 1, 1, 2, 4, 8, 9, 16, 17, 40, 64],
+  );
+});
+
+test("Vitest shards preserve every selected filter for ten independent repetitions", () => {
+  const filters = Array.from(
+    { length: 336 },
+    (_, index) => `test-${index}.test.ts`,
+  );
+  assert.equal(vitestShards(filters.length), 10);
+  assert.equal(vitestShards(2), 2);
+  const shards = Array.from({ length: 10 }, (_, index) =>
+    vitestShard(filters, index + 1, 10),
+  );
+  assert.deepEqual(
+    shards.map((shard) => shard.length),
+    [34, 34, 34, 34, 34, 34, 33, 33, 33, 33],
+  );
+  assert.deepEqual(new Set(shards.flat()), new Set(filters));
+  assert.deepEqual(vitestShard(["one", "two", "three"], 2, 2), ["two"]);
+  assert.throws(() => vitestShard(filters, 0, 10));
+});
+
+test("CI repeats every Vitest shard ten times in bounded two-run jobs", () => {
+  const workflow = readFileSync(
+    new URL("../../.github/workflows/ci.yml", import.meta.url),
+    "utf8",
+  );
+  const lane = workflow
+    .split("  flake_vitest:\n")[1]
+    ?.split("\n  flake_browser:")[0];
+  assert.ok(lane, "Vitest flake lane exists");
+  assert.ok(lane.includes("batch: [1, 2, 3, 4, 5]"));
+  assert.match(
+    lane,
+    /shard: \$\{\{ fromJSON\(needs\.flake_select\.outputs\.vitest_shards\) \}\}/,
+  );
+  assert.match(lane, /vitest --iterations=2 --shard=\$\{\{ matrix\.shard \}\}/);
+  assert.match(
+    lane,
+    /name: flake-vitest-\$\{\{ matrix\.shard \}\}-\$\{\{ matrix\.batch \}\}/,
   );
 });
 
@@ -954,8 +1023,8 @@ test("predicted browser lane time is the slowest engine's slowest shard, with jo
   close(browserLaneSeconds([10, 20], 5), 105 + 1.11 * 100);
   // A sixth journey adds a shard; the slowest runs 1.22× their mean.
   close(browserLaneSeconds([10, 20], 6), 105 + 1.11 * 1.22 * 50);
-  // Shards stop at sixteen, so each takes more of a larger selection.
-  close(browserLaneSeconds([0, 160], 160), 105 + 1.11 * 1.22 * 50);
+  // The shard cap still bounds each job for a very large selection.
+  close(browserLaneSeconds([0, 160], 160), 105 + 1.11 * 1.22 * 25);
 });
 
 test("predicted Vitest lane time follows the summed files on two workers or the slowest file", () => {
@@ -963,9 +1032,9 @@ test("predicted Vitest lane time follows the summed files on two workers or the 
     assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≠ ${expected}`);
   assert.equal(vitestLaneSeconds([]), 0);
   // Every file pays 2.5 s of setup on top of its tests.
-  close(vitestLaneSeconds([10, 10, 10, 10]), 26 + 5 * (2.6 + 0.74 * 25));
-  close(vitestLaneSeconds(Array(20).fill(0)), 26 + 5 * (2.6 + 0.74 * 25));
-  close(vitestLaneSeconds([143, 1]), 26 + 5 * (2.6 + 0.74 * 145.5));
+  close(vitestLaneSeconds([10, 10, 10, 10]), 26 + 10 * (2.6 + 0.74 * 12.5));
+  close(vitestLaneSeconds(Array(20).fill(0)), 26 + 10 * (2.6 + 0.74 * 2.5));
+  close(vitestLaneSeconds([143, 1]), 26 + 10 * (2.6 + 0.74 * 145.5));
   // One 143 s file, as MessageComposer.test.tsx takes on CI, cannot join as a
   // related pick within the default budget.
   assert.ok(vitestLaneSeconds([143]) > LANE_BUDGET_MINUTES * 60);

@@ -11,7 +11,6 @@ import {
 } from "../federated-identity/testing";
 import {
   backupOfferedFor,
-  builderlabPhone,
   federatedBuilderlabAccount,
   seededAccount,
 } from "./builderlab-account";
@@ -165,7 +164,7 @@ describe("linkedKey", () => {
     [
       "an account without the USER role",
       refusal(403, "unauthorized"),
-      "This Builderlab account can't manage Buzz identities right now. Try signing in again.",
+      "This Builderlab account can't manage Zion identities right now. Try signing in again.",
     ],
     ["a lapsed session", lapsed, signedOut],
     [
@@ -341,10 +340,10 @@ describe("hosted community creation", () => {
       untouched,
     );
     await expect(account.createCommunity("north-star")).rejects.toThrow(
-      "That Buzz address is already taken.",
+      "That Zion address is already taken.",
     );
     await expect(account.communityAvailable("north-star")).rejects.toThrow(
-      "Connect your Buzz identity before creating a community.",
+      "Connect your Zion identity before creating a community.",
     );
     await expect(account.createCommunity("north-star")).rejects.toThrow(
       "Builderlab community create failed (HTTP 200: no community address).",
@@ -640,18 +639,18 @@ describe("bind", () => {
     [
       "a verify for an account bound to another key",
       [answer(200, challenge), refusal(409, "identity_already_bound")],
-      "This Builderlab account is connected to another Buzz identity.",
+      "This Builderlab account is connected to another Zion identity.",
     ],
     [
       "a verify for a key bound to another account",
       [answer(200, challenge), refusal(409, "pubkey_already_bound")],
-      "This Buzz identity is connected to another Builderlab account.",
+      "This Zion identity is connected to another Builderlab account.",
     ],
     // kgoose's codes the card lacks.
     [
       "a challenge refused for its origin",
       [refusal(403, "invalid_origin")],
-      "Builderlab didn’t accept this request from Buzz.",
+      "Builderlab didn’t accept this request from Zion.",
     ],
     [
       "a challenge refused for too many open challenges",
@@ -737,13 +736,13 @@ describe("bind", () => {
     [
       "identity_already_bound",
       409,
-      "This Builderlab account is connected to another Buzz identity.",
+      "This Builderlab account is connected to another Zion identity.",
       false,
     ],
     [
       "pubkey_already_bound",
       409,
-      "This Buzz identity is connected to another Builderlab account.",
+      "This Zion identity is connected to another Builderlab account.",
       false,
     ],
     // Defensive, not a kgoose reply: its identity routes never send `unknown`,
@@ -798,7 +797,7 @@ describe("bind", () => {
       [
         "pubkey_already_bound",
         409,
-        "This Buzz identity is connected to another Builderlab account.",
+        "This Zion identity is connected to another Builderlab account.",
       ],
     ] as const) {
       warn.mockClear();
@@ -936,88 +935,6 @@ describe("bind", () => {
       );
     },
   );
-
-  describe("bindLegacy", () => {
-    const legacy = [
-      "identity_sign_builderlab_binding",
-      { challenge, legacy: true },
-    ];
-
-    it("signs with old Buzz's key, verifies it and resolves to the key bound", async () => {
-      vi.mocked(invoke).mockResolvedValue(event);
-      const { request, sent } = kgoose(
-        unbound,
-        answer(200, challenge),
-        bound(pubkey),
-      );
-      const account = forwardedAccount(credential, request, untouched);
-      expect(await account.bindLegacy()).toBe(pubkey);
-      expect(sent.map(({ url }) => url.split("/").at(-1))).toEqual([
-        "current",
-        "challenge",
-        "verify",
-      ]);
-      expect(vi.mocked(invoke).mock.calls).toEqual([legacy]);
-    });
-
-    it("sends no verify when the account already holds old Buzz's key", async () => {
-      vi.mocked(invoke).mockResolvedValue(event);
-      const { request, sent } = kgoose(bound(pubkey), answer(200, challenge));
-      const account = forwardedAccount(credential, request, untouched);
-      expect(await account.bindLegacy()).toBe(pubkey);
-      expect(sent.map(({ url }) => url.split("/").at(-1))).toEqual([
-        "current",
-        "challenge",
-      ]);
-    });
-
-    it("resolves null when kgoose refuses old Buzz's key as another account's", async () => {
-      vi.spyOn(console, "warn").mockImplementation(() => {});
-      vi.mocked(invoke).mockResolvedValue(event);
-      const { request } = kgoose(
-        unbound,
-        answer(200, challenge),
-        refusal(409, "pubkey_already_bound"),
-      );
-      const account = forwardedAccount(credential, request, untouched);
-      expect(await account.bindLegacy()).toBeNull();
-    });
-
-    it("resolves null when native can't read old Buzz's key, sending no verify", async () => {
-      vi.mocked(invoke).mockResolvedValue(null);
-      const { request, sent } = kgoose(unbound, answer(200, challenge));
-      const account = forwardedAccount(credential, request, untouched);
-      expect(await account.bindLegacy()).toBeNull();
-      expect(sent).toHaveLength(2);
-    });
-
-    it("fails when native refuses to sign, such as an expired challenge, sending no verify", async () => {
-      vi.mocked(invoke).mockRejectedValue("Invalid Nostr identity challenge");
-      const { request, sent } = kgoose(unbound, answer(200, challenge));
-      const account = forwardedAccount(credential, request, untouched);
-      await expect(account.bindLegacy()).rejects.toThrow(
-        "Invalid Nostr identity challenge",
-      );
-      expect(sent).toHaveLength(2);
-    });
-
-    it.each([
-      [
-        "an account bound to another key",
-        [answer(200, challenge), refusal(409, "identity_already_bound")],
-      ],
-      ["a challenge outage", [answer(502, "<html>bad gateway</html>")]],
-    ])(
-      "fails on %s rather than giving up the old key",
-      async (_label, replies) => {
-        vi.spyOn(console, "warn").mockImplementation(() => {});
-        vi.mocked(invoke).mockResolvedValue(event);
-        const { request } = kgoose(unbound, ...replies);
-        const account = forwardedAccount(credential, request, untouched);
-        await expect(account.bindLegacy()).rejects.toBeInstanceOf(Error);
-      },
-    );
-  });
 });
 
 describe("unbind", () => {
@@ -1162,7 +1079,7 @@ describe("unbind", () => {
     [
       "a refused origin",
       refusal(403, "invalid_origin"),
-      "Builderlab didn’t accept this request from Buzz.",
+      "Builderlab didn’t accept this request from Zion.",
       false,
     ],
     // Defensive, not a kgoose reply: its identity routes never send `unknown`,
@@ -1547,92 +1464,5 @@ describe("federatedBuilderlabAccount", () => {
       ],
     ]);
     expect(fi.request).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("builderlabPhone", () => {
-  const other = "cd".repeat(32);
-  /** A signed-in session whose account answers `current` with `linked` and
-   * `status` with `backups`, and whose native backup is offered. */
-  const phone = async (
-    linked: string | null,
-    backups: string[] | ReturnType<typeof answer> | Error,
-  ) => {
-    const fi = federatedFixture();
-    await fi.service.signIn();
-    fi.request.mockImplementation(async ({ path }: { path: string }) => {
-      if (path.endsWith("/nostr-identities/current"))
-        return answer(200, {
-          identity: linked ? { pubkey_hex: linked } : null,
-        });
-      if (path.endsWith("/nsec-backups/status")) {
-        if (backups instanceof Error) throw backups;
-        return Array.isArray(backups)
-          ? answer(200, {
-              current_nostr_pubkey: linked,
-              backup_nostr_pubkeys: backups,
-            })
-          : backups;
-      }
-      throw new Error(`Unexpected ${path}`);
-    });
-    const send = vi.fn(async (command: string) => {
-      if (command === "nsec_backup_state")
-        return { seq: 1, pass: 0, builderlab: true, status: "idle" };
-    });
-    return {
-      fi,
-      phone: builderlabPhone(fi.service, {
-        ...noRecovery,
-        backup: createBackupStatus(send as never),
-        setBackupChoice: () => {
-          throw new Error("Wrote backup consent");
-        },
-      }),
-    };
-  };
-
-  it("restores this key when it is the account's linked key and is backed up", async () => {
-    const { fi, phone: card } = await phone(pubkey, [pubkey]);
-    expect(await card.restoresOnPhone(pubkey)).toBe(true);
-    expect(await card.restoresOnPhone(pubkey.toUpperCase())).toBe(true);
-    expect(
-      fi.request.mock.calls.map(([input]) => (input as { path: string }).path),
-    ).toEqual(
-      expect.arrayContaining([
-        "/api/goose/v1/buzz/nostr-identities/current",
-        "/api/goose/v1/buzz/nsec-backups/status",
-      ]),
-    );
-  });
-
-  it.each([
-    ["no backup", pubkey, []],
-    ["no key linked", null, [pubkey]],
-    ["a different key linked and backed up", other, [pubkey, other]],
-    ["this key backed up but another linked", other, [pubkey]],
-    ["backups unavailable", pubkey, answer(404, "")],
-    ["a refused status read", pubkey, answer(403, "{}")],
-    ["an unreadable status reply", pubkey, answer(200, "not json")],
-    ["a failed status read", pubkey, new Error("timed out")],
-  ] as const)("does not restore with %s", async (_, linked, backups) => {
-    const { phone: card } = await phone(
-      linked,
-      backups as Parameters<typeof phone>[1],
-    );
-    expect(await card.restoresOnPhone(pubkey)).toBe(false);
-  });
-
-  it("does not restore, and reads nothing, when signed out or with no identity", async () => {
-    const { fi, phone: card } = await phone(pubkey, [pubkey]);
-    fi.publish({ status: "signed-out" });
-    expect(await card.restoresOnPhone(pubkey)).toBe(false);
-    expect(
-      await builderlabPhone(fi.service, undefined).restoresOnPhone(pubkey),
-    ).toBe(false);
-    expect(
-      await builderlabPhone(undefined, undefined).restoresOnPhone(pubkey),
-    ).toBe(false);
-    expect(fi.request).not.toHaveBeenCalled();
   });
 });

@@ -347,10 +347,10 @@ test.describe("visitor", () => {
     app.setChannelMetadata(shared, [...tags, ["public"]]);
     await page.goto(app.origin);
     await page
-      .getByRole("button", { name: "Search Buzz", exact: true })
+      .getByRole("button", { name: "Search Zion", exact: true })
       .click();
     await page
-      .getByRole("combobox", { name: "Search Buzz" })
+      .getByRole("combobox", { name: "Search Zion" })
       .fill("Release planning");
     const result = page
       .locator("[data-search-result]")
@@ -390,7 +390,7 @@ test.describe("visitor", () => {
       await page.keyboard.press("Escape");
       await expect(page.getByRole("menu")).toHaveCount(0);
       const searchButton = page.getByRole("button", {
-        name: "Search Buzz",
+        name: "Search Zion",
         exact: true,
       });
       await searchButton.focus();

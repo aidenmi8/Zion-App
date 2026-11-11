@@ -9,9 +9,9 @@ test("selected author remains a removable chip through typing and date completio
   app,
 }) => {
   await page.goto(app.origin);
-  await page.getByRole("button", { name: "Search Buzz", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Search Buzz" });
-  const input = dialog.getByRole("combobox", { name: "Search Buzz" });
+  await page.getByRole("button", { name: "Search Zion", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Search Zion" });
+  const input = dialog.getByRole("combobox", { name: "Search Zion" });
   await input.fill("from:@fixture");
   await dialog
     .getByRole("group", { name: "People" })
@@ -94,9 +94,9 @@ test("replacing a standalone author chip leaves no hidden operand", async ({
   app,
 }) => {
   await page.goto(app.origin);
-  await page.getByRole("button", { name: "Search Buzz", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Search Buzz" });
-  const input = dialog.getByRole("combobox", { name: "Search Buzz" });
+  await page.getByRole("button", { name: "Search Zion", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Search Zion" });
+  const input = dialog.getByRole("combobox", { name: "Search Zion" });
   const person = dialog
     .getByRole("group", { name: "People" })
     .getByRole("option", { name: /Fixture Reader/ });

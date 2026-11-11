@@ -11,7 +11,6 @@ import type { ProfileQueries } from "../relay/profile-directory";
 import {
   useContext,
   useEffect,
-  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -67,7 +66,6 @@ export function ComposerModels({
   resettable = false,
   explicitOnly = false,
   onChange,
-  focusAfterPickerRemoval,
   onResolved,
   onRetryInventory,
   startsThread,
@@ -83,7 +81,6 @@ export function ComposerModels({
   /** A new Solo chat keeps provider defaults unchanged unless picked. */
   explicitOnly?: boolean;
   onChange(value: DraftPicks, resetPubkeys?: readonly string[]): void;
-  focusAfterPickerRemoval(): void;
   /** null waits for choices; undefined invalidates the picker's snapshot. */
   onResolved(value: MentionPicks | null | undefined, error?: string): void;
   onRetryInventory?(): void;
@@ -94,7 +91,6 @@ export function ComposerModels({
 }) {
   const [open, setOpen] = useState(false);
   const [retry, setRetry] = useState(0);
-  const unavailableDescriptionId = useId();
   const mentioned = useMentionModels(pubkeys, retry);
   const choices = useMemo<readonly MentionModelChoice[]>(
     () =>
@@ -102,22 +98,15 @@ export function ComposerModels({
         const { session, ...catalog } = choice;
         const visible: MentionModelChoice =
           startsThread && session === "thread" ? catalog : choice;
-        const unavailablePick = unavailableSavedPick(
-          visible,
-          value[visible.pubkey] ?? {},
-          resettable,
-          explicitOnly,
-        );
         return visible.loading ||
           visible.failed ||
           visible.models.length > 1 ||
           visible.models.some((model) => model.efforts.length) ||
-          visible.session ||
-          unavailablePick
+          visible.session
           ? [visible]
           : [];
       }),
-    [mentioned, startsThread, resettable, explicitOnly, value],
+    [mentioned, startsThread],
   );
   const profileKey = pubkeys.join(":");
   const selection = useMemo(
@@ -177,7 +166,6 @@ export function ComposerModels({
   }, [agents, mentioned, value, onChange]);
   const thumb = useRef<HTMLInputElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const restoreComposerFocusAfterReset = useRef(false);
   // Publish the displayed defaults separately from the user's draft picks.
   // A settings refresh or model-only pick must still follow the new default.
   useLayoutEffect(() => {
@@ -249,44 +237,23 @@ export function ComposerModels({
   const canReset =
     resettable &&
     pubkeys.some((pubkey) => value[pubkey]?.model || value[pubkey]?.effort);
-  useLayoutEffect(() => {
-    if (!restoreComposerFocusAfterReset.current || open) return;
-    restoreComposerFocusAfterReset.current = false;
-    if (!trigger.current?.isConnected) focusAfterPickerRemoval();
-  }, [open, focusAfterPickerRemoval]);
   if (!choices.length && !inventoryFailed && !canReset) return null;
   const picked = choices.flatMap((choice) => {
     if (choice.loading) return [];
     const { model, effort } = value[choice.pubkey] ?? {};
     const runs = runModel(choice, model);
     const selected = choice.models.some((item) => item.id === model);
-    const unavailable = unavailableSavedPick(
-      choice,
-      value[choice.pubkey] ?? {},
-      resettable,
-      explicitOnly,
-    );
     const savedEffortApplies = !resettable || !model || selected;
     const supportedEffort = savedEffortApplies
       ? runs.efforts.find((item) => item.id === effort)
       : undefined;
-    const text =
-      unavailable ??
-      [selected && runs.label, effort !== undefined && supportedEffort?.label]
-        .filter(Boolean)
-        .join(" · ");
+    const text = [
+      selected && runs.label,
+      effort !== undefined && supportedEffort?.label,
+    ]
+      .filter(Boolean)
+      .join(" · ");
     return text ? [choices.length > 1 ? `${choice.name}: ${text}` : text] : [];
-  });
-  const unavailableDescription = choices.flatMap((choice) => {
-    const unavailable = unavailableSavedPick(
-      choice,
-      value[choice.pubkey] ?? {},
-      resettable,
-      explicitOnly,
-    );
-    return unavailable
-      ? [choices.length > 1 ? `${choice.name}: ${unavailable}` : unavailable]
-      : [];
   });
   const pick = (pubkey: string, next: RunPick) => {
     const { [pubkey]: _, ...rest } = value;
@@ -303,14 +270,8 @@ export function ComposerModels({
       ? "Model and effort for this chat"
       : "Model and effort for the next run";
   const target = resettable ? "this chat" : "next run";
-  const unavailableDescriptionText = unavailableDescription.join(" ");
   return (
     <Popover.Root open={open && !disabled} onOpenChange={setOpen}>
-      {unavailableDescriptionText && (
-        <span id={unavailableDescriptionId} className="sr-only">
-          {unavailableDescriptionText}
-        </span>
-      )}
       <Popover.Trigger
         disabled={disabled}
         render={
@@ -321,9 +282,6 @@ export function ComposerModels({
             disabled={disabled}
             data-selected={picked.length ? "" : undefined}
             aria-label={label}
-            aria-describedby={
-              unavailableDescriptionText ? unavailableDescriptionId : undefined
-            }
             title={
               picked.length
                 ? `${label}. ${target}: ${picked.join(", ")}`
@@ -348,16 +306,6 @@ export function ComposerModels({
             aria-label={label}
             initialFocus={thumb}
           >
-            <div
-              className="sr-only"
-              role="status"
-              aria-label="Saved model and effort availability"
-              aria-atomic="true"
-            >
-              <span className={styles.statusCopy}>
-                {unavailableDescriptionText}
-              </span>
-            </div>
             {inventoryFailed && (
               <div className={`${styles.agent} floating-surface`}>
                 <PanelHeader
@@ -389,7 +337,6 @@ export function ComposerModels({
                 variant="subtle"
                 size="sm"
                 onClick={() => {
-                  restoreComposerFocusAfterReset.current = true;
                   const addressed = new Set(pubkeys);
                   onChange(
                     Object.fromEntries(
@@ -409,12 +356,6 @@ export function ComposerModels({
               <AgentChoice
                 key={choice.pubkey}
                 choice={choice}
-                availability={unavailableSavedPick(
-                  choice,
-                  value[choice.pubkey] ?? {},
-                  resettable,
-                  explicitOnly,
-                )}
                 avatarSrc={avatarMedia(
                   portraits.get(choice.pubkey)?.picture,
                   media,
@@ -441,49 +382,8 @@ const runModel = (choice: MentionModelChoice, picked: string | undefined) =>
   choice.models.find((item) => item.id === choice.current) ??
   choice.models[0] ?? { id: "", label: "", efforts: [] };
 
-function unavailableSavedPick(
-  choice: MentionModelChoice,
-  value: RunPick,
-  resettable: boolean,
-  explicitOnly: boolean,
-) {
-  if (!resettable || choice.loading || choice.failed) return undefined;
-  const selectedModel = choice.models.some((item) => item.id === value.model);
-  const runs = runModel(choice, value.model);
-  const unavailableModel = Boolean(value.model && !selectedModel);
-  const unavailableEffort = Boolean(
-    value.effort &&
-      (!value.model || selectedModel) &&
-      !runs.efforts.some((item) => item.id === value.effort),
-  );
-  if (!unavailableModel && !unavailableEffort) return undefined;
-  const defaultEffort = runs.efforts.find((item) => item.id === runs.effort);
-  const modelIsKnown =
-    selectedModel ||
-    (choice.sendDefaults && !explicitOnly) ||
-    choice.current === runs.id;
-  const fallback = runs.id
-    ? !modelIsKnown
-      ? "Send omits model and effort overrides; the agent or provider decides which model runs"
-      : `Using ${runs.label}${
-          defaultEffort
-            ? ` with its default effort (${defaultEffort.label})`
-            : runs.efforts.length
-              ? " with the provider's default effort"
-              : ""
-        }`
-    : "No supported model is listed in the loaded catalog. Send omits model and effort overrides and uses the agent's defaults";
-  const reason = unavailableModel
-    ? "Saved model is unavailable."
-    : modelIsKnown && runs.id
-      ? `Saved effort is unavailable for ${runs.label}.`
-      : "Saved effort is unavailable.";
-  return `${reason} ${fallback}. Your saved choice is retained until you reset it.`;
-}
-
 function AgentChoice({
   choice,
-  availability,
   avatarSrc,
   place,
   value,
@@ -494,7 +394,6 @@ function AgentChoice({
   thumb,
 }: {
   choice: MentionModelChoice;
-  availability: string | undefined;
   avatarSrc: string | undefined;
   place: SessionPlace;
   value: RunPick;
@@ -609,11 +508,6 @@ function AgentChoice({
           )
         }
       />
-      {availability && (
-        <div className={styles.status} aria-hidden="true">
-          <span className={styles.statusCopy}>{availability}</span>
-        </div>
-      )}
       <div className={styles.controls}>
         {choice.failed ? (
           <div className={styles.status}>

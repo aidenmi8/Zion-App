@@ -219,7 +219,7 @@ it("starts no review worker until a Buzz sign-in records a ChatGPT workspace", a
       f.homes,
     ),
   ).rejects.toThrow(
-    "need a ChatGPT sign-in made in Buzz, which Settings → Agent setup",
+    "need a ChatGPT sign-in made in Zion. Use Sign in again in Settings",
   );
   expect(f.spawn).not.toHaveBeenCalled();
 });
@@ -240,7 +240,7 @@ it("refuses a recorded workspace that could escape its config string", async () 
       f.homes,
     ),
   ).rejects.toThrow(
-    "need a ChatGPT sign-in made in Buzz, which Settings → Agent setup",
+    "need a ChatGPT sign-in made in Zion. Use Sign in again in Settings",
   );
   expect(f.spawn).not.toHaveBeenCalled();
 });

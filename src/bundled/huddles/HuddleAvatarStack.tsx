@@ -1,4 +1,3 @@
-import { TypingDots } from "../../shared/design-system/ui/TypingDots";
 import { useProfileGeneration } from "../../features/relay/react";
 import { HuddleAvatarMotion } from "./HuddleAvatarMotion";
 import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
@@ -12,14 +11,10 @@ export function HuddleAvatarStack({
   participants,
   relay,
   transition = false,
-  thinking = [],
-  speakers,
 }: {
   participants: readonly string[];
   relay: RelayData;
   transition?: boolean;
-  thinking?: readonly string[] | undefined;
-  speakers?: Readonly<Record<string, number>> | undefined;
 }) {
   const { session } = useSyncExternalStore(relay.subscribe, relay.snapshot);
   const profiles = useSyncExternalStore(
@@ -37,11 +32,7 @@ export function HuddleAvatarStack({
   }, [keys, session, profileGeneration]);
   const name = (key: string) =>
     profiles.get(key)?.name || formatPublicKey(key) || "Participant";
-  const isThinking = (key: string) =>
-    thinking.includes(key) && !speakers?.[key];
-  const label = participants
-    .map((key) => `${name(key)}${isThinking(key) ? ", thinking" : ""}`)
-    .join(", ");
+  const label = participants.map(name).join(", ");
   const visible = participants.slice(-4);
   const hidden = participants.length - visible.length;
   const slots = visible.length + (hidden ? 1 : 0);
@@ -75,11 +66,6 @@ export function HuddleAvatarStack({
                 alt=""
               />
             </HuddleAvatarMotion>
-            {isThinking(key) && (
-              <span className={styles.thinkingDots} aria-hidden="true">
-                <TypingDots size="small" />
-              </span>
-            )}
           </span>
         );
       })}

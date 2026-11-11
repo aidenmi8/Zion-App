@@ -93,7 +93,6 @@ function fixture() {
               selected={selected}
               onSelect={() => {}}
               onOpenThread={() => {}}
-              onOpenMessage={() => {}}
             />
           </Profiler>
         </div>

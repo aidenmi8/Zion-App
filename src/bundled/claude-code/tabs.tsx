@@ -8,19 +8,16 @@ import { AgentSaveButton } from "../../features/agents/AgentSaveButton";
 import { ProviderDialogActions } from "../../features/agents/ProviderDialogActions";
 // Claude's provider controls, New agent choices, and agent settings.
 import {
-  type ReactNode,
   useEffect,
   useRef,
   useId,
   useState,
   useSyncExternalStore,
 } from "react";
-import { PreferenceRow } from "../../shared/design-system/ui/PreferenceRow";
 import { TranscriptPanel } from "../../features/agents/TranscriptPanel";
 import { AgentInstructions } from "../../features/agents/AgentInstructions";
 import { CreateModelChoices } from "../../features/agents/CreateModelChoices";
 import { Dialog } from "../../shared/design-system/ui/Dialog";
-import { useToastNotification } from "../../shared/design-system/ui/Toast";
 import { Accordion } from "../../shared/design-system/ui/Accordion";
 import { ModelPicker } from "../../features/agents/ModelPicker";
 import {
@@ -49,7 +46,6 @@ import {
   type SavedConversation,
   modelName as resolvedModelName,
 } from "./runtime";
-import { Missing, SignedIn, SignIn } from "./auth";
 import type { ClaudeModel } from "./claude";
 import type { ClaudeSetup } from "./setup";
 import type { ClaudeDefaults } from "./defaults";
@@ -166,25 +162,17 @@ const SCOPES = options([
   ["channel", "One session per channel"],
 ]);
 
-/** A model field's stand-in while Claude cannot run. `inline` asks for
- * sign-in in place; otherwise, as in a row, a button opens setup. */
 function ClaudeSignIn({
   setup,
   disabled,
-  inline = false,
 }: {
   setup: ClaudeSetup;
   disabled: boolean;
-  inline?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const state = useSyncExternalStore(setup.subscribe, setup.snapshot);
   const missing = state.status?.state === "missing";
   const outdated = state.status?.state === "outdated";
-  const signedOut =
-    state.status?.state === "signed-out" && state.running !== "install";
-  if (signedOut && inline)
-    return <SignIn setup={setup} disabled={disabled} variant="compact" />;
   return (
     <>
       <Button
@@ -194,31 +182,21 @@ function ClaudeSignIn({
         onClick={() => {
           if (setup.snapshot().running) return;
           setOpen(true);
-          if (missing || outdated) void setup.run("install");
+          void setup.run(missing || outdated ? "install" : "login");
         }}
       >
-        {missing
-          ? "Install integration"
-          : outdated
-            ? "Update Claude"
-            : signedOut
-              ? setup.auth.attentionLabel
-              : "Set up"}
+        {missing ? "Install Claude" : outdated ? "Update Claude" : "Sign in"}
       </Button>
       <Dialog
         open={open}
-        title={missing || outdated ? "Claude integration" : "Set up Claude"}
+        title={missing || outdated ? "Set up Claude" : "Sign in to Claude"}
+        description="Continue in your browser. If it gives you a code to paste, choose Enter a code below."
         onOpenChange={(next) => {
           setOpen(next);
           if (!next) void setup.cancel();
         }}
       >
-        <ClaudeSetupPanel
-          setup={setup}
-          disabled={disabled}
-          variant="compact"
-          onSaved={() => setOpen(false)}
-        />
+        <ClaudeSetupPanel setup={setup} disabled={disabled} variant="compact" />
       </Dialog>
     </>
   );
@@ -228,55 +206,45 @@ function ClaudeSetupPanel({
   setup,
   disabled = false,
   variant = "full",
-  onSaved,
 }: {
   setup: ClaudeSetup;
   disabled?: boolean;
   variant?: "full" | "compact";
-  /** Follows saved credentials, so the panel's dialog can close. */
-  onSaved?: (() => void) | undefined;
 }) {
   const state = useSyncExternalStore(setup.subscribe, setup.snapshot);
+  const [code, setCode] = useState("");
   useEffect(() => {
     if (!setup.snapshot().status) void setup.check();
   }, [setup]);
   const status = state.status;
-  const signingIn =
-    state.running === "sign-in" ||
-    (status?.state === "signed-out" && !state.running);
   const line =
     !status || state.checking
       ? "Checking Claude…"
       : status.state === "missing"
-        ? "The Claude integration isn't installed yet."
+        ? "Claude is not installed."
         : status.state === "outdated"
-          ? `Claude ${status.version} is older than Buzz needs.`
+          ? `Claude ${status.version} is older than Zion needs.`
           : status.state === "signed-out"
-            ? `Claude ${status.version} ${setup.auth.needs}.`
+            ? `Claude ${status.version} needs you to sign in.`
             : status.state === "ready"
               ? `Claude ${status.version} is ready${status.account ? ` (${status.account})` : ""}.`
               : status.message;
-  // One button per slot, so focus stays put as Install becomes Check again.
+  // One button per slot, so focus stays put as Install becomes Sign in and
+  // Cancel becomes Check again.
   const action =
     status?.state === "missing"
-      ? ({ step: "install", label: "Install integration" } as const)
+      ? ({ step: "install", label: "Install Claude" } as const)
       : status?.state === "outdated"
         ? ({ step: "install", label: "Update Claude" } as const)
-        : undefined;
+        : status?.state === "signed-out"
+          ? ({ step: "login", label: "Sign in" } as const)
+          : undefined;
   return (
     <section className="grid gap-2">
       {!(variant === "compact" && status?.state === "signed-out") && (
         <p role="status" className="m-0">
           {line}
         </p>
-      )}
-      {signingIn && (
-        <SignIn
-          setup={setup}
-          disabled={disabled}
-          variant={variant}
-          onSaved={onSaved}
-        />
       )}
       <div className="flex flex-wrap gap-2">
         {action && (
@@ -292,28 +260,27 @@ function ClaudeSetupPanel({
             {action.label}
           </Button>
         )}
-        {/* A running sign-in has its own controls. */}
         {(variant !== "compact" ||
           status?.state !== "signed-out" ||
-          state.running) &&
-          state.running !== "sign-in" && (
-            <Button
-              variant="ghost"
-              disabled={!state.running && state.checking}
-              focusableWhenDisabled
-              onClick={() =>
-                void (state.running ? setup.cancel() : setup.check(true))
-              }
-            >
-              {state.running ? "Cancel" : "Check again"}
-            </Button>
-          )}
+          state.running) && (
+          <Button
+            variant="ghost"
+            disabled={!state.running && state.checking}
+            focusableWhenDisabled
+            onClick={() =>
+              void (state.running ? setup.cancel() : setup.check(true))
+            }
+          >
+            {state.running ? "Cancel" : "Check again"}
+          </Button>
+        )}
       </div>
       {status?.state === "missing" && (
         <p className="m-0 text-body-sm text-subtle">
-          Downloads Buzz's own copy of Claude (about 250 MB) and keeps it on the
-          latest release. Your own installation of Claude will be unaffected,
-          and uses the same settings.
+          Downloads Zion's own copy of Claude (about 250 MB) from
+          downloads.claude.ai and keeps it on the latest release. It does not
+          change the <code>claude</code> in your terminal, and uses the same
+          sign-in and settings.
         </p>
       )}
       {state.output && (
@@ -335,6 +302,47 @@ function ClaudeSetupPanel({
           ]}
         />
       )}
+      {state.running === "login" && (
+        <Accordion
+          items={[
+            {
+              value: "code",
+              title: "Enter a code",
+              content: (
+                <div className="flex items-end gap-2">
+                  <Field
+                    label="Sign-in code"
+                    description="If the browser shows a code to paste, enter it here."
+                  >
+                    <Input
+                      autoFocus
+                      disabled={disabled}
+                      value={code}
+                      onValueChange={setCode}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" || !code.trim() || disabled)
+                          return;
+                        event.preventDefault();
+                        void setup.answer(code);
+                        setCode("");
+                      }}
+                    />
+                  </Field>
+                  <Button
+                    disabled={disabled || !code.trim()}
+                    onClick={() => {
+                      void setup.answer(code);
+                      setCode("");
+                    }}
+                  >
+                    Send
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+        />
+      )}
     </section>
   );
 }
@@ -343,19 +351,14 @@ export function createTabs({
   setup,
   defaults,
   runtime,
-  openSetup,
 }: Readonly<{
   setup: ClaudeSetup;
   defaults: ClaudeDefaults;
   runtime: ClaudeRuntime;
-  /** Opens Claude's setup in Settings → Agent setup. */
-  openSetup?: () => void;
 }>) {
-  /** Whether `agent` runs on an execution target; undefined while that is
-   * being resolved, and for no agent. */
-  function useRemote(agent: AgentViewProps<Config>["agent"] | undefined) {
-    const key = agent?.key;
-    const selection = JSON.stringify(agent?.executionBinding ?? null);
+  function useRemote(agent: AgentViewProps<Config>["agent"]) {
+    const key = agent.key;
+    const selection = JSON.stringify(agent.executionBinding ?? null);
     const [state, setState] = useState<{
       agent: string;
       selection: string;
@@ -363,7 +366,6 @@ export function createTabs({
       error?: string;
     }>();
     useEffect(() => {
-      if (!key) return;
       let current = true;
       void runtime.isRemote(key).then(
         (remote) => {
@@ -378,7 +380,7 @@ export function createTabs({
         current = false;
       };
     }, [key, selection]);
-    return key && state?.agent === key && state.selection === selection
+    return state?.agent === key && state.selection === selection
       ? state
       : undefined;
   }
@@ -434,21 +436,8 @@ export function createTabs({
           Checking sign-in…
         </span>
       );
-    // A library card is one agent's: the key is added once, in Settings.
-    if (
-      props.modelAppearance === "glass-ghost" &&
-      state.status.state === "signed-out" &&
-      !state.running
-    )
-      return <Missing openSettings={openSetup} />;
     if (state.status.state !== "ready" || state.running)
-      return (
-        <ClaudeSignIn
-          setup={setup}
-          disabled={props.disabled}
-          inline={props.modelAppearance === "inverted"}
-        />
-      );
+      return <ClaudeSignIn setup={setup} disabled={props.disabled} />;
     return (
       <CreateModelChoices
         {...props}
@@ -558,151 +547,6 @@ export function createTabs({
     );
   }
 
-  /** Whether a new or edited agent waits for this computer's credentials.
-   * An agent being edited may run on an execution target, which brings its
-   * own: only one that runs here needs them. One whose place can't be told
-   * is taken to run here. */
-  function useCredentials(agent: AgentCreateProps<Config>["agent"]) {
-    const state = useSetupCatalog();
-    const execution = useRemote(agent);
-    const resolving = !!agent && !execution;
-    const local = !agent || (!!execution && execution.remote !== true);
-    const signedOut =
-      local &&
-      state.status?.state === "signed-out" &&
-      state.running !== "install";
-    return { state, resolving, signedOut };
-  }
-
-  /** Beside Harness while Claude has no credentials, as Builderlab's Sign in
-   * is: opens Set up Claude. Credentials close it and say so; closing it
-   * stops a sign-in it started. */
-  function CreateAction({
-    agent,
-    disabled,
-  }: {
-    agent?: AgentCreateProps<Config>["agent"];
-    disabled: boolean;
-  }) {
-    const { state, signedOut } = useCredentials(agent);
-    const notify = useToastNotification();
-    // Passive Back may have hidden the action while its provider kept working.
-    const [open, setOpen] = useState(
-      () => signedOut && state.running === "sign-in",
-    );
-    const openNow = useRef(open);
-    openNow.current = open;
-    const notifyNow = useRef(notify);
-    notifyNow.current = notify;
-    useEffect(() => {
-      if (signedOut || !openNow.current) return;
-      setOpen(false);
-      notifyNow.current(
-        "Claude is set up",
-        "success",
-        openSetup && { label: "Manage in Settings", onClick: openSetup },
-      );
-    }, [signedOut]);
-    const signingIn = state.running === "sign-in";
-    return (
-      <>
-        {signedOut && (
-          <Button
-            size="sm"
-            variant="subtle"
-            shape="capsule"
-            disabled={disabled}
-            aria-label={setup.auth.attentionLabel}
-            title={setup.auth.attentionLabel}
-            onClick={() => setOpen(true)}
-          >
-            {setup.auth.signIn ? "Sign in" : "Add key"}
-          </Button>
-        )}
-        <Dialog
-          open={open && signedOut}
-          title="Set up Claude"
-          actions={
-            signingIn && (
-              <Button variant="ghost" onClick={() => void setup.cancel()}>
-                Cancel
-              </Button>
-            )
-          }
-          onOpenChange={(next) => {
-            setOpen(next);
-            if (!next && setup.snapshot().running === "sign-in")
-              void setup.cancel();
-          }}
-        >
-          <div className="grid gap-3">
-            {/* A build that signs in interactively (`auth.signIn`) starts
-             * it here, as Claude's Settings dialog does; a key's form saves
-             * on its own. */}
-            {setup.auth.signIn && !signingIn && (
-              <div>
-                <Button
-                  size="sm"
-                  variant="prominent"
-                  disabled={disabled || !!state.running}
-                  onClick={() => void setup.run("sign-in")}
-                >
-                  Sign in
-                </Button>
-              </div>
-            )}
-            <SignIn setup={setup} disabled={disabled} />
-          </div>
-        </Dialog>
-      </>
-    );
-  }
-
-  /** New agent's Harness, Model and Thinking. While Claude has no
-   * credentials, Model and Thinking wait, disabled, for CreateAction's
-   * setup beside Harness, and so does the agent. */
-  function CreateConfiguration({
-    harnessControl,
-    onReadyChange,
-    agent,
-    ...props
-  }: AgentCreateProps<Config> & {
-    harnessControl: ReactNode;
-    onReadyChange?: (ready: boolean) => void;
-  }) {
-    const { state, resolving, signedOut } = useCredentials(agent);
-    // Only missing credentials hold creation: an agent made before Claude is
-    // installed waits for the download, as it did with the Model row alone.
-    const ready = !!state.status && !signedOut && !resolving;
-    useEffect(() => onReadyChange?.(ready), [onReadyChange, ready]);
-    return (
-      <SettingsGroup>
-        {harnessControl}
-        <PreferenceRow
-          title="Model"
-          trailing={
-            signedOut ? (
-              <Select
-                label="Model"
-                variant="compact"
-                value=""
-                groups={options([["", "Default"]])}
-                disabled
-                onValueChange={() => {}}
-              />
-            ) : (
-              <CreateModel {...props} />
-            )
-          }
-        />
-        <PreferenceRow
-          title="Thinking"
-          trailing={<CreateThinking {...(agent && { agent })} {...props} />}
-        />
-      </SettingsGroup>
-    );
-  }
-
   /** The instructions a new agent starts with. */
   function Create({ config, onChange, disabled }: AgentCreateProps<Config>) {
     const current = readConfig(config);
@@ -782,32 +626,52 @@ export function createTabs({
 
   function ProviderDialogBody({ onClose }: { onClose(): void }) {
     const state = useSetupCatalog();
+    const [code, setCode] = useState("");
+    const [token, setToken] = useState("");
+    const [saving, setSaving] = useState<AbortController>();
+    // Kept until the dialog closes.
+    const [saved, setSaved] = useState<{ ok: boolean; text: string }>();
+    const saveToken = async () => {
+      const controller = new AbortController();
+      setSaving(controller);
+      setSaved(undefined);
+      try {
+        const text = await setup.saveReviewSignIn(
+          token.trim(),
+          controller.signal,
+        );
+        setToken("");
+        setSaved({ ok: true, text });
+      } catch (error) {
+        if (!controller.signal.aborted)
+          setSaved({ ok: false, text: message(error) });
+      } finally {
+        setSaving(undefined);
+      }
+    };
+    // Every dismissal cancels a save, as the footer Cancel does.
+    useEffect(() => () => saving?.abort(), [saving]);
     const status = state.status;
     const ready = status?.state === "ready" && !state.checking;
-    const signingIn =
-      state.running === "sign-in" ||
-      (status?.state === "signed-out" && !state.running);
-    // Credentials pasted here, not an interactive sign-in.
-    const keyEntry = !setup.auth.signIn;
     const line =
       !status || state.checking
         ? "Checking Claude…"
         : status.state === "missing"
-          ? "The Claude integration isn't installed yet."
+          ? "Claude is not installed."
           : status.state === "outdated"
-            ? `Claude ${status.version} is older than Buzz needs.`
+            ? `Claude ${status.version} is older than Zion needs.`
             : status.state === "signed-out"
-              ? `Claude ${status.version} ${setup.auth.needs}.`
+              ? `Claude ${status.version} needs you to sign in.`
               : status.state === "error"
                 ? status.message
                 : undefined;
     const action =
       status?.state === "missing"
-        ? ({ step: "install", label: "Install integration" } as const)
+        ? ({ step: "install", label: "Install Claude" } as const)
         : status?.state === "outdated"
           ? ({ step: "install", label: "Update Claude" } as const)
-          : status?.state === "signed-out" && setup.auth.signIn
-            ? ({ step: "sign-in", label: "Sign in" } as const)
+          : status?.state === "signed-out"
+            ? ({ step: "login", label: "Sign in" } as const)
             : undefined;
     const latestOutputLine = state.output
       .replaceAll("\r", "\n")
@@ -823,8 +687,7 @@ export function createTabs({
           </p>
         )}
         <div className="grid gap-2" hidden={ready}>
-          {/* A key's own form takes the dialog over: it says what is missing. */}
-          {!state.running && !(keyEntry && status?.state === "signed-out") && (
+          {!state.running && (
             <p
               role={status?.state === "error" ? "alert" : "status"}
               className="m-0 text-body-sm text-primary"
@@ -832,7 +695,7 @@ export function createTabs({
               <strong>{line}</strong>
             </p>
           )}
-          {state.running === "install" && (
+          {state.running ? (
             <div className="flex flex-wrap items-center gap-2">
               <p
                 role="status"
@@ -843,15 +706,18 @@ export function createTabs({
                   aria-hidden="true"
                   className="motion-safe:animate-spin"
                 />
-                {latestOutputLine ?? "Installing Claude Code…"}
+                {state.running === "login"
+                  ? "Waiting for Claude Code sign-in…"
+                  : (latestOutputLine ?? "Installing Claude Code…")}
               </p>
             </div>
-          )}
+          ) : null}
           {status?.state === "missing" && !state.running && (
             <p className="m-0 text-body-sm text-subtle">
-              Downloads Buzz's own copy of Claude (about 250 MB) and keeps it on
-              the latest release. Your own installation of Claude will be
-              unaffected, and uses the same settings.
+              Downloads Zion's own copy of Claude (about 250 MB) from
+              downloads.claude.ai and keeps it on the latest release. It does
+              not change the <code>claude</code> in your terminal, and uses the
+              same sign-in and settings.
             </p>
           )}
           {state.output && state.running !== "install" && (
@@ -863,7 +729,28 @@ export function createTabs({
               {state.output}
             </div>
           )}
-          {signingIn && <SignIn setup={setup} onSaved={onClose} />}
+          {state.running === "login" && (
+            <form
+              className="grid gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void setup.answer(code);
+                setCode("");
+              }}
+            >
+              <Field
+                label="Sign-in code"
+                description="If the browser shows a code to paste, enter it here."
+              >
+                <div className="flex items-center gap-2">
+                  <Input value={code} onValueChange={setCode} />
+                  <Button type="submit" disabled={!code.trim()}>
+                    Send
+                  </Button>
+                </div>
+              </Field>
+            </form>
+          )}
           {status?.state === "error" && (
             <p className="m-0 text-body-sm text-subtle">
               Open Claude Code in a terminal for more details, then please try
@@ -871,19 +758,72 @@ export function createTabs({
             </p>
           )}
         </div>
-        {/* Kept through a routine check, so a paste or save goes on. Saving
-            the key closes the dialog while the key is all it edits; once it
-            has other settings, saving should leave it open. */}
+        {ready && (
+          <p className="m-0 text-body-sm text-subtle">Claude is signed in.</p>
+        )}
+        {/* Kept through a routine check, so a paste or save goes on. */}
         {status?.state === "ready" && (
-          <SignedIn setup={setup} onSaved={onClose} />
+          <div className="grid gap-2" aria-busy={saving ? true : undefined}>
+            <Field
+              label="Sign in for reviews"
+              description={
+                <>
+                  Security reviews sign in apart from your agents. Run{" "}
+                  <code>claude setup-token</code> in Terminal, then paste the
+                  token it prints. It lasts a year.
+                </>
+              }
+            >
+              <Input
+                type="password"
+                autoComplete="off"
+                value={token}
+                readOnly={!!saving}
+                aria-disabled={saving ? true : undefined}
+                onValueChange={setToken}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" || event.nativeEvent.isComposing)
+                    return;
+                  event.preventDefault();
+                  if (token.trim() && !saving) void saveToken();
+                }}
+              />
+            </Field>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                disabled={!token.trim()}
+                focusableWhenDisabled
+                loading={!!saving}
+                onClick={saveToken}
+              >
+                Save review sign-in
+              </Button>
+              {saved && (
+                <p
+                  role={saved.ok ? "status" : "alert"}
+                  className={
+                    saved.ok
+                      ? "m-0 text-body-sm text-subtle"
+                      : "buzz-field-error m-0"
+                  }
+                >
+                  {saved.text}
+                </p>
+              )}
+            </div>
+          </div>
         )}
         <ProviderDialogActions>
           <Button
             onClick={() =>
-              state.running && !ready ? void setup.cancel() : onClose()
+              saving
+                ? saving.abort()
+                : state.running && !ready
+                  ? void setup.cancel()
+                  : onClose()
             }
           >
-            {ready ? "Done" : "Cancel"}
+            {ready && !saving ? "Done" : "Cancel"}
           </Button>
           {!ready && action && !state.running && !state.checking && (
             <Button
@@ -1366,8 +1306,6 @@ export function createTabs({
 
   return {
     CreateModel,
-    CreateConfiguration,
-    CreateAction,
     CreateThinking,
     Create,
     ProviderDialogBody,

@@ -2,7 +2,6 @@ import { hoverMessage } from "./message-actions.mjs";
 import { settleDialogMotion } from "./navigation.mjs";
 import { test, expect } from "./source-fixture.mjs";
 import { settle } from "./timeline.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 // Browser-only: real nested hover, deferred toolbar mounting, and top-layer
 // visibility must agree with the production reaction row and preview wiring.
@@ -681,7 +680,9 @@ test("comment actions revealed while the drawer slides realign when it settles",
       };
     });
   // Keep the drawer held while the toolbar's own entrance settles.
-  await animationsSettled(actions);
+  await actions.evaluate((bar) =>
+    Promise.all(bar.getAnimations().map((animation) => animation.finished)),
+  );
   // The animated gap queues a resize-observer positioning frame after entry.
   await expect.poll(anchoring).toMatchObject({ anchored: true });
   const moving = await anchoring();

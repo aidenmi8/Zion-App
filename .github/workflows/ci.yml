@@ -112,12 +112,11 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Tauri system libraries
         run: |
-          # Azure package downloads can stall until the whole job expires:
+          # Preserve both runner-provided Ubuntu mirrors: either can stall.
+          # Bound each fetch so apt can fail over instead of consuming the job.
           # https://github.com/actions/runner-images/issues/14594
-          # Keep the image's official HTTPS archive and security fallbacks.
-          sudo sed -i '\|^http://azure\.archive\.ubuntu\.com/ubuntu/|d' /etc/apt/apt-mirrors.txt
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y dbus-daemon libwebkit2gtk-4.1-dev build-essential libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 update
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 install --no-install-recommends -y dbus-daemon libwebkit2gtk-4.1-dev build-essential libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: native
@@ -291,31 +290,24 @@ jobs:
       HOME: /root
       BUZZ_BROWSER_FIXTURE_DIR: target/ci-browser-fixture
     # Playwright sizes file-level shards by test count, not duration, so costly
-    # files can share one. WebKit runs slower, so it gets eighteen shards to keep
+    # files can share one. WebKit runs slower, so it gets fourteen shards to keep
     # its slowest well inside this deadline on slower runners, setup included;
-    # Chromium keeps nine. Size the WebKit count from a recent run's per-test
-    # durations and `playwright test --list --shard=K/N`: at fourteen, the
-    # slowest shard's summed test time reached 25 minutes (two workers, about
-    # 15 minutes of job time) and hit this deadline with every test passing.
+    # Chromium keeps nine.
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         engine: [chromium, webkit]
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         exclude:
           - { engine: chromium, shard: 10 }
           - { engine: chromium, shard: 11 }
           - { engine: chromium, shard: 12 }
           - { engine: chromium, shard: 13 }
           - { engine: chromium, shard: 14 }
-          - { engine: chromium, shard: 15 }
-          - { engine: chromium, shard: 16 }
-          - { engine: chromium, shard: 17 }
-          - { engine: chromium, shard: 18 }
         include:
           - { engine: chromium, shards: 9 }
-          - { engine: webkit, shards: 18 }
+          - { engine: webkit, shards: 14 }
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -392,6 +384,8 @@ jobs:
       browser: ${{ steps.select.outputs.browser }}
       browser_shards: ${{ steps.select.outputs.browser_shards }}
       browser_shard_total: ${{ steps.select.outputs.browser_shard_total }}
+      vitest_shards: ${{ steps.select.outputs.vitest_shards }}
+      vitest_shard_total: ${{ steps.select.outputs.vitest_shard_total }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -405,7 +399,7 @@ jobs:
         run: ./bin/node scripts/flake-check.mjs select HEAD^1 HEAD
 
   flake_vitest:
-    name: Flake check (Vitest, ${{ matrix.batch }}/2)
+    name: Flake check (Vitest, ${{ matrix.shard }}/${{ needs.flake_select.outputs.vitest_shard_total }}, batch ${{ matrix.batch }}/5)
     needs: [flake_select]
     if: needs.flake_select.outputs.vitest != ''
     runs-on: ubuntu-24.04
@@ -413,7 +407,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        batch: [1, 2]
+        shard: ${{ fromJSON(needs.flake_select.outputs.vitest_shards) }}
+        batch: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -424,14 +419,14 @@ jobs:
           # Match the JavaScript lane's worker contention.
           BUZZ_TEST_WORKERS: "2"
           SELECTED: ${{ needs.flake_select.outputs.vitest }}
-        # Keep ten independent repetitions without serial setup consuming
-        # the job budget; each batch retains two-worker contention.
-        run: ./bin/node scripts/flake-check.mjs vitest --iterations=5 $SELECTED
+        # Each selected filter runs twice per batch, five batches in total.
+        # The same ten independent repetitions now fit the job timeout.
+        run: ./bin/node scripts/flake-check.mjs vitest --iterations=2 --shard=${{ matrix.shard }} --shards=${{ needs.flake_select.outputs.vitest_shard_total }} $SELECTED
       - name: Vitest iteration reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: flake-vitest-${{ matrix.batch }}
+          name: flake-vitest-${{ matrix.shard }}-${{ matrix.batch }}
           path: test-results/flake
           retention-days: 7
 

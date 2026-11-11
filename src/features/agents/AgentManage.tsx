@@ -1,6 +1,6 @@
 // Owner actions on an agent that every surface showing it offers: the
 // Agents Build view and the profile panel.
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { TrashIcon } from "../../shared/design-system/icons";
 import { Button } from "../../shared/design-system/ui/Button";
 import { Dialog } from "../../shared/design-system/ui/Dialog";
@@ -46,7 +46,6 @@ export function AgentDelete({
   onRemoved(): void;
   trigger?: (open: () => void) => ReactNode;
 }) {
-  const cancel = useRef<HTMLButtonElement>(null);
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState("");
@@ -105,7 +104,6 @@ export function AgentDelete({
       <Dialog
         size="compact"
         open={confirming}
-        initialFocus={cancel}
         onOpenChange={setConfirming}
         title={`Delete ${agent.name}?`}
         description={
@@ -118,11 +116,7 @@ export function AgentDelete({
         preventClose={removing}
         actions={
           <>
-            <Button
-              ref={cancel}
-              onClick={() => setConfirming(false)}
-              disabled={removing}
-            >
+            <Button onClick={() => setConfirming(false)} disabled={removing}>
               Cancel
             </Button>
             <Button
@@ -221,7 +215,6 @@ export function AgentRemoveHere({
   onRemoved(): void;
   trigger: (open: () => void) => ReactNode;
 }) {
-  const cancel = useRef<HTMLButtonElement>(null);
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState("");
@@ -244,18 +237,13 @@ export function AgentRemoveHere({
       <Dialog
         size="compact"
         open={confirming}
-        initialFocus={cancel}
         onOpenChange={setConfirming}
         title={`Remove ${agent.name} from ${place}?`}
         description="It stops here, leaves this community's channels and is archived here. It stays in your other communities with the same name, type and settings. Add it here again and its memory and conversations here come back, but what it paid attention to here doesn't."
         preventClose={removing}
         actions={
           <>
-            <Button
-              ref={cancel}
-              onClick={() => setConfirming(false)}
-              disabled={removing}
-            >
+            <Button onClick={() => setConfirming(false)} disabled={removing}>
               Cancel
             </Button>
             <Button

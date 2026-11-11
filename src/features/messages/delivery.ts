@@ -8,9 +8,7 @@ export function deliveryFeedback(
   if (
     !row.delivery ||
     row.delivery === "seen" ||
-    // Only an unconfirmed send waits; a failed one is already known.
-    (row.delivery !== "failed" &&
-      now < row.createdAt * 1000 + DELIVERY_GRACE_MS)
+    now < row.createdAt * 1000 + DELIVERY_GRACE_MS
   )
     return undefined;
   if (row.delivery === "failed") return "Couldn’t send this message.";

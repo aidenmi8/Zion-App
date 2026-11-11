@@ -2,7 +2,6 @@ import { useSoloRowActivation } from "./useSoloRowActivation";
 import { useSoloNavigation } from "./solo-navigation-react";
 import {
   useCallback,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -51,16 +50,10 @@ import { PlusIcon, ChatCircleIcon } from "../../shared/design-system/icons";
 import { NavigationItem } from "../../shared/design-system/ui/NavigationItem";
 import type { ContributionReader } from "../conversation/contracts";
 import type { ChatIcon, ChatMenu } from "../conversation/service";
-import type {
-  RegisteredSidebarRows,
-  SidebarRows,
-} from "./sidebar-rows-service";
 import channelStyles from "../../bundled/channels/Channels.module.css";
 import styles from "../../bundled/channels/SoloWorkspaces.module.css";
 
 const noSubscription = () => () => {};
-const emptyRows: readonly RegisteredSidebarRows[] = [];
-const noSidebarRows = () => emptyRows;
 const chatIcon = (
   <span className={styles.conversationIcon} aria-hidden="true">
     <ChatCircleIcon size={16} />
@@ -75,7 +68,6 @@ export function SoloInventory({
   target,
   chatIcons,
   chatMenus,
-  sidebarRows,
   renderContents,
 }: {
   session: RelaySession;
@@ -85,13 +77,13 @@ export function SoloInventory({
   /** Plugin icons that can stand in for a chat's own. */
   chatIcons?: ContributionReader<ChatIcon> | undefined;
   chatMenus?: ContributionReader<ChatMenu> | undefined;
-  sidebarRows?: SidebarRows | undefined;
-  /** Places the conversations in a host that titles them; creation then
-   * belongs to the host's own New menu, so only the standalone header has it. */
   renderContents?: (
     content: ReactNode,
+    actions: ReactNode,
     header: ReactNode,
+    trigger: RefObject<HTMLButtonElement | null>,
     pendingClick: RefObject<ReturnType<typeof setTimeout> | undefined>,
+    headerActions: ReactNode,
   ) => ReactNode;
 }) {
   const list = useChannelList(session.channels);
@@ -134,11 +126,6 @@ export function SoloInventory({
   const workingChannels = useMemo(
     () => new Set<string>(JSON.parse(workingIds)),
     [workingIds],
-  );
-  const rowEntries = useSyncExternalStore(
-    sidebarRows?.subscribe ?? noSubscription,
-    sidebarRows?.snapshot ?? noSidebarRows,
-    sidebarRows?.snapshot ?? noSidebarRows,
   );
   const open = useCallback(
     (channelId: string) => navigator.open(conversationTarget(scope, channelId)),
@@ -201,9 +188,6 @@ export function SoloInventory({
         onSelect={() => void open(item.id)}
         onRename={rename}
         onOpenThread={(thread) => openMessage(thread.channelId, thread.rootId)}
-        onOpenMention={(mention) =>
-          openMessage(mention.channelId, mention.messageId)
-        }
         onOpenWorkingAgent={(id, _agent, messageId) => {
           if (messageId) openMessage(id, messageId);
           else void open(id);
@@ -325,7 +309,6 @@ export function SoloInventory({
         />
       )}
       <SoloWorkspaces
-        sidebarRows={rowEntries}
         renderChatMenu={renderChatMenu}
         navigator={navigator}
         draft={
@@ -387,7 +370,14 @@ export function SoloInventory({
       aria-label={`${regions.regions.find((region) => region.source)?.title ?? "Solo"} conversations`}
     >
       {renderContents ? (
-        renderContents(content, header, pendingClick)
+        renderContents(
+          content,
+          creationItems,
+          header,
+          trigger,
+          pendingClick,
+          actions,
+        )
       ) : (
         <>
           {header}
@@ -411,7 +401,6 @@ function SoloConversationRow({
   onSelect,
   onRename,
   onOpenThread,
-  onOpenMention,
   onOpenWorkingAgent,
   onOpenAgentActivity,
 }: {
@@ -428,60 +417,8 @@ function SoloConversationRow({
   onRename: (() => boolean) | undefined;
 } & Pick<
   ComponentProps<typeof ChannelActivityPopover>,
-  | "onOpenThread"
-  | "onOpenMention"
-  | "onOpenWorkingAgent"
-  | "onOpenAgentActivity"
+  "onOpenThread" | "onOpenWorkingAgent" | "onOpenAgentActivity"
 >) {
-  const selectRef = useRef<HTMLButtonElement>(null);
-  useLayoutEffect(() => {
-    const button = selectRef.current;
-    if (!button) return;
-    const document = button.ownerDocument;
-    const sidebar = button.closest("nav");
-    const panel = button.closest<HTMLElement>("[data-solo-project]");
-    return () => {
-      if (document.activeElement !== button) return;
-      const rows = [
-        ...(panel?.querySelectorAll<HTMLElement>(
-          "button[data-solo-channel-id]",
-        ) ?? []),
-      ];
-      const index = rows.indexOf(button);
-      const neighbors = [
-        ...rows.slice(index + 1),
-        ...rows.slice(0, index).reverse(),
-      ].map((row) => row.dataset.soloChannelId ?? "");
-      // Decorations can remount every row. Resolve surviving buttons after the
-      // commit, but never take focus back from another control or a new editor.
-      queueMicrotask(() => {
-        if (
-          (document.activeElement !== document.body &&
-            document.activeElement !== button) ||
-          (button.isConnected && !button.closest("[hidden], [inert]")) ||
-          !sidebar?.isConnected
-        )
-          return;
-        const find = (id: string) =>
-          sidebar.querySelector<HTMLElement>(
-            `button[data-solo-channel-id="${CSS.escape(id)}"]`,
-          );
-        const candidates = [
-          find(id),
-          ...neighbors.map(find),
-          sidebar.querySelector<HTMLElement>(
-            `[data-solo-menu-id="project-${CSS.escape(panel?.dataset.soloProject ?? "")}"] button`,
-          ),
-        ];
-        for (const candidate of candidates) {
-          if (!candidate?.isConnected || candidate.closest("[hidden], [inert]"))
-            continue;
-          candidate.focus({ preventScroll: true });
-          if (document.activeElement === candidate) break;
-        }
-      });
-    };
-  }, [id]);
   const activation = useSoloRowActivation(
     navigation,
     pendingClick,
@@ -504,12 +441,10 @@ function SoloConversationRow({
       agents={agents}
       agentProfiles={agentProfiles}
       onOpenThread={onOpenThread}
-      onOpenMention={onOpenMention}
       {...(onOpenWorkingAgent ? { onOpenWorkingAgent } : {})}
       {...(onOpenAgentActivity ? { onOpenAgentActivity } : {})}
       trigger={
         <NavigationItem
-          ref={selectRef}
           type="button"
           selected={selected}
           data-solo-channel-id={id}

@@ -189,11 +189,11 @@ fn endpoint_binding_is_valid(event: &nostr::event::Event, content: &serde_json::
 
 pub fn availability_from_events(events: Vec<nostr::event::Event>) -> MeshAvailability {
     if events.is_empty() {
-        return MeshAvailability::unavailable("Buzz shared compute status is not published yet");
+        return MeshAvailability::unavailable("Zion shared compute status is not published yet");
     }
     let Some(members) = latest_membership_list(&events) else {
         return MeshAvailability::unavailable(
-            "Buzz shared compute is waiting for the current member roster",
+            "Zion shared compute is waiting for the current member roster",
         );
     };
 
@@ -273,7 +273,7 @@ pub fn availability_from_events(events: Vec<nostr::event::Event>) -> MeshAvailab
     }
 
     if !saw_valid_status {
-        return MeshAvailability::unavailable("Buzz shared compute status is malformed");
+        return MeshAvailability::unavailable("Zion shared compute status is malformed");
     }
 
     let serve_targets = dedupe_targets(all_targets);
@@ -288,7 +288,7 @@ pub fn availability_from_events(events: Vec<nostr::event::Event>) -> MeshAvailab
         reason: if available {
             None
         } else {
-            Some("no Buzz shared compute serving members are available".to_string())
+            Some("no Zion shared compute serving members are available".to_string())
         },
         models,
         serve_targets,

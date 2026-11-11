@@ -50,11 +50,11 @@ const failures = [];
 // Product artwork retains its literal hues. Exceptions name exact files and
 // colors; all other values and foundation rules remain checked.
 const artworkColors = new Map([
-  // Mobile chartreuse welcome and decorative bee artwork retain their exact hues.
+  // Owner-approved Zion welcome artwork retains these five exact hues.
   // Controls use the shared semantic roles without local overrides.
   [
     "features/identity/IdentitySetup.module.css",
-    new Set(["#d7d72e", "#231e1e", "#d7e7f5", "#dbfa52"]),
+    new Set(["#0a0a0a", "#1c1c1e", "#2c2c2e", "#a6a6a8", "#f5f5f7"]),
   ],
   [
     "features/profiles/AvatarCustomColor.module.css",

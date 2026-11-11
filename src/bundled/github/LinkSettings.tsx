@@ -15,7 +15,7 @@ export function LinkSettings({ active }: { active(): boolean }) {
       <InlineHeader title="Links" />
       <SettingsGroup>
         <SwitchPreferenceRow
-          label="Open GitHub links in Buzz"
+          label="Open GitHub links in Zion"
           description="Open supported GitHub links in a side panel. Turn off to use your browser. This applies to all communities on this device."
           checked={enabled}
           onCheckedChange={(next) => {

@@ -21,10 +21,7 @@ import {
   useAgentSaveState,
 } from "../../features/agents/AgentSaveButton";
 import type { ChannelChoice } from "../../features/agents/attention";
-import type {
-  AgentMemories,
-  MemoryLinks,
-} from "../../features/agents/MemoryPanel";
+import type { AgentMemories } from "../../features/agents/MemoryPanel";
 import type {
   Agent,
   Agents,
@@ -94,7 +91,6 @@ export function AgentDetails({
   types,
   channels,
   memories,
-  memoryLinks,
   onRemoved,
   messageAction,
   conversation,
@@ -115,7 +111,6 @@ export function AgentDetails({
   types: readonly RegisteredAgentType[];
   channels: readonly ChannelChoice[];
   memories: AgentMemories | undefined;
-  memoryLinks?: MemoryLinks | undefined;
   onRemoved(): void;
   messageAction: (variant: "glass" | "subtle") => ReactNode;
   conversation?: AgentConversation | undefined;
@@ -525,7 +520,6 @@ export function AgentDetails({
               settingsHost={settings.settingsHost}
               onDiscard={settings.discard}
               memories={memories}
-              memoryLinks={memoryLinks}
               communities={communities}
               settingsContent={
                 <div>

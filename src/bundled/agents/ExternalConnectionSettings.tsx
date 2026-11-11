@@ -18,14 +18,14 @@ export function ExternalConnectionSettings({
     <section>
       <Header
         title="External apps"
-        subtitle="Apps you authorize can use Buzz through this copy of the app."
+        subtitle="Apps you authorize can use Zion through this copy of the app."
       />
       <SettingsGroup layout="form">
         <p className="m-0 text-body-sm text-secondary">
-          Start setup in the external app. Buzz asks you to select an agent and
+          Start setup in the external app. Zion asks you to select an agent and
           authorize access. Apps can renew valid approval for another 30 days.
           Approval expires after 30 days without renewal. Apps can restore valid
-          access after a restart. Keys stay in Buzz. Keep Buzz open.
+          access after a restart. Keys stay in Zion. Keep Zion open.
         </p>
         {state.grant ? (
           <PreferenceRow

@@ -147,7 +147,7 @@ export function createPluginRequests({
       );
     if (buzzHosted(repository))
       throw new Error(
-        "Ask your owner to add plugins from Buzz-hosted repositories in Settings",
+        "Ask your owner to add plugins from Zion-hosted repositories in Settings",
       );
     const preview = await gitImports().checkGit(repository, reference);
     if (!preview?.candidates.length)
@@ -223,7 +223,7 @@ export function createPluginRequests({
     if (input.action === "remove" && bundled)
       throw new Error("Bundled plugins cannot be removed");
     if (input.action !== "update") return { pluginId: id, pluginName: name };
-    if (bundled) throw new Error("Bundled plugins update with Buzz");
+    if (bundled) throw new Error("Bundled plugins update with Zion");
     unmanaged(id);
     const recorded = plugin.updateSource;
     if (!recorded || !("repository" in recorded))

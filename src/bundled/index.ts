@@ -3,8 +3,6 @@ import * as mesh from "./mesh-compute";
 import voiceNotesManifest from "./voice-notes/manifest.json";
 import * as voiceNotes from "./voice-notes";
 
-import draftsSentManifest from "./drafts-sent/manifest.json";
-import * as draftsSent from "./drafts-sent";
 import pairingManifest from "./pairing/manifest.json";
 import * as pairing from "./pairing";
 import todosManifest from "./todos/manifest.json";
@@ -33,7 +31,6 @@ import watchingManifest from "./watching/manifest.json";
 import * as watching from "./watching";
 import claudeCodeManifest from "./claude-code/manifest.json";
 import * as claudeCode from "./claude-code";
-import { leadsHarnesses as claudeLeadsHarnesses } from "./claude-code/auth";
 import codexManifest from "./codex/manifest.json";
 import * as codex from "./codex";
 import gooseManifest from "./goose/manifest.json";
@@ -61,8 +58,6 @@ import * as workflows from "./workflows";
 import type { BundledPlugin } from "../plugins/manager";
 import linksManifest from "./links/manifest.json";
 import * as links from "./links";
-import linkPreviewsManifest from "./link-previews/manifest.json";
-import * as linkPreviews from "./link-previews";
 import moderationManifest from "./moderation/manifest.json";
 import * as moderation from "./moderation";
 import relayStaffManifest from "./relay-staff/manifest.json";
@@ -74,17 +69,6 @@ import * as pluginDevelopment from "./plugin-development";
 
 import relayNotesManifest from "./relay-notes/manifest.json";
 import * as relayNotes from "./relay-notes";
-
-const codexHarness: BundledPlugin = {
-  manifest: { ...codexManifest, apiVersion: 1 },
-  module: codex,
-  enabledByDefault: true,
-};
-const claudeHarness: BundledPlugin = {
-  manifest: { ...claudeCodeManifest, apiVersion: 1 },
-  module: claudeCode,
-  enabledByDefault: true,
-};
 
 export const bundledPlugins: readonly BundledPlugin[] = [
   {
@@ -112,12 +96,6 @@ export const bundledPlugins: readonly BundledPlugin[] = [
     manifest: { ...builderlabManifest, apiVersion: 1 },
     module: builderlab,
     enabledByDefault: true,
-  },
-  {
-    manifest: { ...draftsSentManifest, apiVersion: 1 },
-    module: draftsSent,
-    // Opt-in until it is ready for everyone.
-    enabledByDefault: false,
   },
   {
     manifest: { ...pairingManifest, apiVersion: 1 },
@@ -170,11 +148,6 @@ export const bundledPlugins: readonly BundledPlugin[] = [
     enabledByDefault: true,
   },
   {
-    manifest: { ...linkPreviewsManifest, apiVersion: 1 },
-    module: linkPreviews,
-    enabledByDefault: true,
-  },
-  {
     manifest: { ...channelsManifest, apiVersion: 1 },
     module: channels,
     enabledByDefault: true,
@@ -187,7 +160,7 @@ export const bundledPlugins: readonly BundledPlugin[] = [
   {
     manifest: { ...bestieManifest, apiVersion: 1 },
     module: bestie,
-    enabledByDefault: true,
+    enabledByDefault: false,
   },
   {
     manifest: { ...usageManifest, apiVersion: 1 },
@@ -224,11 +197,16 @@ export const bundledPlugins: readonly BundledPlugin[] = [
     module: watching,
     enabledByDefault: true,
   },
-  // The first of Codex and Claude leads the Harness list and is new agents'
-  // default: Codex, unless Claude's auth seam says Claude may.
-  ...(claudeLeadsHarnesses
-    ? [claudeHarness, codexHarness]
-    : [codexHarness, claudeHarness]),
+  {
+    manifest: { ...claudeCodeManifest, apiVersion: 1 },
+    module: claudeCode,
+    enabledByDefault: true,
+  },
+  {
+    manifest: { ...codexManifest, apiVersion: 1 },
+    module: codex,
+    enabledByDefault: true,
+  },
   {
     manifest: { ...gooseManifest, apiVersion: 1 },
     module: goose,

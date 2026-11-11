@@ -57,7 +57,6 @@ import {
   MenuItem,
   MenuPopup,
 } from "../../shared/design-system/ui/Menu";
-import { communityRefusalTitle } from "../../features/federated-identity/CommunitySignIn";
 import styles from "./Inbox.module.css";
 import {
   readView,
@@ -226,13 +225,10 @@ export function InboxPage({
               <p className="text-body text-subtle">
                 {connection.status === "connecting"
                   ? "Connecting to your activity…"
-                  : connection.denied
-                    ? // Its notice, on every page, offers what fixes it.
-                      communityRefusalTitle(connection.refusal)
-                    : (connection.error ??
-                      "Choose a community to see your activity.")}
+                  : (connection.error ??
+                    "Choose a community to see your activity.")}
               </p>
-              {connection.status === "error" && !connection.denied && (
+              {connection.status === "error" && (
                 <Button onClick={relay.retry}>Retry connection</Button>
               )}
             </div>

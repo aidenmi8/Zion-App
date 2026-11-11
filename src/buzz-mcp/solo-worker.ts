@@ -1,5 +1,5 @@
 // The Solo worker tools: an agent its owner has authorized asks the owner's
-// Buzz to start, message, read, stop and archive workers in their Solo
+// Buzz to start, message, read, stop and archive Nexus workers in their Solo
 // chats. Each call is one protocol request (see solo-worker-protocol.ts),
 // signed by this agent and posted in its private control channel with the
 // owner; the answer counts only when the owner's Buzz signs it there. The
@@ -88,14 +88,14 @@ const workerTool = (
 export const SOLO_WORKER_TOOLS = [
   workerTool(
     "solo_worker_connections",
-    "The owners whose Solo workers you may run, each with the workers and actions they allow. None means no owner has authorized you yet; only the owner can, in Buzz.",
+    "The owners whose Nexus workers you may run, each with the workers and actions they allow. None means no owner has authorized you yet; only the owner can, in Zion.",
     {},
     [],
     { readOnlyHint: true },
   ),
   workerTool(
     "solo_worker_readiness",
-    "Whether the owner's Buzz can take worker requests now.",
+    "Whether the owner's Zion can take worker requests now.",
     {},
     [],
     { destructiveHint: false },
@@ -230,7 +230,7 @@ export async function callSoloWorkerTool(
   if (ready.phase !== "ready" || !ready.result)
     return JSON.stringify({
       ...ready,
-      note: `${ready.note ? `${ready.note} ` : ""}The owner's Buzz is not ready, so the change was not sent.`,
+      note: `${ready.note ? `${ready.note} ` : ""}The owner's Zion is not ready, so the change was not sent.`,
     });
   // The change may carry task text, and the channel had time to change while
   // the owner answered.
@@ -392,7 +392,7 @@ async function exchange(
         phase: "uncertain",
         reason: "conflict",
         ...retry,
-        note: "The owner's Buzz gave two different answers.",
+        note: "The owner's Zion gave two different answers.",
       };
     answer = word;
     if ((answer && !INTERIM.includes(answer.phase)) || clock.now() >= deadline)
@@ -407,7 +407,7 @@ async function exchange(
       ...retry,
       note: answer
         ? "Still in progress; ask again with retry to see how it ends."
-        : "No answer yet: the owner's Buzz may be closed. No answer does not mean it did nothing.",
+        : "No answer yet: the owner's Zion may be closed. No answer does not mean it did nothing.",
     };
   return {
     status: "answered",
@@ -467,7 +467,7 @@ async function connections(client: BuzzClient, clock: Clock) {
   const { relayAuthor } = client;
   if (relayAuthor === undefined)
     throw new Error(
-      "This Buzz connection does not know its relay's key, so it cannot verify channel members or find an owner's grant.",
+      "This Zion connection does not know its relay's key, so it cannot verify channel members or find an owner's grant.",
     );
   const query = bounded(client, clock);
   const streams = new Map<string, string>();
@@ -620,7 +620,7 @@ function pick(
       owner === undefined &&
         found.connections.some((connection) => connection.state === "active")
         ? `Your own owner has not authorized you${found.complete ? "" : ", as far as could be found"}. To run another person's workers, give owner.`
-        : `No owner has authorized you to run their workers${owner === undefined ? "" : " for that owner"}${found.complete ? "" : ", as far as could be found"}. Only the owner can, in Buzz.`,
+        : `No owner has authorized you to run their workers${owner === undefined ? "" : " for that owner"}${found.complete ? "" : ", as far as could be found"}. Only the owner can, in Zion.`,
     );
   if (wanted === undefined)
     throw new Error("Give owner: the person whose workers you mean to run.");

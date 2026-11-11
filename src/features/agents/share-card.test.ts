@@ -1,5 +1,53 @@
-import { expect, it } from "vitest";
-import { cardModel, ellipsize } from "./share-card";
+import { expect, it, vi } from "vitest";
+import { cardModel, drawShareCard, ellipsize } from "./share-card";
+
+it("draws the exact Zion geometry and name on exported agent artwork", async () => {
+  const paths: string[] = [];
+  const labels: string[] = [];
+  const context = new Proxy(
+    {},
+    {
+      get: (_target, key) =>
+        key === "measureText"
+          ? (value: string) => ({ width: value.length * 10 })
+          : key === "fillText"
+            ? (value: string) => labels.push(value)
+            : () => ({ addColorStop() {} }),
+    },
+  );
+  vi.stubGlobal(
+    "Path2D",
+    class {
+      constructor(path: string) {
+        paths.push(path);
+      }
+      moveTo() {}
+      arc() {}
+      rect() {}
+    },
+  );
+  vi.stubGlobal("document", {
+    fonts: { load: async () => [] },
+    createElement: () => ({
+      getContext: () => context,
+      toBlob: (done: (blob: Blob) => void) =>
+        done(new Blob(["synthetic card"])),
+    }),
+  });
+  try {
+    await drawShareCard({
+      name: "Sample agent",
+      harness: "Codex",
+      model: "Default",
+    });
+    expect(paths).toEqual([
+      "M16 30 32 12h20L36 30H16Z M12 52 28 34h20L32 52H12Z",
+    ]);
+    expect(labels).toContain("ZION AGENT");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
 
 it("doesn't repeat the harness in the model", () => {
   expect(cardModel("Claude", "claude-opus-5-5")).toBe("Opus 5.5");

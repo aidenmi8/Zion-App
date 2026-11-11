@@ -291,7 +291,7 @@ mod contention_tests {
         let path = directory.path().join("busy.sqlite3");
         let identity = IdentityHost::fixture();
         let viewer = identity.viewer().await.unwrap();
-        let store = Store::open(path.clone()).unwrap();
+        let mut store = Store::open(path.clone()).unwrap();
         store.seed(&viewer, "https://a.test").unwrap();
         store.0.busy_handler(Some(blocked)).unwrap();
         let blocker = Connection::open(&path).unwrap();

@@ -232,7 +232,7 @@ function BestieTab({
           <PreferenceRow
             icon={<BestieIcon size="1rem" />}
             title="This is your Bestie"
-            subtitle="It's pinned at the top of Buzz, with your DM as its home."
+            subtitle="It's pinned at the top of Zion, with your DM as its home."
             trailing={
               <MenuRoot>
                 <MenuTrigger
@@ -415,9 +415,9 @@ function FeatureSwitch({
                 checked && timer?.value.type === "timer" && !timer.value.enabled
                 ? `Paused in Attention. Turn ${feature.title} off and on again to restart it.`
                 : // Attention reads off while no plugin shows it, as when the
-                  // Watching plugin is off.
+                  // Watching plugin is off, or while the agent's switch is off.
                   checked && feature.timer && !agent.attentionEnabled
-                  ? "Paused: watches aren't running on this device. Turn on the Attention plugin."
+                  ? "Paused: watches aren't running on this device. Turn on the Watching plugin and its Run watches switch."
                   : feature.description
         }
         checked={checked}

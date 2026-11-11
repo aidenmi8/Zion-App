@@ -9,7 +9,7 @@ import { CodexLogoIcon } from "../../shared/design-system/icons";
 import { type Config, config, defaults, validWorkspace } from "./config";
 import { codexRun, TYPE_ID } from "./run";
 import { CodexRuntime } from "./runtime";
-import { CodexSetup, explainTurn, reviewHome, withScript } from "./setup";
+import { CodexSetup, reviewHome, withScript } from "./setup";
 import { CodexProvider, createTabs } from "./tabs";
 import { readUsage } from "./usage";
 import { reviewModel } from "./security-review";
@@ -71,12 +71,6 @@ export const apply: PluginModule["apply"] = (ctx) => {
     ctx.host,
     (pubkey) => ctx.agents.handle(pubkey),
   );
-  // Failed turns' notices link to where Codex signs in.
-  runtime.explain = (notice) =>
-    explainTurn(
-      notice,
-      `buzz://settings?section=agents&provider=${encodeURIComponent(typeKey)}`,
-    );
   ctx.agentProtection.registerModels({
     label: "Codex",
     models: async () => {

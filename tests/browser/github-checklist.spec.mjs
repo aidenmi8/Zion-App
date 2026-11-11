@@ -60,10 +60,8 @@ test("a PR opens on its checklist, with failing checks linked and wrapping in a 
   await expect(link).toHaveAccessibleDescription("Pull request, open");
   await end(page);
   await link.click();
-  // Opening the panel reflows the timeline under the resting pointer, and the
-  // viewer's avatar crosses it before the panel covers that point. A slow
-  // runner can hold it there past the hover delay, and the opened profile
-  // preview then covers the checklist. The next step moves the pointer anyway.
+  // Opening the side panel can place the pointer over a profile trigger in the
+  // shifted timeline. Leave it before interacting with the panel's controls.
   await page.mouse.move(0, 0);
   const panel = page.getByRole("complementary", {
     name: "GitHub",

@@ -67,22 +67,14 @@ const inventory =
     : solo
       ? [{ pubkey: person.pubkey, name: "Morgan" }]
       : [];
-// One agent past a page, so a removal from the last page empties it.
-const lastPageAlone = new URLSearchParams(location.search).has(
-  "last-page-alone",
-);
-const searchScale =
-  new URLSearchParams(location.search).has("search-scale") || lastPageAlone;
+const searchScale = new URLSearchParams(location.search).has("search-scale");
 const idleOverlap = new URLSearchParams(location.search).has("idle-overlap");
 const managed =
   searchScale || idleOverlap
-    ? Array.from(
-        { length: idleOverlap ? 2 : lastPageAlone ? 51 : 60 },
-        (_, index) => ({
-          key: keypair(),
-          name: `Agent ${index + 1}`,
-        }),
-      )
+    ? Array.from({ length: idleOverlap ? 2 : 60 }, (_, index) => ({
+        key: keypair(),
+        name: `Agent ${index + 1}`,
+      }))
     : [];
 const managedProfiles = await Promise.all(
   managed.map(async ({ key, name }) => {
@@ -211,19 +203,12 @@ const { session: sharedSession } = createRelaySession(
           memberAdministration: {
             sign: async (template: import("nostr-tools").EventTemplate) =>
               signed(viewer, template),
-            publish: async (event) => {
+            publish: async () => {
               publishStarted();
               await held;
               if (rejectRemoval)
                 throw new PublishRejected("Permission changed");
-              // A removal takes the member it names off the roster.
-              if (event.kind === 9001) {
-                const at = members.indexOf(
-                  event.tags.find(([tag]) => tag === "p")?.[1] ?? "",
-                );
-                if (at === -1) throw new Error("Removed member is not listed");
-                members.splice(at, 1);
-              }
+              members.splice(members.indexOf(person.pubkey), 1);
               clock++;
             },
           },

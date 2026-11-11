@@ -1,5 +1,19 @@
 patchedDependencies:
   '@base-ui/react@1.9.0': patches/@base-ui__react@1.9.0.patch
   '@dnd-kit/core@6.3.1': patches/@dnd-kit__core@6.3.1.patch
+  '@hypothesi/tauri-mcp-server@0.13.1': patches/@hypothesi__tauri-mcp-server@0.13.1.patch
   sonner@2.0.8: patches/sonner@2.0.8.patch
   virtua@0.53.5: patches/virtua@0.53.5.patch
+
+# The optional native-MCP migration is paired with its compatibility patch.
+# Keep this resolution scoped; the app's separate MCP 2 line stays unchanged.
+overrides:
+  '@hypothesi/tauri-mcp-server@0.13.1>ws': 8.21.0
+  '@hypothesi/tauri-mcp-server@0.13.1>@modelcontextprotocol/sdk': 1.32.2
+  '@hypothesi/tauri-mcp-server@0.13.1>zod': 4.6.6
+  '@hypothesi/tauri-mcp-server@0.13.1>zod-to-json-schema': '-'
+  '@modelcontextprotocol/sdk@1.32.2>zod': 4.6.6
+  'jsdom@30.1.0>undici': 8.12.2
+  '@modelcontextprotocol/server@2.3.1>zod': 4.6.6
+  '@modelcontextprotocol/core@2.3.1>zod': 4.6.6
+  'seroval@1.6.7': 1.6.11

@@ -46,9 +46,6 @@ test("sidebar headings keep readable space and compact disclosure targets at enl
       if (width === 260) await resize.dblclick();
       else await resize.press(width === 220 ? "Home" : "End");
       await expect(resize).toHaveAttribute("aria-valuenow", String(width));
-      // Measure at rest: the double-click leaves the pointer where a heading
-      // can land, and hovering reveals its actions, which take their width.
-      await page.mouse.move(0, 0);
       for (const summary of summaries) {
         await summary.scrollIntoViewIfNeeded();
         await expect
@@ -57,15 +54,10 @@ test("sidebar headings keep readable space and compact disclosure targets at enl
               const title = element.firstElementChild.lastElementChild;
               const label = element.firstElementChild.getBoundingClientRect();
               const chevron = element.lastElementChild.getBoundingClientRect();
-              const header = element.closest(".navigation-section-heading");
+              const header = element.parentElement.parentElement;
               const frame = header.getBoundingClientRect();
-              const slot = header
-                .querySelector(".navigation-section-heading-label")
-                .getBoundingClientRect();
               const disclosure = element.getBoundingClientRect();
-              const actions = header
-                .querySelector(".navigation-section-heading-actions")
-                .getBoundingClientRect();
+              const actions = header.lastElementChild.getBoundingClientRect();
               const root = Number.parseFloat(
                 getComputedStyle(document.documentElement).fontSize,
               );
@@ -81,16 +73,14 @@ test("sidebar headings keep readable space and compact disclosure targets at enl
                   Math.abs(frame.height - disclosure.height) < 1 &&
                   frame.height <= 2.5 * root,
                 adjacent: Math.abs(chevron.left - label.right - gap) < 1,
-                // The trigger fills the label slot; actions follow it.
                 fullTarget:
-                  disclosure.left === slot.left &&
-                  disclosure.right === slot.right &&
-                  slot.right <= actions.left + 0.5,
+                  disclosure.left === frame.left &&
+                  disclosure.right === frame.right,
                 actionsContained:
                   actions.left >= frame.left &&
                   actions.right <= frame.right + 1 &&
-                  // Fractional sizes may land half a layout subpixel off;
-                  // check the intended center.
+                  // translateY(-50%) may land half a layout subpixel above
+                  // the frame at fractional sizes; check its intended center.
                   Math.abs(
                     actions.top +
                       actions.height / 2 -
@@ -116,9 +106,7 @@ test("sidebar headings keep readable space and compact disclosure targets at enl
   await resize.press("Home");
   await page.setViewportSize({ width: 1440, height: 1200 });
   const channels = summaries[0];
-  // The trailing edge before the revealed action buttons still toggles the
-  // section. Hover first: revealed actions take their width from the trigger.
-  await channels.hover();
+  // The trailing edge outside the action buttons still toggles the section.
   const target = await channels.boundingBox();
   await channels.click({
     position: { x: target.width - 2, y: target.height / 2 },

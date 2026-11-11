@@ -87,7 +87,7 @@ it("discloses an automatic failure reply while keeping its original text availab
   try {
     const view = renderDom(<MessageRow {...props} />);
     const details = screen.getByRole("button", {
-      name: "Show activity history: Spongebob: Couldn’t finish",
+      name: "Spongebob: Couldn’t finish · Details",
     });
     expect(details).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText(content)).not.toBeInTheDocument();
@@ -95,7 +95,7 @@ it("discloses an automatic failure reply while keeping its original text availab
     expect(screen.getByText(content)).toBeVisible();
     expect(details).toHaveAttribute("aria-expanded", "true");
     expect(details).toHaveAccessibleName(
-      "Collapse activity history: Spongebob: Couldn’t finish",
+      "Spongebob: Couldn’t finish · Hide details",
     );
     fireEvent.click(details);
     expect(details).toHaveAttribute("aria-expanded", "false");
@@ -111,9 +111,7 @@ it("discloses an automatic failure reply while keeping its original text availab
     );
     expect(screen.getByText("Here is the useful result.")).toBeVisible();
     expect(
-      screen.queryByRole("button", {
-        name: /activity history: Spongebob: Couldn’t finish/,
-      }),
+      screen.queryByRole("button", { name: /Couldn’t finish · Details/ }),
     ).not.toBeInTheDocument();
     view.rerender(<MessageRow {...props} row={{ ...row, content }} />);
     expect(screen.getByText(content)).toBeVisible();
@@ -122,7 +120,7 @@ it("discloses an automatic failure reply while keeping its original text availab
   }
 });
 
-it("keeps automatic failure explanations in the incoming agent frame for every request author", () => {
+it("aligns a failure caption with its request rather than the agent author", () => {
   const request = { ...row, id: "request", authorId: "viewer" };
   const props = {
     row: { ...row, notice: "execution-failure" as const },
@@ -139,13 +137,10 @@ it("keeps automatic failure explanations in the incoming agent frame for every r
     const caption = () =>
       screen
         .getByRole("button", {
-          name: "Show activity history: Spongebob: Couldn’t finish",
+          name: "Spongebob: Couldn’t finish · Details",
         })
         .closest("[data-message-notice]");
-    expect(caption()).not.toHaveAttribute("data-viewer-message");
-    expect(
-      caption()?.closest("[data-agent-response-preview]"),
-    ).toBeInTheDocument();
+    expect(caption()).toHaveAttribute("data-viewer-message");
     view.rerender(
       <MessageRow
         {...props}
@@ -2372,7 +2367,7 @@ it("keeps audio and video players between their original image runs", () => {
 });
 
 it.each([true, false])(
-  "keeps timeline-sized thread avatars and one step smaller nested ones (clickable=%s)",
+  "uses smaller shared avatars without shrinking thread profile controls (clickable=%s)",
   (clickable) => {
     const props = {
       row: { ...row, authorId: "a".repeat(64) },
@@ -2387,7 +2382,7 @@ it.each([true, false])(
     const view = renderDom(<MessageRow {...props} compactAvatar />);
     expect(view.container.querySelector(".buzz-avatar")).toHaveAttribute(
       "data-size",
-      "small",
+      "tiny",
     );
     if (clickable) {
       expect(
@@ -2397,7 +2392,7 @@ it.each([true, false])(
     view.rerender(<MessageRow {...props} />);
     expect(view.container.querySelector(".buzz-avatar")).toHaveAttribute(
       "data-size",
-      "default",
+      "small",
     );
     view.unmount();
   },
@@ -3070,7 +3065,7 @@ it.each(["timeline", "thread", "continuation"] as const)(
       expect(container.querySelector("[data-own]")).toHaveTextContent("Root");
       expect(container.querySelector(".buzz-avatar")).toHaveAttribute(
         "data-size",
-        "small",
+        "tiny",
       );
       expect(
         screen.getByRole("button", { name: "View author profile" }),

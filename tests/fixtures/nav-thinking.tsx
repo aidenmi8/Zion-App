@@ -264,7 +264,6 @@ function Preview() {
               selected={selected}
               onSelect={selectChannel}
               onOpenThread={() => {}}
-              onOpenMessage={() => {}}
               onOpenWorkingAgent={(channelId, agent) => {
                 selectChannel(channelId);
                 setDetail({ agent, destination: "thread" });
@@ -290,7 +289,6 @@ function Preview() {
               selected={selected}
               onSelect={selectChannel}
               onOpenThread={() => {}}
-              onOpenMessage={() => {}}
               onOpenWorkingAgent={(channelId, agent) => {
                 selectChannel(channelId);
                 setDetail({ agent, destination: "thread" });

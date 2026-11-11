@@ -7,7 +7,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { watchPageErrors } from "./page-errors.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 let server, directory, fixture;
 // A dev server serves this fixture as about 1,600 modules, and each test
@@ -141,7 +140,13 @@ test("actual composer selects namesakes by exact key, publishes channel/reply ta
   // shape, typography, clear target and alignment in both appearance modes.
   const searchAppearance = async (field) => {
     // Main animates field focus; compare settled appearance, not an arbitrary frame.
-    await animationsSettled(field, { subtree: true });
+    await field.evaluate(async (element) => {
+      await Promise.all(
+        element
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished),
+      );
+    });
     return field.evaluate((element) => {
       const nativeInput = element.querySelector("input");
       // Both the React and vendor search use the shared field boundary.

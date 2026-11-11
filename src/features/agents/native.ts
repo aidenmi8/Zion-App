@@ -4,7 +4,6 @@ import type {
 } from "../agent-protection/service";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { eventsDto, type RelayEvent } from "../relay/events";
-import { effectiveEditDto, effectiveEditFilter } from "../relay/effective-edit";
 import { importedEmojiPicture } from "./import-picture";
 
 /** A plugin agent's identity in one community as native custody reports it;
@@ -190,11 +189,6 @@ export type AgentsNative = {
   publish(member: Membership, event: AgentEventTemplate): Promise<RelayEvent>;
   /** Reads the membership's community as the agent: one to eight filters. */
   query(member: Membership, filters: readonly object[]): Promise<RelayEvent[]>;
-  effectiveEdit(
-    member: Membership,
-    id: string,
-    channel: string,
-  ): Promise<RelayEvent>;
   /** Finds profiles by `name` or `display_name` in the agent's community, as
    * the agent, best match first. `undefined` when the community has no
    * profile name search. */
@@ -314,16 +308,6 @@ export const nativeAgents = (): AgentsNative | undefined =>
         query: async ({ pubkey, relay }, filters) =>
           eventsDto(
             await invoke("app_agent_query", { pubkey, relay, filters }),
-          ),
-        effectiveEdit: async ({ pubkey, relay }, id, channel) =>
-          effectiveEditDto(
-            await invoke("app_agent_query", {
-              pubkey,
-              relay,
-              filters: effectiveEditFilter(id, channel),
-            }),
-            id,
-            channel,
           ),
         searchProfiles: async ({ pubkey, relay }, query, limit) => {
           const found = await invoke("app_agent_search_profiles", {

@@ -6,12 +6,7 @@ import { OnboardingScreen } from "../identity/OnboardingScreen";
 import type { SettingsCards } from "../settings/service";
 import { CommunityDialog } from "./CommunityDialog";
 import type { FederatedIdentity } from "../federated-identity/service";
-import {
-  type InviteLink,
-  parsePastedInvite,
-  pastedInviteError,
-} from "./invite-link";
-import type { JoinRequest } from "./invite-intent";
+import { type InviteLink, parsePastedInvite } from "./invite-link";
 import type { Communities } from "./service";
 
 /** First run with no community: joining replaces the empty shell. */
@@ -26,7 +21,7 @@ export function CommunityLanding({
 }: {
   communities: Communities;
   federatedIdentity?: FederatedIdentity | undefined;
-  invite?: (JoinRequest & { requestId: number }) | undefined;
+  invite?: (InviteLink & { requestId: number }) | undefined;
   onInviteClose(requestId: number): void;
   settingsCards: Pick<SettingsCards, "subscribe" | "has">;
   onJoined(id: string): void;
@@ -47,7 +42,7 @@ export function CommunityLanding({
         federatedIdentity={federatedIdentity}
         mode="join"
         onboarding
-        submittedDestination={!invite || invite.submitted === true}
+        submittedDestination={!invite}
         invite={opened}
         onJoined={onJoined}
         close={() => {
@@ -71,13 +66,7 @@ export function CommunityLanding({
               event.preventDefault();
               const parsed = parsePastedInvite(link);
               if (parsed) setJoining(parsed);
-              else
-                setError(
-                  pastedInviteError(
-                    link,
-                    "Paste an invite link or community URL.",
-                  ),
-                );
+              else setError("Paste an invite link or community URL.");
             }}
           >
             <Field label="Invite link or community URL" error={error}>

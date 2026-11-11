@@ -114,9 +114,7 @@ it.each(["binding-mismatch", "authorization-denied"])(
     expect(alert).not.toHaveTextContent("Builderlab hosting");
     // The others on that server, never the refusing one or another server's.
     expect(
-      screen.getByText(
-        "will also uses this account. Switching may change your access there.",
-      ),
+      screen.getByText("Switching accounts also affects: will."),
     ).toBeVisible();
     await userEvent
       .setup()

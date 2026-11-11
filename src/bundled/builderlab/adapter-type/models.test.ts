@@ -27,7 +27,6 @@ it.each([
       id: "opaque-provider-id",
       displayName,
       supportedReasoningEfforts: ["high"],
-      fast: false,
     });
     expect(choice).toMatchObject({
       id: "opaque-provider-id",
@@ -36,13 +35,3 @@ it.each([
     expect(modelFamily(choice)).toBe(family);
   },
 );
-
-it("carries the catalog's fast marker to the picker choice", () => {
-  const model = {
-    id: "kimi-k3-1-pro-cerebras",
-    displayName: "Kimi K3.1 Pro (Cerebras)",
-    supportedReasoningEfforts: ["low"],
-  };
-  expect(modelChoice({ ...model, fast: true })).toMatchObject({ fast: true });
-  expect(modelChoice({ ...model, fast: false })).not.toHaveProperty("fast");
-});

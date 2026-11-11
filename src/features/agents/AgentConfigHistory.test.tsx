@@ -99,8 +99,7 @@ it("shows recent versions relatively and older dates with an exact timestamp", (
   };
   const old = {
     ...rev("old", undefined, "old"),
-    // Local noon keeps the calendar day "Oct 27" in every time zone.
-    created_at: new Date(2025, 9, 27, 12).getTime() / 1000,
+    created_at: Date.UTC(2025, 9, 27, 18) / 1000,
   };
   try {
     render(

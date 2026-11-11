@@ -465,6 +465,8 @@ export type RunnerHost = {
   };
   /** The partition its community's activity is kept under, while live. */
   scope(agent: Agent): string | undefined;
+  /** Its saved record, without defaults. */
+  saved(key: AgentKey): AgentRecord | undefined;
   /** Whether a plugin that shows Attention is on; Attention runs only then. */
   attentionShown(): boolean;
   /** Whether plugins have finished starting. */
@@ -522,6 +524,8 @@ export type RunnerHost = {
   tabs(agent: Agent): ReturnType<AgentHandle["tabs"]>;
   /** Buzz settings on this device, where there are any. */
   settings?(): DeviceSettings | undefined;
+  /** Owner reads for a run of the agent, where this build enables them. */
+  ownerAccess?(agent: Agent): AgentHandle["ownerAccess"];
   /** Whether watch classifiers can run here. */
   classifier(): ClassifierAvailability;
   /** The decisions service that runs classifiers, where there is one. */
@@ -538,7 +542,6 @@ export type RunnerHost = {
         | "release"
         | "publish"
         | "query"
-        | "effectiveEdit"
         | "searchProfiles"
         | "upload"
         | "media"
@@ -708,8 +711,9 @@ export class AgentRunners {
   }
 
   /** Keeps one runner for each saved agent: a deleted one's is retired, and a
-   * replaced type aborts its run. Hiding Attention voids the watch work it
-   * queued, even if it is shown again before that work would run. */
+   * replaced type aborts its run. Turning attention off voids the watch work
+   * it queued or held, even if it is turned on again before that work would
+   * run. */
   reconcile(
     identities: readonly RunnerMember[],
     types: ReadonlyMap<string, RegisteredAgentType>,
@@ -722,9 +726,13 @@ export class AgentRunners {
     for (const identity of identities) {
       const type = types.get(identity.type);
       const runner = this.runners.get(identity.key);
-      if (runner && !this.host.attentionShown()) {
+      const off = this.host.saved(identity.key)?.attentionEnabled !== true;
+      if (runner && (off || !this.host.attentionShown())) {
         runner.epoch++;
         this.dropWatchWork(runner);
+        // A startup hold keeps its events until Attention is shown, but not
+        // past the switch being turned off.
+        if (off) runner.held.clear();
       }
       if (!runner) this.runners.set(identity.key, this.runner(identity, type));
       else if (
@@ -770,7 +778,7 @@ export class AgentRunners {
   wakeIn(key: AgentKey, trigger: PluginTrigger) {
     const runner = this.runners.get(key);
     if (!runner || !this.runs(key) || !this.host.ready(key))
-      throw new Error("This copy of Buzz does not run that agent");
+      throw new Error("This copy of Zion does not run that agent");
     if (!this.enqueue(runner, { trigger, channelId: trigger.channel }))
       throw new Error("The agent is busy and could not take this wake");
   }
@@ -782,7 +790,7 @@ export class AgentRunners {
   ) {
     const runner = this.runners.get(key);
     if (!runner || !this.runs(key) || !this.host.ready(key))
-      throw new Error("This copy of Buzz does not run that agent");
+      throw new Error("This copy of Zion does not run that agent");
     const job = {
       trigger,
       matched: { object, epoch: runner.epoch },
@@ -915,7 +923,7 @@ export class AgentRunners {
       !this.host.ready(key)
     )
       throw new Error(
-        "Use session controls in the Buzz app that runs this agent.",
+        "Use session controls in the Zion app that runs this agent.",
       );
     return change();
   }
@@ -938,7 +946,7 @@ export class AgentRunners {
     if (working()) throw answering();
     if (!runner)
       throw new Error(
-        "This agent is not running in this copy of Buzz. Change its provider in the Buzz app that runs it.",
+        "This agent is not running in this copy of Zion. Change its provider in the Zion app that runs it.",
       );
     const pubkey = runner.member.pubkey;
     if (
@@ -951,7 +959,7 @@ export class AgentRunners {
     try {
       if (!(await this.claimForRetype(runner)))
         throw new Error(
-          "Another copy of Buzz is running this agent. Change its provider there, or quit that copy of Buzz and try again.",
+          "Another copy of Zion is running this agent. Change its provider there, or quit that copy of Zion and try again.",
         );
       if (working()) throw answering();
       return await change();
@@ -2223,7 +2231,10 @@ export class AgentRunners {
         ? { triggers: [{ type: "mention", event }] }
         : { triggers: [] };
     // An agent whose Attention waits for startup holds what it would hear.
-    const waiting = !agent.attentionEnabled && this.starting();
+    const waiting =
+      !agent.attentionEnabled &&
+      this.host.saved(runner.key)?.attentionEnabled === true &&
+      this.starting();
     if (!agent.attentionEnabled && !waiting) return { triggers: [] };
     const matches = this.watches(runner, agent).filter(
       ({ slug, watch }) => !done.has(slug) && watchMatches(watch, event),
@@ -2475,25 +2486,15 @@ export class AgentRunners {
   }
 
   private showWork(runner: Runner, job: Job) {
-    if (
-      job.work ||
-      (job.trigger.type !== "mention" && job.trigger.type !== "plugin")
-    )
-      return;
-    const trigger = job.trigger;
+    if (job.work || job.trigger.type !== "mention") return;
     const agent = this.host.agent(runner.key);
     const scope = agent && this.host.scope(agent);
-    const event =
-      trigger.type === "mention" ? trigger.event : wakeAnchor(trigger);
+    const event = job.trigger.event;
     const channelId =
       job.channelId ?? event.tags.find(([key]) => key === "h")?.[1];
     if (!scope || !channelId) return;
     const threadRootId = threadReference(event)?.rootId;
     const channel = this.host.channel(agent, event);
-    const thread =
-      threadRootId &&
-      (trigger.type === "mention" ||
-        (channel?.channelType !== "solo" && channel?.channelType !== "dm"));
     const soloChat =
       channel?.channelType === "solo" &&
       !channel.cached &&
@@ -2506,19 +2507,16 @@ export class AgentRunners {
         agent: runner.member.pubkey,
         channelId,
         messageId: event.id,
-        ...(trigger.type === "plugin" ? { syntheticMessage: true } : {}),
         threadRootId: threadRootId ?? event.id,
-        ...(thread ? { thread: true } : {}),
+        ...(threadRootId ? { thread: true } : {}),
         ...(soloChat ? { soloChat: true } : {}),
         ...(soloChat && conversationName ? { conversationName } : {}),
       },
-      // A resumed mention must not reuse its resume marker on retry.
+      // Retry queues the same mention again. It was seen when first heard,
+      // so it is not marked again; its run saves it as working as any does.
       () =>
         void this.enqueue(runner, {
-          trigger:
-            trigger.type === "mention"
-              ? { type: "mention", event: trigger.event }
-              : trigger,
+          trigger: { type: "mention", event },
           ...(job.channelId ? { channelId: job.channelId } : {}),
         }),
     );
@@ -2852,6 +2850,12 @@ export class AgentRunners {
     const lifetime = runner.controller.signal;
     const protection = this.host.protection?.(agent);
     const settings = run ? this.host.settings?.() : undefined;
+    // Only a bundled harness's run: an installed harness plugin is not trusted
+    // with its owner's access.
+    const ownerAccess =
+      run && runner.type?.revision === "bundled"
+        ? this.host.ownerAccess?.(agent)
+        : undefined;
     const handle = guarded(
       {
         protection: protection && {
@@ -2902,10 +2906,6 @@ export class AgentRunners {
         query: async (filters: readonly object[]) => {
           lifetime.throwIfAborted();
           return this.require().query(agent, filters);
-        },
-        effectiveEdit: async (id: string, channel: string) => {
-          lifetime.throwIfAborted();
-          return this.require().effectiveEdit(agent, id, channel);
         },
         searchProfiles: async (query: string, limit: number) => {
           lifetime.throwIfAborted();
@@ -2965,6 +2965,7 @@ export class AgentRunners {
         tabs: () => this.host.tabs(agent),
         // Only a run's: a plugin acting through the agent doesn't get them.
         ...(settings && { settings }),
+        ...(ownerAccess && { ownerAccess }),
         notes: (channelId: string, root?: string) => {
           const pending = runner.notes.get(channelId) ?? [];
           const matches = (note: { root: string | undefined }) =>
@@ -3213,7 +3214,8 @@ export class AgentRunners {
     const record = () => this.host.record(key);
     return guarded(
       {
-        enabled: () => this.host.attentionShown(),
+        enabled: () =>
+          record().attentionEnabled === true && this.host.attentionShown(),
         classifier: () => this.host.classifier(),
         show: async (slug: string, interest?: string) => {
           const result = await show(record(), slug, seconds(), interest);

@@ -1,7 +1,8 @@
 //! NIP-AB HKDF-SHA256 key derivation primitives.
 //!
 //! All functions are pure (no I/O, no side effects) and operate on fixed-size
-//! `[u8; 32]` arrays. HKDF uses the RustCrypto `hkdf` crate over SHA-256.
+//! `[u8; 32]` arrays. The underlying HKDF implementation is
+//! [`nostr::util::hkdf`], which uses `bitcoin::hashes` internally.
 //!
 //! # Derivation overview
 //!
@@ -19,35 +20,26 @@
 //!                                    info="nostr-pair-transcript-v1")
 //! ```
 
-use zeroize::Zeroizing;
+use nostr::hashes::Hash as _;
+use nostr::util::hkdf;
 
 const INFO_SESSION_ID: &[u8] = b"nostr-pair-session-id";
 const INFO_SAS: &[u8] = b"nostr-pair-sas-v1";
 const INFO_TRANSCRIPT: &[u8] = b"nostr-pair-transcript-v1";
 
 /// Run HKDF-SHA256(IKM=`ikm`, salt=`salt`, info=`info`) and return 32 bytes.
-fn hkdf32(salt: &[u8], ikm: &[u8], info: &[u8]) -> [u8; 32] {
-    let mut out = [0u8; 32];
-    // HKDF-Expand accepts up to 255 * HashLen bytes, so 32 never fails.
-    let _ = hkdf::Hkdf::<sha2::Sha256>::new(Some(salt), ikm).expand(info, &mut out);
-    out
-}
-
-/// Compute the raw 32-byte ECDH shared x-coordinate between `secret_key` and
-/// the even-parity point of the x-only `public_key`.
 ///
-/// This is the `ecdh_shared` input to [`derive_sas`]. Callers zero the result
-/// after deriving from it.
-pub fn ecdh_shared_x(
-    secret_key: &nostr::key::SecretKey,
-    public_key: &nostr::key::PublicKey,
-) -> Result<[u8; 32], secp256k1::Error> {
-    let x_only = secp256k1::XOnlyPublicKey::from_byte_array(public_key.as_bytes())?;
-    let point = secp256k1::PublicKey::from_x_only_public_key(x_only, secp256k1::Parity::Even);
-    let shared_point = Zeroizing::new(secp256k1::ecdh::shared_secret_point(&point, secret_key));
-    let mut shared_x = [0u8; 32];
-    shared_x.copy_from_slice(&shared_point[..32]);
-    Ok(shared_x)
+/// Uses `nostr::util::hkdf::{extract, expand}` directly so we don't pull in
+/// an extra `hkdf` crate dependency.
+fn hkdf32(salt: &[u8], ikm: &[u8], info: &[u8]) -> [u8; 32] {
+    let prk = hkdf::extract(salt, ikm);
+    let okm = hkdf::expand(&prk.to_byte_array(), info, 32);
+    // HKDF-Expand with L=32 and SHA-256 (HashLen=32) always produces exactly
+    // 32 bytes (one iteration, truncated to L). Copy into a fixed-size array
+    // without expect/unwrap.
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&okm[..32]);
+    out
 }
 
 /// Derive the session ID from the session secret.
@@ -73,7 +65,8 @@ pub fn derive_session_id(session_secret: &[u8; 32]) -> [u8; 32] {
 /// Returns `(sas_code, sas_input)`. The caller needs `sas_input` to compute
 /// the transcript hash — see [`derive_transcript_hash`].
 ///
-/// `ecdh_shared` is the raw 32-byte x-coordinate from [`ecdh_shared_x`].
+/// `ecdh_shared` is the raw 32-byte x-coordinate from
+/// `nostr::util::generate_shared_key(own_secret, other_pubkey)`.
 pub fn derive_sas(ecdh_shared: &[u8; 32], session_secret: &[u8; 32]) -> (u32, [u8; 32]) {
     let sas_input = hkdf32(session_secret, ecdh_shared, INFO_SAS);
     let sas_code =
@@ -225,7 +218,7 @@ mod tests {
 
     #[test]
     fn sas_with_real_ecdh_keys() {
-        use nostr::key::{Keys, SecretKey};
+        use nostr::{Keys, SecretKey};
 
         let src_sk = SecretKey::from_slice(&source_privkey_bytes()).expect("valid key");
         let tgt_sk = SecretKey::from_slice(&target_privkey_bytes()).expect("valid key");
@@ -233,9 +226,13 @@ mod tests {
         let tgt_keys = Keys::new(tgt_sk);
 
         // ECDH: source computes shared key with target's pubkey
-        let ecdh_from_src = ecdh_shared_x(src_keys.secret_key(), &tgt_keys.public_key()).unwrap();
+        let ecdh_from_src =
+            nostr::util::generate_shared_key(src_keys.secret_key(), &tgt_keys.public_key())
+                .unwrap();
         // ECDH: target computes shared key with source's pubkey (must match)
-        let ecdh_from_tgt = ecdh_shared_x(tgt_keys.secret_key(), &src_keys.public_key()).unwrap();
+        let ecdh_from_tgt =
+            nostr::util::generate_shared_key(tgt_keys.secret_key(), &src_keys.public_key())
+                .unwrap();
 
         assert_eq!(ecdh_from_src, ecdh_from_tgt, "ECDH must be symmetric");
 
@@ -248,7 +245,7 @@ mod tests {
 
     #[test]
     fn transcript_hash_is_deterministic() {
-        use nostr::key::{Keys, SecretKey};
+        use nostr::{Keys, SecretKey};
 
         let src_sk = SecretKey::from_slice(&source_privkey_bytes()).expect("valid key");
         let tgt_sk = SecretKey::from_slice(&target_privkey_bytes()).expect("valid key");
@@ -256,7 +253,8 @@ mod tests {
         let tgt_keys = Keys::new(tgt_sk);
 
         let session_id = derive_session_id(&session_secret());
-        let ecdh = ecdh_shared_x(src_keys.secret_key(), &tgt_keys.public_key()).unwrap();
+        let ecdh = nostr::util::generate_shared_key(src_keys.secret_key(), &tgt_keys.public_key())
+            .unwrap();
         let (_, sas_input) = derive_sas(&ecdh, &session_secret());
 
         let src_pk: [u8; 32] = src_keys.public_key().to_bytes();
@@ -272,7 +270,7 @@ mod tests {
     /// Full test vector suite — all values pinned against the NIP-AB spec.
     #[test]
     fn all_test_vectors() {
-        use nostr::key::{Keys, SecretKey};
+        use nostr::{Keys, SecretKey};
 
         let src_sk = SecretKey::from_slice(&source_privkey_bytes()).expect("valid key");
         let tgt_sk = SecretKey::from_slice(&target_privkey_bytes()).expect("valid key");
@@ -290,7 +288,8 @@ mod tests {
         );
 
         // ECDH
-        let ecdh = ecdh_shared_x(src_keys.secret_key(), &tgt_keys.public_key()).unwrap();
+        let ecdh = nostr::util::generate_shared_key(src_keys.secret_key(), &tgt_keys.public_key())
+            .unwrap();
         assert_eq!(
             bytes_to_hex(&ecdh),
             "9b4b6d6990713d89d6d9982e506ee1bbcde6f05c54d9d2978696e8a7274d4408"
@@ -324,7 +323,7 @@ mod tests {
 
     #[test]
     fn transcript_hash_sensitive_to_pubkey_order() {
-        use nostr::key::{Keys, SecretKey};
+        use nostr::{Keys, SecretKey};
 
         let src_sk = SecretKey::from_slice(&source_privkey_bytes()).expect("valid key");
         let tgt_sk = SecretKey::from_slice(&target_privkey_bytes()).expect("valid key");
@@ -332,7 +331,8 @@ mod tests {
         let tgt_keys = Keys::new(tgt_sk);
 
         let session_id = derive_session_id(&session_secret());
-        let ecdh = ecdh_shared_x(src_keys.secret_key(), &tgt_keys.public_key()).unwrap();
+        let ecdh = nostr::util::generate_shared_key(src_keys.secret_key(), &tgt_keys.public_key())
+            .unwrap();
         let (_, sas_input) = derive_sas(&ecdh, &session_secret());
 
         let src_pk: [u8; 32] = src_keys.public_key().to_bytes();
@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     fn full_derivation_round_trip() {
-        use nostr::key::{Keys, SecretKey};
+        use nostr::{Keys, SecretKey};
 
         // Simulate both sides of the pairing independently deriving the same values.
         let src_sk = SecretKey::from_slice(&source_privkey_bytes()).expect("valid key");
@@ -382,8 +382,12 @@ mod tests {
         let session_id = derive_session_id(&secret);
 
         // Both sides compute ECDH (symmetric).
-        let ecdh_src = ecdh_shared_x(src_keys.secret_key(), &tgt_keys.public_key()).unwrap();
-        let ecdh_tgt = ecdh_shared_x(tgt_keys.secret_key(), &src_keys.public_key()).unwrap();
+        let ecdh_src =
+            nostr::util::generate_shared_key(src_keys.secret_key(), &tgt_keys.public_key())
+                .unwrap();
+        let ecdh_tgt =
+            nostr::util::generate_shared_key(tgt_keys.secret_key(), &src_keys.public_key())
+                .unwrap();
         assert_eq!(ecdh_src, ecdh_tgt, "ECDH must be symmetric");
 
         // Both sides derive the same SAS.

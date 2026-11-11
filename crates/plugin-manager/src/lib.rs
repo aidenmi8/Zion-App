@@ -14,12 +14,14 @@ use std::{
 };
 
 pub mod access;
+#[path = "../../distribution.rs"]
+mod distribution;
 pub mod imports;
 pub mod managed;
 mod migrate_agent_flag;
 
 pub type Result<T> = std::result::Result<T, String>;
-pub const LIMIT: u64 = 8 * 1024 * 1024;
+const LIMIT: u64 = 8 * 1024 * 1024;
 const MAX_README_BYTES: usize = 256 * 1024;
 const MAX_ICON_BYTES: usize = 1024 * 1024;
 const MAX_ICON_DIMENSION: u32 = 4096;
@@ -88,14 +90,6 @@ pub struct HostGrants {
     /// Pathless temporary saves in host-selected private storage; no read access.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub managed_files: bool,
-    /// `requestBytes` may also read raster images from any public HTTPS
-    /// address, one hop at a time, with no cookies; never pages.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub public_images: bool,
-    /// `readPage` may read the preview fields of a web page on any public
-    /// HTTPS address, one hop at a time, with no cookies; never its HTML.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub public_pages: bool,
 }
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -459,10 +453,6 @@ pub fn bundled_manifests() -> Vec<Manifest> {
         serde_json::from_str(include_str!("../../../src/bundled/mermaid/manifest.json"))
             .expect("bundled mermaid manifest"),
         serde_json::from_str(include_str!(
-            "../../../src/bundled/link-previews/manifest.json"
-        ))
-        .expect("bundled link previews manifest"),
-        serde_json::from_str(include_str!(
             "../../../src/bundled/identity-naming/manifest.json"
         ))
         .expect("identity naming manifest"),
@@ -486,10 +476,6 @@ pub fn bundled_manifests() -> Vec<Manifest> {
             .expect("github manifest"),
         serde_json::from_str(include_str!("../../../src/bundled/inbox/manifest.json"))
             .expect("valid Inbox manifest"),
-        serde_json::from_str(include_str!(
-            "../../../src/bundled/drafts-sent/manifest.json"
-        ))
-        .expect("drafts-sent manifest"),
         serde_json::from_str(include_str!("../../../src/bundled/reminders/manifest.json"))
             .expect("reminders manifest"),
         serde_json::from_str(include_str!("../../../src/bundled/bestie/manifest.json"))
@@ -551,11 +537,9 @@ fn enabled_by_default(id: &str) -> bool {
             | "buzz.terminal"
             | "buzz.profiles"
             | "buzz.links"
-            | "buzz.link-previews"
             | "buzz.voice-notes"
             | "buzz.huddles"
             | "buzz.github"
-            | "buzz.bestie"
             | "buzz.watching"
             | "buzz.pairing"
             | "buzz.inbox"
@@ -627,7 +611,6 @@ impl ReloadSource {
 pub enum InstallSource {
     Folder(ReloadSource),
     Git(GitSource),
-    Url(UrlSource),
 }
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -637,13 +620,6 @@ pub struct GitSource {
     pub path: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
-}
-/// A single plugin artifact downloaded over HTTPS and accepted only if its SHA-256 matches.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct UrlSource {
-    pub url: String,
-    pub sha256: String,
 }
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -664,7 +640,7 @@ impl Default for Registry {
         }
     }
 }
-// Freeze known defaults so later releases cannot silently change a feature's state.
+// Freeze known defaults so later releases cannot silently withdraw a feature.
 fn pin_bundled_defaults(registry: &mut Registry, existing_profile: bool) -> bool {
     let mut changed = false;
     for manifest in bundled_manifests() {
@@ -673,13 +649,9 @@ fn pin_bundled_defaults(registry: &mut Registry, existing_profile: bool) -> bool
             .entry(manifest.id.clone())
             .or_insert_with(|| {
                 changed = true;
-                if existing_profile && manifest.id == "buzz.bestie" {
-                    false
-                } else {
-                    enabled_by_default(&manifest.id)
-                        || (existing_profile
-                            && matches!(manifest.id.as_str(), "buzz.reminders" | "buzz.workflows"))
-                }
+                enabled_by_default(&manifest.id)
+                    || (existing_profile
+                        && matches!(manifest.id.as_str(), "buzz.reminders" | "buzz.workflows"))
             });
     }
     changed
@@ -849,13 +821,17 @@ pub enum InstallationResult {
     },
 }
 /// The desktop app data folder a CLI targets by default: a debug CLI the
-/// development app's, a release CLI the installed app's. Each refuses while the
-/// app has yet to fill that folder from the installed app's older one: creating
-/// it would stop the development copy, or leave both and stop the release move.
+/// development app's, a release CLI Zion's owner-approved namespace. Only the
+/// upstream development profile participates in legacy seeding; Zion starts
+/// fresh and must not adopt another app's folders.
 fn default_home() -> Result<PathBuf> {
     let data =
         dirs::data_dir().ok_or("Cannot determine application data directory; set BUZZODZ_HOME")?;
-    let (home, older, open): (_, &[_], _) = if cfg!(debug_assertions) {
+    default_home_at(data, cfg!(debug_assertions))
+}
+
+fn default_home_at(data: PathBuf, development: bool) -> Result<PathBuf> {
+    let (home, older, open): (_, &[_], _) = if development {
         (
             "xyz.block.buzz.desktop.dev",
             &["xyz.block.buzz.desktop", "dev.local.buzz.foundation"],
@@ -863,9 +839,9 @@ fn default_home() -> Result<PathBuf> {
         )
     } else {
         (
-            "xyz.block.buzz.desktop",
-            &["dev.local.buzz.foundation"],
-            "Buzz has not moved its storage to its 1.0 folder yet. Open Buzz once",
+            distribution::RELEASE_IDENTIFIER,
+            &[],
+            "Open Zion once to initialize its application storage",
         )
     };
     let home = data.join(home);
@@ -881,7 +857,6 @@ pub struct Manager {
     profile: String,
     safe_mode: bool,
     existing_profile: bool,
-    packaged_fetch: std::sync::Arc<std::sync::Mutex<managed::PackagedFetch>>,
 }
 impl Manager {
     /// Host control-plane location that protected workers must not modify.
@@ -907,7 +882,6 @@ impl Manager {
             profile: profile.into(),
             safe_mode,
             existing_profile,
-            packaged_fetch: Default::default(),
         })
     }
     /// Opens the environment's plugin home, else `home`: the desktop passes its own app data folder.
@@ -920,38 +894,14 @@ impl Manager {
     }
     /// The managed plugin policy and how each recommendation stands in `catalog`.
     pub fn managed(&self, catalog: &Catalog) -> managed::Managed {
-        let fetch = self.packaged_fetch.lock().map_or_else(
-            |_| managed::PackagedFetch::Failed("Policy fetch state is unavailable".into()),
-            |fetch| fetch.clone(),
-        );
-        managed::effective(
-            &self.home,
-            std::env::var_os(managed::PATH_ENV),
-            (!managed::PACKAGED_URL.is_empty()).then_some((managed::PACKAGED_URL, &fetch)),
+        managed::status(
+            managed::path(&self.home, std::env::var_os(managed::PATH_ENV)),
             catalog,
         )
     }
     /// Repository access rules for Git imports, from the file beside the profile folders.
     pub fn repository_access(&self) -> access::AccessRules {
         access::load(&self.home, std::env::var_os(access::PATH_ENV))
-    }
-    /// Keeps a policy fetched from [`managed::PACKAGED_URL`] if Buzz can use it.
-    pub fn store_packaged_policy(&self, bytes: &[u8]) -> Result<bool> {
-        let stored = managed::store_packaged(&self.home, managed::PACKAGED_URL, bytes);
-        self.record_packaged_fetch(stored.as_ref().map(|_| ()).map_err(Clone::clone));
-        stored
-    }
-    /// Records a fetch that failed before Buzz could check the response.
-    pub fn packaged_policy_failed(&self, reason: String) {
-        self.record_packaged_fetch(Err(reason));
-    }
-    fn record_packaged_fetch(&self, outcome: std::result::Result<(), String>) {
-        if let Ok(mut fetch) = self.packaged_fetch.lock() {
-            *fetch = match outcome {
-                Ok(()) => managed::PackagedFetch::Fetched,
-                Err(reason) => managed::PackagedFetch::Failed(reason),
-            };
-        }
     }
     fn lock(&self) -> Result<File> {
         fs::create_dir_all(&self.root).map_err(err)?;
@@ -1495,14 +1445,6 @@ fn prepare_artifact(directory: &Path) -> Result<Release> {
 pub fn release_manifest(directory: &Path) -> Result<Manifest> {
     prepare_artifact(directory)?.validate()
 }
-/// The single-file artifact a URL source serves, and its SHA-256: the exact bytes Buzz
-/// installs. A release signature is not part of it.
-pub fn pack_release(directory: &Path) -> Result<(Manifest, Vec<u8>, String)> {
-    let release = prepare_artifact(directory)?;
-    let manifest = release.validate()?;
-    let digest = hash(&release.bytes);
-    Ok((manifest, release.bytes, digest))
-}
 fn prepare_reload_artifact(source: &InstallSource) -> Result<Release> {
     let InstallSource::Folder(source) = source else {
         return Err("Plugin was not installed from a reloadable folder".into());
@@ -1692,6 +1634,26 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn zion_release_cli_uses_its_own_storage_without_adopting_other_apps() {
+        let root = tempfile::tempdir().unwrap();
+        for old in ["xyz.block.buzz.desktop", "dev.local.buzz.foundation"] {
+            std::fs::create_dir(root.path().join(old)).unwrap();
+            std::fs::write(root.path().join(old).join("keep"), old).unwrap();
+        }
+        assert_eq!(
+            super::default_home_at(root.path().to_owned(), false).unwrap(),
+            root.path().join("xyz.block.buzz.app")
+        );
+        assert!(!root.path().join("xyz.block.buzz.app").exists());
+        for old in ["xyz.block.buzz.desktop", "dev.local.buzz.foundation"] {
+            assert_eq!(
+                std::fs::read_to_string(root.path().join(old).join("keep")).unwrap(),
+                old
+            );
+        }
+    }
+
     use super::{
         artifact_from_text, bundled_manifests, enabled_by_default, validate_candidate_path,
         Manager, Manifest, Release, MAX_HOST_COMMAND_OUTPUT_BYTES,
@@ -2290,36 +2252,6 @@ mod tests {
         );
         managed["host"]["managedFiles"] = serde_json::json!("true");
         assert!(serde_json::from_value::<Manifest>(managed).is_err());
-        assert!(!old.host.as_ref().unwrap().public_images);
-        let mut images = manifest.clone();
-        images["host"]["publicImages"] = serde_json::json!(false);
-        let parsed: Manifest = serde_json::from_value(images.clone()).unwrap();
-        assert_eq!(serde_json::to_value(&parsed).unwrap(), manifest);
-        images["host"]["publicImages"] = serde_json::json!(true);
-        let parsed: Manifest = serde_json::from_value(images.clone()).unwrap();
-        assert!(parsed.host.as_ref().unwrap().public_images);
-        assert_eq!(serde_json::to_value(&parsed).unwrap(), images);
-        assert_ne!(
-            artifact_from_text(&manifest.to_string(), "export const x = 1".into()).unwrap(),
-            artifact_from_text(&images.to_string(), "export const x = 1".into()).unwrap()
-        );
-        images["host"]["publicImages"] = serde_json::json!("true");
-        assert!(serde_json::from_value::<Manifest>(images).is_err());
-        assert!(!old.host.as_ref().unwrap().public_pages);
-        let mut pages = manifest.clone();
-        pages["host"]["publicPages"] = serde_json::json!(false);
-        let parsed: Manifest = serde_json::from_value(pages.clone()).unwrap();
-        assert_eq!(serde_json::to_value(&parsed).unwrap(), manifest);
-        pages["host"]["publicPages"] = serde_json::json!(true);
-        let parsed: Manifest = serde_json::from_value(pages.clone()).unwrap();
-        assert!(parsed.host.as_ref().unwrap().public_pages);
-        assert_eq!(serde_json::to_value(&parsed).unwrap(), pages);
-        assert_ne!(
-            artifact_from_text(&manifest.to_string(), "export const x = 1".into()).unwrap(),
-            artifact_from_text(&pages.to_string(), "export const x = 1".into()).unwrap()
-        );
-        pages["host"]["publicPages"] = serde_json::json!("true");
-        assert!(serde_json::from_value::<Manifest>(pages).is_err());
         for limit in [1, 4096, MAX_HOST_COMMAND_OUTPUT_BYTES] {
             let mut valid = manifest.clone();
             valid["host"]["commands"][0]["maxOutputBytes"] = serde_json::json!(limit);

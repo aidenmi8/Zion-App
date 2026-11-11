@@ -248,9 +248,17 @@ it.each(ACCENTS)(
   },
 );
 
-it("the default Citrus accent keeps its strong fill and paired black ink", () => {
+it("the default Iris accent keeps its strong fill and paired white ink", () => {
   for (const mode of ["light", "dark"] as const) {
     const palette = resolvedPalette(mode);
+    expect(palette["--affordance-accent-prominent"]).toBe("#5f55fa");
+    expect(palette["--text-on-accent"]).toBe("#ffffff");
+  }
+});
+
+it("an explicitly selected Citrus keeps its strong fill and paired black ink", () => {
+  for (const mode of ["light", "dark"] as const) {
+    const palette = resolvedPalette(mode, "citrus");
     expect(palette["--affordance-accent-prominent"]).toBe("#beda36");
     expect(palette["--text-on-accent"]).toBe("#000000");
   }

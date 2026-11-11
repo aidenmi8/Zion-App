@@ -23,7 +23,7 @@ function openDatabase() {
     request.onerror = () => reject(request.error);
     request.onblocked = () => {
       blocked = true;
-      reject(new Error("Close other Buzz windows to open saved choices."));
+      reject(new Error("Close other Zion windows to open saved choices."));
     };
   });
 }

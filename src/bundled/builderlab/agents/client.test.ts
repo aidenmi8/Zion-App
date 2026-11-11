@@ -149,44 +149,6 @@ it.each([{}, { agents: [] }])(
     expect(await h.client.list(h.signal)).toEqual([]);
   },
 );
-it("normalizes optional creation dates from JSON without inventing dates", async () => {
-  const h = await fixture();
-  const millis = Date.UTC(2026, 6, 15, 12);
-  const values = [
-    millis,
-    millis / 1000,
-    String(millis),
-    String(millis / 1000),
-    "2026-07-15T12:00:00Z",
-    null,
-    "",
-    "bad date",
-    undefined,
-    true,
-    1e20,
-  ];
-  vi.mocked(h.host.request).mockResolvedValueOnce(
-    response({
-      status: 1,
-      agents: values.map((created_at) => ({ ...row, created_at })),
-    }),
-  );
-  expect(
-    (await h.client.list(h.signal)).map(({ createdAt }) => createdAt),
-  ).toEqual([
-    millis,
-    millis,
-    millis,
-    millis,
-    millis,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-  ]);
-});
 it.each([
   ["AGENT_STATUS_UNATTESTED", "Unattested"],
   [1, "Unattested"],
@@ -245,33 +207,22 @@ it.each(["sign-out", "new-login", "cancel", "dispose"])(
   async (action) => {
     const h = await fixture();
     const held = deferred<HostResponse>();
-    const started = deferred<void>();
-    vi.mocked(h.host.request).mockImplementation(() => {
-      started.resolve();
-      return held.promise;
-    });
+    vi.mocked(h.host.request).mockReturnValue(held.promise);
     const controller = new AbortController();
     const pending = h.client.list(controller.signal);
-    const rejected = expect(pending).rejects.toMatchObject({
-      name: "AbortError",
-    });
-    await started.promise;
-    try {
-      if (action === "cancel") controller.abort();
-      else if (action === "dispose") h.session.dispose();
-      else {
-        h.session.signOut();
-        if (action === "new-login") await h.session.signIn();
-      }
-    } finally {
-      held.resolve(
-        response(
-          { status: 1, agents: [row] },
-          action === "new-login" ? 401 : 200,
-        ),
-      );
+    if (action === "cancel") controller.abort();
+    else if (action === "dispose") h.session.dispose();
+    else {
+      h.session.signOut();
+      if (action === "new-login") await h.session.signIn();
     }
-    await rejected;
+    held.resolve(
+      response(
+        { status: 1, agents: [row] },
+        action === "new-login" ? 401 : 200,
+      ),
+    );
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
     if (action === "new-login")
       expect(h.session.snapshot().status).toBe("signed-in");
   },
@@ -305,12 +256,6 @@ it("loads the standalone catalog with model-specific effort identifiers", async 
           display_name: "Friendly Model",
           supported_reasoning_efforts: ["none", "max"],
         },
-        {
-          id: "model-two",
-          display_name: "Fast Model",
-          supported_reasoning_efforts: ["low"],
-          fast: true,
-        },
       ],
     }),
   );
@@ -320,13 +265,6 @@ it("loads the standalone catalog with model-specific effort identifiers", async 
         id: "model-one",
         displayName: "Friendly Model",
         supportedReasoningEfforts: ["none", "max"],
-        fast: false,
-      },
-      {
-        id: "model-two",
-        displayName: "Fast Model",
-        supportedReasoningEfforts: ["low"],
-        fast: true,
       },
     ],
   });
@@ -802,7 +740,7 @@ it.each([
   [
     "another key is bound to the account",
     [bound("ab".repeat(32))],
-    "linked to a different Buzz identity",
+    "linked to a different Zion identity",
   ],
   [
     "the key is bound to another account",
@@ -838,7 +776,7 @@ it("refuses to link without a local Buzz identity", async () => {
   const h = await fixture();
   h.owner.key.mockResolvedValueOnce(null);
   await expect(h.client.link(h.signal)).rejects.toThrow(
-    "Set up your Buzz identity",
+    "Set up your Zion identity",
   );
   expect(h.host.request).not.toHaveBeenCalled();
 });

@@ -29,12 +29,7 @@ pub(crate) fn onboarding_preserve_window<R: Runtime>(
     if window.label() != "main" {
         return Err("Main window required".into());
     }
-    #[cfg(target_os = "macos")]
-    {
-        let native = window.ns_window().map_err(|error| error.to_string())?;
-        let native: &objc2_app_kit::NSWindow = unsafe { &*native.cast() };
-        native.setAnimationBehavior(objc2_app_kit::NSWindowAnimationBehavior::None);
-    }
+    prepare_native_window(&window)?;
     let app = window.app_handle();
     let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
     let target = dir.join(INTRO_GEOMETRY);
@@ -47,6 +42,21 @@ pub(crate) fn onboarding_preserve_window<R: Runtime>(
     .map_err(|e| e.to_string())?;
     let bytes = std::fs::read(dir.join(app.filename())).map_err(|e| e.to_string())?;
     preserve_intro_geometry(&target, &bytes)
+}
+
+// MockRuntime has no real NSWindow. Keep the OS-only effect behind its adapter;
+// unit tests still exercise the command and all geometry persistence behavior.
+#[cfg(all(target_os = "macos", not(test)))]
+fn prepare_native_window<R: Runtime>(window: &tauri::WebviewWindow<R>) -> Result<(), String> {
+    let native = window.ns_window().map_err(|error| error.to_string())?;
+    let native: &objc2_app_kit::NSWindow = unsafe { &*native.cast() };
+    native.setAnimationBehavior(objc2_app_kit::NSWindowAnimationBehavior::None);
+    Ok(())
+}
+
+#[cfg(any(not(target_os = "macos"), test))]
+fn prepare_native_window<R: Runtime>(_: &tauri::WebviewWindow<R>) -> Result<(), String> {
+    Ok(())
 }
 
 fn preserve_intro_geometry(target: &std::path::Path, bytes: &[u8]) -> Result<(), String> {

@@ -4,6 +4,8 @@ PNG posters from Block's Berd avatar catalog `20260925T154625166Z`, plus
 Buzzies from catalog `20261030T174937230Z`, with their animated WebM/HEVC
 variants streamed from the same CDN. Each asset keeps the URLs of the catalog it
 was added from, so saved profile pictures continue to match.
+Zion displays the upstream Buzzies collection as “Characters”; the original
+asset IDs, URLs, and checksums remain unchanged.
 Berd's `scripts/avatar-manifest.mjs` and `src-tauri/src/commands/avatars.rs`
 define the collections and published CDN. Source: https://github.com/block/berd.
 
@@ -23,4 +25,4 @@ plays the alpha HEVC and other engines the WebM. Offline, reduced motion and
 playback failures show the poster. Saved profiles remain portable PNG URLs, so
 animation never changes the relay profile format.
 
-Buzz includes seven Figgies: the purple characters, turtle, dog, wildcat, and clown (upstream IDs pollies-2, 9, 10, 21, 23, 24, 25). The other human figures are excluded.
+Zion includes seven Figgies: the purple characters, turtle, dog, wildcat, and clown (upstream IDs pollies-2, 9, 10, 21, 23, 24, 25). The other human figures are excluded.

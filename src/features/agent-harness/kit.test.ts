@@ -437,7 +437,7 @@ describe("harnessKit.tools", () => {
       method: "initialize",
       params: {},
     })) as { result: { instructions?: string } };
-    expect(started.result.instructions).toContain("Read and act in Buzz");
+    expect(started.result.instructions).toContain("Read and act in Zion");
   });
 
   it("answers a message without a jsonrpc field", async () => {

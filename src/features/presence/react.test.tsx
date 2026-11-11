@@ -12,7 +12,6 @@ it("omits unavailable evidence and updates valid profile status without Unknown 
   const presence = {
     status: () => status,
     limited: () => false,
-    subscribeSelection: () => () => {},
     subscribe(_key, listener) {
       changed = listener;
       return () => {};

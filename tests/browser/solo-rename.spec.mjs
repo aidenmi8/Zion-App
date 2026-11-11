@@ -1,6 +1,5 @@
 import { test, expect } from "./fixture.mjs";
 import { newChat } from "./navigation.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 const alpha = "33333333-3333-4333-8333-333333333333";
 const beta = "44444444-4444-4444-8444-444444444444";
@@ -29,7 +28,13 @@ async function settledError(page) {
   await expect(alert).toBeVisible();
   // The Field error grows above Reload. Visibility alone admits a click while
   // its hit target is still moving; wait for the actual opening to finish.
-  await animationsSettled(alert.locator(".."), { subtree: true });
+  await alert.evaluate((element) =>
+    Promise.all(
+      element.parentElement
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished),
+    ),
+  );
 }
 
 // These exercise native focus loss, actual drawer hit targets and signed live

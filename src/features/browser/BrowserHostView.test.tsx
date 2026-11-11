@@ -762,7 +762,7 @@ it("offers Try again and the system browser when Builderlab can't be reached", a
     />,
   );
   const alert = await screen.findByRole("alert");
-  expect(alert).toHaveTextContent("Buzz couldn’t load this app");
+  expect(alert).toHaveTextContent("Zion couldn’t load this app");
   expect(alert).not.toHaveTextContent("sign-in request failed");
   expect(screen.getAllByRole("alert")).toHaveLength(1);
 

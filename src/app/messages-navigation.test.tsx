@@ -21,12 +21,6 @@ vi.mock("../bundled", async () => ({
       enabledByDefault: true,
     },
     {
-      // Off by default in the app; enabled here to exercise its navigation.
-      manifest: (await import("../bundled/drafts-sent/manifest.json")).default,
-      module: await import("../bundled/drafts-sent"),
-      enabledByDefault: true,
-    },
-    {
       manifest: { id: "test.sidebar", name: "Sidebar fixture", apiVersion: 1 },
       module: await import("./sidebar-plugin.fixture"),
       enabledByDefault: true,
@@ -61,24 +55,24 @@ beforeEach(() => {
   }));
 });
 
-it("opens the Drafts & sent plugin page from global search inside Messages", async () => {
+it("opens the host Drafts & sent destination from global search", async () => {
   services = createServices();
   render(<App services={services} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Search Buzz" }));
-  const search = await screen.findByRole("combobox", { name: "Search Buzz" });
+  await user.click(await screen.findByRole("button", { name: "Search Zion" }));
+  const search = await screen.findByRole("combobox", { name: "Search Zion" });
   await user.type(search, "drafts");
-  const dialog = await screen.findByRole("dialog", { name: "Search Buzz" });
   await user.click(
-    await within(dialog).findByRole("button", { name: "Drafts & sent" }),
+    await screen.findByRole("option", { name: "Drafts & sent" }),
   );
   expect(
     await screen.findByRole("region", { name: "Drafts & sent" }),
   ).toBeVisible();
   expect(services.navigation.snapshot().entry.target).toMatchObject({
     kind: "page",
-    pluginId: "buzz.drafts-and-sent",
-    pageId: "drafts-sent",
+    pluginId: "buzz.channels",
+    pageId: "channels",
+    route: { version: 1, params: "drafts-sent" },
   });
   expect(screen.getByRole("tab", { name: "Messages" })).toHaveAttribute(
     "aria-selected",
@@ -183,37 +177,20 @@ it("opens Drafts & sent inside Messages and retains the sidebar through Back/For
   );
 });
 
-const legacyLinks = {
-  "plugin page": {
-    version: 1,
-    kind: "page",
-    pluginId: "buzz.drafts-sent",
-    pageId: "drafts-sent",
-    scope: null,
-  },
-  plugin: {
-    version: 1,
-    kind: "plugin",
-    pluginId: "buzz.drafts-sent",
-    pageId: "drafts-sent",
-    scope: null,
-  },
-  "Messages route": {
-    version: 1,
-    kind: "page",
-    pluginId: "buzz.channels",
-    pageId: "channels",
-    scope: null,
-    route: { version: 1, params: "drafts-sent" },
-  },
-};
-it.each(Object.keys(legacyLinks) as (keyof typeof legacyLinks)[])(
+it.each(["page", "plugin"] as const)(
   "opens old %s links inside Messages without an extra history visit",
   async (kind) => {
+    const old = {
+      version: 1,
+      kind,
+      pluginId: "buzz.drafts-sent",
+      pageId: "drafts-sent",
+      scope: null,
+    };
     window.history.replaceState(
       null,
       "",
-      `/#buzz=${encodeURIComponent(JSON.stringify(legacyLinks[kind]))}`,
+      `/#buzz=${encodeURIComponent(JSON.stringify(old))}`,
     );
     services = createServices();
     const entryId = services.navigation.snapshot().entry.id;
@@ -228,9 +205,10 @@ it.each(Object.keys(legacyLinks) as (keyof typeof legacyLinks)[])(
     expect(services.navigation.snapshot().entry.target).toEqual({
       version: 1,
       kind: "page",
-      pluginId: "buzz.drafts-and-sent",
-      pageId: "drafts-sent",
+      pluginId: "buzz.channels",
+      pageId: "channels",
       scope: null,
+      route: { version: 1, params: "drafts-sent" },
     });
     expect(screen.getByRole("tab", { name: "Messages" })).toHaveAttribute(
       "aria-selected",

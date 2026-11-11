@@ -36,9 +36,8 @@ and reported as migration errors.
 
 The shared tools offer `agent_types` to list installed local runtimes and
 `agent_create` to submit an unsaved creation draft using a listed type key and a display name,
-optionally with instructions for types that take them and a picture. It returns a request ID and `saved: false`; no identity exists yet. The owner reviews
-the usual Create agent form, filled in with any requested instructions and picture, may edit
-the name, runtime and settings, and creates
+optionally with a picture. It returns a request ID and `saved: false`; no identity exists yet. The owner reviews
+the usual Create agent form, may edit the name, runtime and settings, and creates
 only by submitting it. Closing the form discards the request. Requests are local,
 bounded to 16 and do not survive reload or a change of signed-in owner.
 Approval binds the identity to the requesting agent's owner and community, even
@@ -76,31 +75,22 @@ same local bound and lifetime.
 Keys stay in native custody. Hosted-provider provisioning and standalone tool
 servers do not support these operations.
 
-## Message edits
+## Owner tools
 
-The shared MCP `edit` tool retains the latest live attachment set, including an
-empty set left by a previous edit. Both app-hosted and standalone agents resolve
-that state as the agent through the version-1 `effective_edit` primary lookup on
-`/query`; they verify the signed original/replacement and their target/channel.
-The exact filter uses kinds `[9,40002,40008,45001,45003]`.
-Deploy the relay support from
-[buzz#9226](https://github.com/block/buzz/pull/9226) before releasing this client.
-An old relay's array response, inaccessible target, invalid response or failed
-lookup aborts without publishing. All MCP agent edits stop working on a community
-whose relay lacks this lookup; upgrade each community before releasing the client.
-There is no original-attachment fallback. Observe MCP edit errors and the relay's
-`buzz_media_publication_access_total` denials during rollout. Rolling the client
-back restores the original-attachment resurrection bug.
-
-The tool waits until the second after the observed head before requesting a
-signature, reusing the bounded wait for notes/canvas. If that second is over five
-seconds ahead, it asks the caller to retry when the clock catches up.
-The MCP publisher stamps the current time, so its five-second wait bounds tool
-latency. The CLI supplies an explicit timestamp and tolerates a 60-second lead.
-Concurrent writers still use relay ordering; this is not compare-and-swap. The relay must
-authorize every carried file for the signing agent; an owner's access does not
-grant the agent private-media access, and denial never causes an automatic retry
-with files stripped.
+In communities the build flag `BUZZ_OWNER_MCP_COMMUNITIES` enables, an agent's
+runs in this app on a bundled harness list `owner_channel_list`, `owner_channel_get` and
+`owner_member_list`. They read the owner's channels, one channel's details and
+the owner's rights in it, and its roster, through the owner's own signed-in
+session, including private and archived channels, DMs and Solo chats the agent
+is not in. They write nothing. The app decides the agent, owner and community;
+answers name them in `executedAs`. Each call needs the agent's owner signed in
+to that community now and fails, returning nothing, when the account, community
+or connection changes during it or the turn ends or is stopped, including while
+protection reviews its result. Installed harness plugins, plugins' tools, plugin
+MCP connections and external apps never get this access, and a plugin cannot add
+a tool whose name starts with `owner_`. Protection reviews these calls and their
+results as it does other Buzz tools. See
+[configuration](configuration.md#owner-mcp-community-flag).
 
 ## External app authorization
 
@@ -287,7 +277,7 @@ older app or remote host.
 
 ## Agent Attention
 
-Attention itself (the runtime, tools, storage and sources) is core, but it runs on this device only while a plugin that shows it is on. The bundled Attention plugin (`buzz.watching`, on by default) adds an Attention tab to the settings of every agent running on this device, whatever its type. The tab explains Attention, then groups that agent's subscriptions by Interest. It shows instructions, listening and delivery destinations, enabled state and available wake history, and suggests asks while the agent has none. Ask an agent to create watches through its Attention tools; pausing or removing one preserves the other saved objects. Each Interest can be paused without changing its watches’ enabled settings. Deleting an Interest with watches asks for confirmation, then removes them together. Turning the plugin off hides the tab and turns every agent's Attention off on this device; mentions still wake agents. There is no per-agent switch: while the plugin is on, Attention runs for every agent. The former standalone Agent Attention page is gone, so an old link to `buzz.agents/attention` opens as an unavailable destination.
+Attention itself (the runtime, tools, storage and sources) is core, but it runs on this device only while a plugin that shows it is on. The bundled Attention plugin (`buzz.watching`, on by default) adds an Attention tab to the settings of every agent running on this device, whatever its type. The tab explains Attention, holds the switch that lets this device run the agent's watches, then groups that agent's subscriptions by Interest. It shows instructions, listening and delivery destinations, enabled state and available wake history, and suggests asks while the agent has none. Ask an agent to create watches through its Attention tools; pausing or removing one preserves the other saved objects. Each Interest can be paused without changing its watches’ enabled settings. Deleting an Interest with watches asks for confirmation, then removes them together. Turning the plugin off hides the tab and turns every agent's Attention off on this device; mentions still wake agents, and each agent keeps its saved switch for when the plugin is back on. The former standalone Agent Attention page is gone, so an old link to `buzz.agents/attention` opens as an unavailable destination.
 
 ## Agent types and providers
 
@@ -341,8 +331,8 @@ Harness plugins register agent types with the Agents service. An agent type owns
 the defaults, migration policy, per-agent settings tabs, model discovery and run
 behavior for its agents. Plugins can add a tab to every local agent with
 `ctx.agents.registerTab`, or to some of them with its optional `when(agent)`;
-the Attention plugin's Attention tab lists an agent's Interests and watches, and
-the Bestie plugin's Bestie tab shows only on your Bestie.
+the Attention plugin's Attention tab holds the device Attention switch, and the
+Bestie plugin's Bestie tab shows only on your Bestie.
 
 Attention command processes on macOS and Linux stop when their app process exits, including an abrupt exit. A shared lease allows one running command per agent, provider, watch and declared process across Buzz builds on the same computer. A new owner waits for the previous command to stop before starting its copy. Removing a watch or turning Attention off stops its command through the existing process host.
 
@@ -374,8 +364,7 @@ attention is off. A new shared tool needs no harness change.
 Plugins add tools with `ctx.agents.addTool`, listed after the Buzz tools under
 the same `buzz` server. Names are shared by every plugin, so a plugin's tools
 should start with its name (`notes_get`); `addTool` refuses one that a Buzz tool
-or another plugin has, and any starting with `owner_`, the prefix of retired
-owner-access tools, so a call to one never reaches plugin code. The standalone server in
+or another plugin has. The standalone server in
 `src/buzz-mcp/main.ts` stays without them. A harness reads `agents.tools()`
 and passes it to `respond` or `callSessionTool`. A session keeps the list it
 started with, so `addedKey` goes in what decides when one is replaced: the
@@ -499,12 +488,10 @@ anchor in place of the event (the thread's `e` tag, and a random id), and a
 woke the agent, that neither the owner nor anyone in the channel wrote it, and
 that its text is data. The anchor's id is never published: failure reports and
 typing go to the thread root, or the channel itself in a Solo chat, and a wake
-with no `root` outside a Solo chat is ignored. A wake is not saved for resume.
-It shows a local Work row with its status and a retry action after failure.
-Stop is available when the agent supports interruption. Pi, which continues
-the runs an app left, ends a wake's run instead, unless a mention or Attention
-wake left in the same conversation would end with it or stay queued behind it.
-Then the wake's run
+with no `root` outside a Solo chat is ignored. A wake is not saved for resume
+and shows no activity row or Stop. Pi, which continues the runs an app left,
+ends a wake's run instead, unless a mention or Attention wake left in the same
+conversation would end with it or stay queued behind it. Then the wake's run
 goes on, and only what it sends is posted. Pi still waits for the wake, so a
 run of its own that fails fails what is queued behind it too, which reports it.
 
@@ -1227,10 +1214,8 @@ is deliberately omitted; public typing alone does not establish ownership.
 
 Typing expires eight seconds after its signed timestamp (future clock skew is
 capped at receipt), swept by the existing one-second activity timer. Messages
-clear the matching agent/channel/thread scope and suppress delayed typing
-for two seconds; a thread reply does the same for that agent's channel-level
-scope, since an agent's pulses and replies for one turn can be filed apart.
-Other threads keep their typing. Disconnect, channel-route failure, disable, access/cache clear
+clear only the matching agent/channel/thread scope and suppress delayed typing
+for two seconds. Disconnect, channel-route failure, disable, access/cache clear
 and disposal drop typing evidence. A fresh observer frame does not refresh it.
 
 The sidebar's quiet working dot has two independent sources. The plugin source
@@ -1244,7 +1229,7 @@ the library) anywhere in the channel, threads included. Typing remains a working
 self-declared profile hint, are not shown. This store keeps working with the plugin off, rejects
 future timestamps instead of capping them, schedules its own expiry eight
 seconds after the signed timestamp and stays quiet for two seconds after the
-typer's message, in that scope and, for a thread reply, at channel level. It is display-only evidence, not ownership; the channel popover
+typer's message. It is display-only evidence, not ownership; the channel popover
 still offers **View activity** for such an agent while the plugin is off.
 A timeline thread summary shows the same dots from this source while one of the
 viewer's agents types in that thread; before the first reply it offers **View thread**.
@@ -1343,16 +1328,6 @@ failure, and `cancelled` to stopped without identifying who cancelled. Exact
 trigger IDs and outcomes survive raw-record trimming. Losing a lifecycle turn
 makes aggregate request completion uncertain.
 
-A `turn_started` frame's `triggeringEventIds` names the messages a turn started
-for, and a second start under the same turn ID makes the turn ambiguous. A
-`turn_steered` frame names messages the agent added to its running turn, as a
-remote agent's safe-point steer does. They join that turn's triggers, so they
-show working and end with it; their activity reads from the turn's start. A
-start or steer that arrives late, after the turn ended or after a newer frame,
-still records membership without reviving or refreshing the turn. Every list is
-admitted whole, up to 64 messages per turn, and the lifecycle's retained
-membership decides which messages a turn's activity belongs to.
-
 With Builderlab sign-in, stale activity or reconnect triggers an owner-only
 `/v3/beekeeper/get-agent-turn-status` read for retained exact tasks. Reads batch
 up to 64 tasks per agent/session/channel using existing bounded retries. Missing
@@ -1370,19 +1345,15 @@ tasks unknown.
 
 ### Activity updates in the conversation
 
-An agent's work has one working indicator. While a live activity bubble on the
-triggering message shows the agent, that bubble is its indicator. Once mounted
-recorded history presents the request's work, that history is its indicator:
-dots in the collapsed summary, or on the active update when expanded, beside the
-shimmering text. The conversation indicator adds no second one, but it stays
-visible for any request of that agent here that nothing mounted presents, and
-returns when that history unmounts or is closed, or once a newer message follows
-it. History that is mounted but scrolled out of view still counts, as the live
-bubble does. A bubble showing only a settled outcome, such as an error, does not
-count. Reduced motion leaves the dots static.
-When local work or a remote turn's triggering IDs identify the request, old
-activity does not inherit the working/thinking state of a different request in
-the same thread. Only work with no known request falls back to the thread.
+When no live activity bubble on the triggering message shows an agent, the live
+conversation indicator remains visible while it works, even when recorded
+activity is collapsed or expanded. While that bubble shows, it is the agent's
+working indicator and the conversation adds no second one; the conversation cue
+returns once recorded history owns the work. The indicator keeps dots beside
+current tool labels; reduced motion leaves the dots static. Activity text may
+shimmer too, but does not replace that persistent working cue.
+When local request evidence is available, old activity does not inherit the
+working/thinking state of a different request in the same thread.
 
 Agent-to-agent coordination messages remain in the conversation as collapsed,
 expandable history, including after completion, stopping, steering, or reload.
@@ -1392,19 +1363,14 @@ its messages in their original order; exact message links open the matching grou
 
 Live work is separate from this history. Explicit immediate reply IDs and activity
 message IDs select request lifecycle evidence; a nearby human message or shared
-thread root is not proof of a turn. Thread replies flatten to the thread root, so an
-update binds first to the request whose local run published it, then to a signed
-`["buzz:request", <id>]` tag naming a loaded human request in the same channel
-and thread (or that thread's root), at any reply level. The `send` and `reply_in_subthread` tools add
-that tag from their `request` argument, the turn's triggering message. That
-request, not the reply link, then decides which live work the update shows.
-Untagged or unverifiable updates keep their reply link. Finishing a request retires its live treatment,
+thread root is not proof of a turn. Finishing a request retires its live treatment,
 not its messages. When lifecycle evidence is missing, a related public reply can
 retire the old live treatment without claiming that execution completed. Current
 work continues to appear in the conversation indicator.
 
 A public reply alone does not replace the request's live indicator. Mounted
-update history can own the current step, its working dots and request controls. When public replies
+update history can own the current step and request controls while the live
+conversation indicator remains available. When public replies
 split one request's updates into several runs, only the latest run for each agent
 owns its live shimmer and Stop control; earlier runs remain readable history.
 Other agents and requests retain their own live presentation.
@@ -1417,20 +1383,6 @@ the exchange or received the helper’s last update. It never overrides availabl
 pending, failed, or uncertain lifecycle evidence. Durable cross-host completion
 would require retained request/turn relationships and terminal events; the
 current live-only feed does not provide that guarantee.
-
-Outcomes use the same response frame and inline disclosure as recorded history.
-Confirmed failure shows a danger warning and “Couldn’t finish”; stopped requests
-use neutral “Stopped”. Passive uncertainty creates no outcome balloon and remains
-available internally for status recovery. A signed execution-failure message still
-proves failure when telemetry is uncertain. Confirmed outcomes remain after live
-progress retires, with no viewing timeout or replacement completion message.
-The expanded outcome sits below Collapse, above the details. Supported local Retry/Dismiss
-and Activity navigation live inside the disclosure; remote retry is not inferred.
-An unedited, attachmentless signed execution-failure reply immediately following
-its author's coordination run folds into that history only with an explicit
-reply link to the same request, channel, thread level and day. Its original
-message and anchor remain readable after reload. Otherwise it has a standalone
-outcome disclosure. Ordinary replies and partial results retain their own rows.
 
 ### Try with an existing owner account
 
@@ -1548,13 +1500,8 @@ and also the host's saved Buzz library. The development broker's
 directory, leaving out an agent that is only in communities it was added to, and
 caps it at 8 MiB / 2000 records; the native host reads it and
 `agents/memberships.json` through their owner, `AppAgents`. A missing store is an empty local
-inventory; neither host falls back to retired stores. Both host reads filter saved
-rows by the signed-in owner and selected community before deduplicating public keys,
-so another account's or community's agents never become chooser candidates or supply
-that community's artwork. Deleted and joining identities are omitted. The native
-IPC requires a community and derives the owner from the native identity; the broker
-uses its captured identity and registered request destination, not caller-supplied
-owner data. Concurrent broker reads are shared only within the same community.
+inventory; neither host falls back to retired stores. Deleted identities are
+omitted and identities configured in multiple communities are joined by public key.
 The host read is read-only: it writes no configuration, migrates no identities,
 retrieves no credentials and manages no processes. Only identity
 public key/name and optional avatar artwork leave the host. Optional artwork
@@ -1564,12 +1511,8 @@ URLs, never file URLs or SVG data.
 The inventory joins exact public keys, not equal names; explicit profile references
 use the publisher's slug mapping only when local definitions do not collide. Local
 names and artwork win for matching keys. A failed source leaves the other source
-visible; the mention menu and agent picker report the failure with Retry, and the
-composer shows no standing notice. Reads are lazy (once per demand or Refresh), with
-no polling or relay-directory startup scan. A connection's first establishment
-rereads retained inventory that failed, wholly or partly; a read already in flight
-is reused and reread once if it fails. Each failed source's reason is logged as a
-console warning.
+visible with a warning. Reads are lazy (once per demand or Refresh), with no polling
+or relay-directory startup scan.
 Relay inventory uses foreground read capacity because Solo needs complete
 inventory to restore its recipients; it keeps the normal ten-second deadline.
 

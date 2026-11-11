@@ -85,7 +85,7 @@ export function createArtifactStore(viewer: string, relay: string) {
         request.onblocked = () => {
           blocked = true;
           reject(
-            new Error("Close other Buzz windows to open artifact storage"),
+            new Error("Close other Zion windows to open artifact storage"),
           );
         };
         request.onsuccess = () => {

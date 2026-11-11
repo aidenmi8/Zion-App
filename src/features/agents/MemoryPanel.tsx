@@ -5,16 +5,8 @@ import { Header } from "../../shared/design-system/ui/Header";
 // memory the same way, encrypted to the owner, so the app shows it once: `core`
 // (what each run is given) first, then the slugs the agent reads on demand.
 import { useReducedMotion } from "motion/react";
-import {
-  type ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import Markdown, { defaultUrlTransform, type Components } from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { formatFullTimestamp } from "../../shared/datetime";
 import { useClockFormat } from "../../shared/clock-preference";
@@ -45,63 +37,35 @@ import {
   type AgentScopeReader,
 } from "./AgentCommunityScope";
 import { writeClipboardText } from "../../shared/clipboard";
-import { MessageLink } from "../conversation/MessageLink";
-import type { ConversationExtensions } from "../conversation/contracts";
-import { labelText } from "../messages/label-text";
-import { parseBuzzLink } from "../navigation/buzz-links";
-import { remarkMemoryLinks } from "./memory-markdown";
 
 export type AgentMemories = RelaySession["agentMemories"];
-export type MemoryLinks = {
-  session: RelaySession;
-  registry: ConversationExtensions["links"] | undefined;
-  open(url: string): boolean;
-};
 type View = ReturnType<AgentMemories["open"]>;
 
 const MESSAGES: Record<MemorySnapshot["status"], string> = {
   idle: "Memory isn't loaded.",
   loading: "Loading memory…",
-  blocked: "Memory can be read once Buzz is connected.",
+  blocked: "Memory can be read once Zion is connected.",
   error: "Memory couldn't be read.",
   denied: "This community doesn't let you read this agent's memory.",
   unavailable: "Memory isn't available here.",
   ready: "Memory isn't available here.",
 };
 
-const REMARK = [remarkGfm, remarkBreaks, remarkMemoryLinks];
+const REMARK = [remarkGfm];
 const WEEK_SECONDS = 7 * 24 * 60 * 60;
 const MONTH_SECONDS = 30 * 24 * 60 * 60;
 const TWO_MONTHS_SECONDS = 2 * MONTH_SECONDS;
-const MemoryLinksContext = createContext<MemoryLinks | undefined>(undefined);
 const MARKDOWN: Components = {
+  a: ({ href, children }) =>
+    href ? (
+      <a href={href} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    ) : (
+      children
+    ),
   // Memories are private context; don't fetch remote images when they open.
   img: ({ alt }) => alt ?? null,
-  // Keep link instances mounted while parent views update their link services.
-  a: ({ href, children }) => {
-    const links = useContext(MemoryLinksContext);
-    if (!href || !parseBuzzLink(href))
-      return href ? (
-        <a href={href} target="_blank" rel="noreferrer">
-          {children}
-        </a>
-      ) : (
-        children
-      );
-    const label = labelText(children);
-    return (
-      <MessageLink
-        url={href}
-        label={label === href ? undefined : label}
-        registry={links?.registry}
-        session={links?.session}
-        scope={links?.session.scope}
-        onOpenLink={(url) => links?.open(url) ?? false}
-      >
-        {label === href ? undefined : children}
-      </MessageLink>
-    );
-  },
 };
 
 /** Keeps the view for exactly as long as its plaintext is rendered, so session
@@ -169,13 +133,11 @@ export function MemoryPanel({
   memories,
   communities,
   agents,
-  links,
 }: {
   agent: Agent;
   memories: AgentMemories | undefined;
   communities?: CommunityReader | undefined;
   agents: AgentScopeReader;
-  links?: MemoryLinks | undefined;
 }) {
   const community = useAgentScopeCommunity(agent, agents, communities);
   const { snapshot, refreshing, refresh } = useMemory(memories, agent.pubkey);
@@ -210,7 +172,6 @@ export function MemoryPanel({
         <>
           <MemorySection
             title="Core memories"
-            links={links}
             description="Included in this agent’s context for every session."
             community={
               <AgentCommunityScope community={community} scope="Memory" />
@@ -221,7 +182,6 @@ export function MemoryPanel({
           />
           <MemorySection
             title="Memories"
-            links={links}
             description="Details the agent can look up as needed."
             community={
               <AgentCommunityScope community={community} scope="Memory" />
@@ -292,7 +252,6 @@ function MemorySection({
   entries,
   emptyIcon,
   refreshing = false,
-  links,
 }: {
   title: string;
   description: string;
@@ -300,7 +259,6 @@ function MemorySection({
   entries: readonly MemoryEntry[];
   emptyIcon: ReactNode;
   refreshing?: boolean;
-  links?: MemoryLinks | undefined;
 }) {
   const ordered = [...entries].sort(
     (left, right) =>
@@ -327,7 +285,7 @@ function MemorySection({
       >
         {entries.length ? (
           ordered.map((entry) => (
-            <MemoryAccordion key={entry.slug} entry={entry} links={links} />
+            <MemoryAccordion key={entry.slug} entry={entry} />
           ))
         ) : (
           <div className={styles.empty}>
@@ -344,13 +302,7 @@ function MemorySection({
   );
 }
 
-function MemoryAccordion({
-  entry,
-  links,
-}: {
-  entry: MemoryEntry;
-  links?: MemoryLinks | undefined;
-}) {
+function MemoryAccordion({ entry }: { entry: MemoryEntry }) {
   useClockFormat();
   return (
     <ContextMenuRoot>
@@ -394,7 +346,7 @@ function MemoryAccordion({
                   </span>
                 </span>
               ),
-              content: <MemoryBody body={entry.body} links={links} />,
+              content: <MemoryBody body={entry.body} />,
             },
           ]}
         />
@@ -433,28 +385,14 @@ function memoryTimestamp(createdAt: number, nowSeconds = Date.now() / 1_000) {
   return relativeTimestamp(createdAt, nowSeconds).replace(/^on /, "");
 }
 
-function MemoryBody({
-  body,
-  links,
-}: {
-  body: string;
-  links?: MemoryLinks | undefined;
-}) {
+function MemoryBody({ body }: { body: string }) {
   if (body.length > MAX_MARKDOWN_LENGTH || scanMarkdown(body).tooDeep)
     return <div className={styles.plain}>{body}</div>;
   return (
     <div className={styles.markdown}>
-      <MemoryLinksContext value={links}>
-        <Markdown
-          remarkPlugins={REMARK}
-          urlTransform={(url) =>
-            parseBuzzLink(url) ? url : defaultUrlTransform(url)
-          }
-          components={MARKDOWN}
-        >
-          {body}
-        </Markdown>
-      </MemoryLinksContext>
+      <Markdown remarkPlugins={REMARK} components={MARKDOWN}>
+        {body}
+      </Markdown>
     </div>
   );
 }

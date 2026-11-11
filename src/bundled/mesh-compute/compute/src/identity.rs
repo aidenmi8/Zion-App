@@ -32,7 +32,7 @@ fn load_owner_with(
         if keystore_metadata(path)?.encrypted {
             unlock(path).map_err(|error| match error {
                 OwnerKeychainLoadError::NoEntry => anyhow::anyhow!(
-                    "Mesh identity is encrypted, but its unlock secret is not in the OS credential store. Unlock or configure this identity with mesh-llm before starting Mesh in Buzz. The existing keystore was not changed."
+                    "Mesh identity is encrypted, but its unlock secret is not in the OS credential store. Unlock or configure this identity with mesh-llm before starting Mesh in Zion. The existing keystore was not changed."
                 ),
                 OwnerKeychainLoadError::Crypto(error) => anyhow::anyhow!(
                     "Could not unlock the existing Mesh identity through the OS credential store: {error}. Check credential access and the identity with mesh-llm, then retry. The existing keystore was not changed."

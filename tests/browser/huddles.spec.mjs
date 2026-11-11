@@ -4,7 +4,6 @@ import { test, expect } from "./playwright-test.mjs";
 import { createServer } from "./vite-server.mjs";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
-import { animationsSettled } from "./animations.mjs";
 
 let server, origin;
 test.beforeAll(async () => {
@@ -118,7 +117,7 @@ test("connected Huddles keep compact controls beside the default window", async 
     (el) => el.getBoundingClientRect().height,
   );
   const searchHeight = await page
-    .getByRole("button", { name: "Search Buzz" })
+    .getByRole("button", { name: "Search Zion" })
     .evaluate((el) => el.getBoundingClientRect().height);
   expect(capsuleHeight).toBe(searchHeight);
   expect(capsuleHeight).toBe(32);
@@ -143,9 +142,9 @@ test("connected Huddles keep compact controls beside the default window", async 
       return values;
     }),
   );
-  for (const name of ["Search Buzz", "Mute"]) {
+  for (const name of ["Search Zion", "Mute"]) {
     expect(
-      await (name === "Search Buzz" ? page : capsule)
+      await (name === "Search Zion" ? page : capsule)
         .getByRole("button", { name, exact: true })
         .locator("svg")
         .evaluate((el) => {
@@ -417,17 +416,12 @@ test("capsule and companion presentation share mute and leave", async ({
       keys.slice(0, count),
     );
     await expect(roster.locator("[data-participant]")).toHaveCount(count - 1);
-    // Motion cancels an animation it replaces, which rejects its finished
-    // promise; wait until none is still running.
     await roster.evaluate(async (el) => {
-      const running = () =>
+      await Promise.all(
         el
           .getAnimations({ subtree: true })
-          .filter((animation) => animation.playState === "running");
-      while (running().length)
-        await Promise.allSettled(
-          running().map((animation) => animation.finished),
-        );
+          .map((animation) => animation.finished),
+      );
     });
     // A spring can briefly cross its final size before overshooting, and
     // Motion can put a sub-pixel transform back on a settled avatar for a
@@ -698,7 +692,13 @@ test("live participant avatars enter on top and reflow without growing the shell
   const avatars = updated.locator("[data-participant]");
   await expect(avatars).toHaveCount(3);
   // Wait for the actual transition lifecycle, not an arbitrary sleep.
-  await animationsSettled(updated, { subtree: true });
+  await updated.evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished),
+    ),
+  );
   const positions = await avatars.evaluateAll((elements) =>
     elements.map((el) => ({
       left: el.getBoundingClientRect().left,
@@ -1434,7 +1434,7 @@ test("window Join and compact Decline operate on the same incoming request", asy
   await expect(request).toHaveCount(0);
   await expect(capsule).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Search Buzz", exact: true }),
+    page.getByRole("button", { name: "Search Zion", exact: true }),
   ).toBeFocused();
   expect(
     await page.evaluate(() => window.huddleFixture.stats.audioOpened),
@@ -1482,7 +1482,7 @@ test("window Join and compact Decline operate on the same incoming request", asy
         await expect(request).toHaveCount(0);
         await expect(capsule).toHaveCount(0);
         await expect(
-          page.getByRole("button", { name: "Search Buzz", exact: true }),
+          page.getByRole("button", { name: "Search Zion", exact: true }),
         ).toBeFocused();
       } else {
         await expect(request.getByRole("alert")).toHaveText(
@@ -1513,7 +1513,7 @@ test("window Join and compact Decline operate on the same incoming request", asy
     .poll(() => page.evaluate(() => window.huddleFixture.stats.opens))
     .toBe(1);
   const elsewhere = page.getByRole("button", {
-    name: "Search Buzz",
+    name: "Search Zion",
     exact: true,
   });
   await elsewhere.focus();
@@ -2012,10 +2012,14 @@ test("portraits can be tossed within the stage and return home, with reduced mot
       );
     })
     .toBe("none");
-  await animationsSettled(
-    portrait.locator("xpath=ancestor-or-self::*[@data-self][1]"),
-    { subtree: true },
-  );
+  await portrait.evaluate(async (element) => {
+    await Promise.all(
+      element
+        .closest("[data-self]")
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished),
+    );
+  });
   const home = await portrait.boundingBox();
   const area = await stage.boundingBox();
   const start = { x: home.x + home.width / 2, y: home.y + home.height / 2 };

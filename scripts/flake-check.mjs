@@ -34,11 +34,25 @@ export const ITERATIONS = 10;
 // Repetitions spread across shards, so a whole-file selection stays inside
 // the flake lane's job timeout. Small selections keep a single runner.
 const JOURNEYS_PER_SHARD = 5;
-// Broad selector migrations can select 180+ journeys (1,800 repetitions).
-// Eight lanes exceeded the unchanged 30-minute deadline in both engines.
-const MAX_SHARDS = 16;
+// Broad fork reconciliation selects hundreds of journeys. Keep all ten
+// repetitions, but bound each hosted job to a small share of the selection.
+const MAX_SHARDS = 64;
 export const browserShards = (journeys) =>
   Math.min(MAX_SHARDS, Math.max(1, Math.ceil(journeys / JOURNEYS_PER_SHARD)));
+const MAX_VITEST_SHARDS = 10;
+export const vitestShards = (filters) =>
+  Math.min(MAX_VITEST_SHARDS, Math.max(1, filters));
+export function vitestShard(filters, shard, total) {
+  if (
+    !Number.isInteger(shard) ||
+    !Number.isInteger(total) ||
+    total < 1 ||
+    shard < 1 ||
+    shard > total
+  )
+    throw new Error("invalid Vitest shard");
+  return filters.filter((_, index) => index % total === shard - 1);
+}
 // Journeys that need their own project or platform: the measurements job and
 // the macOS recorder own them, so the engine lanes never repeat them.
 const excludedTags = ["classic-scrollbars", "local-webkit", "media-recorder"];
@@ -195,8 +209,12 @@ export const repeatableLines = (specs) =>
     .filter((spec) => !spec.tags.some((tag) => excludedTags.includes(tag)))
     .map((spec) => spec.line);
 
-const run = (command, args) => {
-  const result = spawnSync(command, args, { cwd: root, encoding: "utf8" });
+const run = (command, args, options = {}) => {
+  const result = spawnSync(command, args, {
+    cwd: root,
+    encoding: "utf8",
+    ...options,
+  });
   if (result.error) throw result.error;
   return result;
 };
@@ -215,18 +233,22 @@ const cell = (value) => String(value).replaceAll("|", "\\|");
 // Test start lines per file. Vitest filters are substrings, so an argument may
 // list neighbouring files too; those drop out of the map.
 export function listVitest(files) {
-  const result = run(pnpm, [
-    "--silent",
-    "exec",
-    "vitest",
-    "list",
-    "--json",
-    "--includeTaskLocation",
-    // Runtime collection and run filters must use the same call-site locations.
-    // Static collection can map parameterized tests to a different source line.
-    "--staticParse=false",
-    ...files,
-  ]);
+  const result = run(
+    pnpm,
+    [
+      "--silent",
+      "exec",
+      "vitest",
+      "list",
+      "--json",
+      "--includeTaskLocation",
+      // Runtime collection and run filters must use the same call-site locations.
+      // Static collection can map parameterized tests to a different source line.
+      "--staticParse=false",
+      ...files,
+    ],
+    { maxBuffer: 64 * 1024 * 1024 },
+  );
   if (result.status !== 0) throw new Error(`vitest list: ${result.stderr}`);
   const starts = new Map(files.map((file) => [file, []]));
   for (const { file, location } of JSON.parse(result.stdout))
@@ -378,8 +400,8 @@ export function browserLaneSeconds(seconds, journeys) {
   );
 }
 
-// Two Vitest batch jobs each run ITERATIONS / 2 iterations of the selection.
-// A job spends 26 s outside them. `files` holds the seconds of each file's
+// Each shard repeats its share ITERATIONS times. A job spends 26 s outside
+// them. `files` holds the seconds of each file's
 // selected tests, and every file also pays 2.5 s of import and environment
 // setup that the cost table's test spans leave out. An iteration takes
 // 2.6 s plus 0.74 × the larger of half the files' summed time (two workers)
@@ -390,7 +412,12 @@ export function vitestLaneSeconds(files) {
   if (files.length === 0) return 0;
   const charged = files.map((seconds) => seconds + 2.5);
   const total = charged.reduce((sum, seconds) => sum + seconds, 0);
-  return 26 + (ITERATIONS / 2) * (2.6 + 0.74 * Math.max(total / 2, ...charged));
+  return (
+    26 +
+    ITERATIONS *
+      (2.6 +
+        0.74 * Math.max(total / (2 * vitestShards(files.length)), ...charged))
+  );
 }
 
 // Rewrites the cost table from green `main` CI runs, by default the latest
@@ -1112,12 +1139,15 @@ async function select(budget, base = "HEAD^1", head = "HEAD") {
     ]),
   );
   const shards = browserShards(outputs.browser.length);
+  const vitestShardCount = vitestShards(outputs.vitest.length);
   const text = [
     ...Object.entries(outputs).map(
       ([key, entries]) => `${key}=${entries.join(" ")}\n`,
     ),
     `browser_shards=${JSON.stringify(Array.from({ length: shards }, (_, i) => i + 1))}\n`,
     `browser_shard_total=${shards}\n`,
+    `vitest_shards=${JSON.stringify(Array.from({ length: vitestShardCount }, (_, i) => i + 1))}\n`,
+    `vitest_shard_total=${vitestShardCount}\n`,
   ].join("");
   if (process.env.GITHUB_OUTPUT)
     appendFileSync(process.env.GITHUB_OUTPUT, text);
@@ -1210,12 +1240,17 @@ function main() {
   }
   if (command === "vitest") {
     const iterations = option("iterations", ITERATIONS);
+    const shardIndex = option("shard", 1);
+    const shardTotal = option("shards", 1);
     if (Number.isInteger(iterations) && iterations > 0 && operands.length > 0)
-      return repeatVitest(operands, iterations);
+      return repeatVitest(
+        vitestShard(operands, shardIndex, shardTotal),
+        iterations,
+      );
   }
   if (command === "costs") return writeCosts(operands);
   throw new Error(
-    "usage: flake-check select [--budget=minutes] [base] [head] | vitest [--iterations=N] <file[:line]…> | costs [run-id…]",
+    "usage: flake-check select [--budget=minutes] [base] [head] | vitest [--iterations=N] [--shard=N --shards=N] <file[:line]…> | costs [run-id…]",
   );
 }
 

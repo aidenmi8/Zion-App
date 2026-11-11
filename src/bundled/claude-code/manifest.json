@@ -2,7 +2,7 @@
   "id": "buzz.claude-code",
   "name": "Claude",
   "apiVersion": 1,
-  "description": "Run local Claude coding agents in Buzz.",
+  "description": "Run local Claude coding agents in Zion.",
   "discovery": {
     "category": "agents",
     "tags": ["Essentials", "code", "coding-agents"]
@@ -19,16 +19,6 @@
           "--shell",
           "case \"$1\" in \"~/\"*) set -- \"$HOME/${1:2}\";; esac; exec /usr/bin/base64 -i \"$1\"",
           "buzz-read"
-        ]
-      },
-      {
-        "id": "transcript-protected",
-        "program": "buzz-agent-command",
-        "bundled": true,
-        "args": [
-          "--shell",
-          "exec /usr/bin/python3 -IS -c \"$1\" \"$2\"",
-          "buzz-transcript"
         ]
       },
       {

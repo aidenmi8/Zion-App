@@ -259,7 +259,7 @@ export function AppearanceSettings({
                     label: "Vibe level",
                     options: [
                       { value: "low", label: "Chillin’" },
-                      { value: "high", label: "Buzzin’" },
+                      { value: "high", label: "Vibrant" },
                     ],
                   },
                 ]}

@@ -2,14 +2,12 @@ import { finalizeEvent, generateSecretKey } from "nostr-tools";
 import { test, expect } from "./fixture.mjs";
 import { open } from "./timeline.mjs";
 import {
-  activityRow,
   openPage,
   openSettings,
   selectSettingsSection,
   chooseColorMode,
   closeSettings,
 } from "./navigation.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 test.use({
   productionBroker: true,
@@ -59,6 +57,19 @@ test("Inbox rows open their conversation in one side tab beside the list", async
   });
   const roots = app.histories.get("primary/alpha");
   const root = (content) => roots.find((event) => event.content === content);
+  const savedFirstThreadDraft = () =>
+    page.evaluate((threadId) => {
+      const prefix = "buzz-view.v1:";
+      const draftKey = `draft:alpha:thread:${threadId}`;
+      for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index);
+        if (!key?.startsWith(prefix)) continue;
+        const pair = JSON.parse(key.slice(prefix.length));
+        if (pair[1] === draftKey)
+          return JSON.parse(localStorage.getItem(key))?.text ?? "";
+      }
+      return "";
+    }, root("Thread root 1").id);
 
   await rows
     .filter({ hasText: "Unread reply 1" })
@@ -80,6 +91,9 @@ test("Inbox rows open their conversation in one side tab beside the list", async
   await expect(page.getByRole("region", { name: "Channels" })).toHaveCount(0);
 
   await reply.fill("Thread root 1 draft");
+  // The draft must be durable before a fast tab switch, not merely visible in
+  // the current editor. This catches lost edits under a loaded browser run.
+  expect(await savedFirstThreadDraft()).toBe("Thread root 1 draft");
   // Thread root 0's row shows whichever of its replies loaded as newest.
   const other = rows
     .filter({ hasText: "#Alpha" })
@@ -101,6 +115,7 @@ test("Inbox rows open their conversation in one side tab beside the list", async
   );
   await expect(reply).toBeVisible();
   await expect(reply).not.toHaveText("Thread root 1 draft");
+  expect(await savedFirstThreadDraft()).toBe("Thread root 1 draft");
   await expectList();
 
   await rows
@@ -459,7 +474,10 @@ test("Reaction activity turns Unread off and opens the exact message", async ({
   );
   history.push(liveReaction);
   app.relay.publish("primary", liveReaction);
-  const icon = activityRow(page).locator("[data-active]");
+  const icon = page
+    .getByRole("navigation", { name: "Apps dock", exact: true })
+    .getByRole("tab", { name: "Activity", exact: true })
+    .locator("[data-active]");
   await expect(icon).toHaveText("✅");
   await expect(icon).toHaveAttribute("aria-hidden", "true");
   await page.screenshot({ path: testInfo.outputPath("reaction-bell.png") });
@@ -487,8 +505,8 @@ test("Reaction activity turns Unread off and opens the exact message", async ({
   history.push(custom);
   app.relay.publish("primary", custom);
   await expect(icon.locator("img")).toBeVisible();
-  // The emoji fills the sidebar row's 16px icon slot.
-  await expect(icon.locator("img")).toHaveCSS("width", "16px");
+  // The dock tile is larger than a sidebar row, and so is its emoji.
+  await expect(icon.locator("img")).toHaveCSS("width", "18px");
   await expect(icon.locator("img").locator("..")).toHaveCSS("opacity", "1");
   await page.screenshot({ path: testInfo.outputPath("reaction-custom.png") });
   await expect(icon).toHaveCount(0);
@@ -596,7 +614,13 @@ test("Reaction activity turns Unread off and opens the exact message", async ({
   await expect(row).toHaveCount(2);
   await expect(row.filter({ hasText: "reacted ❤️" })).toContainText(" and ");
   const typeTabs = inbox.getByRole("tablist", { name: "Activity type" });
-  await animationsSettled(typeTabs, { subtree: true });
+  await typeTabs.evaluate(async (element) => {
+    await Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished),
+    );
+  });
   await expect
     .poll(() =>
       typeTabs.evaluate((element) => {

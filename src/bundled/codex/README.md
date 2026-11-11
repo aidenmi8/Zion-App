@@ -1,6 +1,6 @@
 # Codex
 
-Create agents that run Codex on your computer and answer you in Buzz. Each agent works in its own **Workspace** folder and can run commands and edit files on its own.
+Create agents that run Codex on your computer and answer you in Zion. Each agent works in its own **Workspace** folder and can run commands and edit files on its own.
 
 ## Getting started
 
@@ -76,7 +76,8 @@ instructions, skills and memories, so no Codex settings, instructions, skills or
 memories reach a review.
 
 Signing in through Buzz runs `codex login` in the review home, records the
-ChatGPT workspace there, and then hands the sign-in to the shared one. It
+ChatGPT workspace there, and then hands the sign-in to the shared one. Once
+Codex is ready, **Sign in again** in its harness defaults does the same. It
 first removes the review home's link, so Codex's sign-out before a sign-in
 revokes nothing and a cancelled sign-in leaves the shared one working; the
 replaced sign-in is left to expire. With
@@ -101,7 +102,7 @@ published checksum and tests the release before switching. A failed update
 leaves the previous copy in use.
 
 Buzz checks for updates when agents load and every six hours. The first download
-(about 130 MB) waits until a Codex agent is running or **Install integration** is clicked.
+(about 130 MB) waits until a Codex agent is running or **Install Codex** is clicked.
 Mentions wait for installation; a failed first download is retried on the next mention.
 
 ## Checks

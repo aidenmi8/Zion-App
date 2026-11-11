@@ -37,7 +37,7 @@ export function WelcomeBack({
         </h1>
         <p className="mt-2 text-body text-subtle">
           {name
-            ? "Continue with your Buzz profile."
+            ? "Continue with your Zion profile."
             : "We found the key to your account."}
         </p>
         {email && (

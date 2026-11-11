@@ -8,7 +8,6 @@ import type {
   NipOaAuthorization,
 } from "../../../features/host/service";
 import { oauthTarget } from "../oauth/browser";
-import { managementTimestamp } from "../management-date";
 import type { BuilderlabSession, Credential } from "../session";
 import {
   clearRegistration,
@@ -21,7 +20,6 @@ export type RemoteAgent = Readonly<{
   name: string;
   pubkey: string;
   status: "Active" | "Unattested" | "Revoked" | "Unknown";
-  createdAt?: number;
   instructions?: string;
   modelId?: string;
   reasoningEffort?: string;
@@ -37,8 +35,6 @@ export type RemoteAgentModel = Readonly<{
   id: string;
   displayName: string;
   supportedReasoningEfforts: readonly string[];
-  /** Served on low-latency inference hardware, such as Cerebras. */
-  fast?: boolean;
 }>;
 
 export type RemoteAgentModelCatalog = Readonly<{
@@ -124,9 +120,9 @@ export function isRetryableAgentRead(error: unknown): boolean {
 
 const LINK_ERRORS: Record<string, string> = {
   identity_already_bound:
-    "This Builderlab account is linked to a different Buzz identity.",
+    "This Builderlab account is linked to a different Zion identity.",
   pubkey_already_bound:
-    "This Buzz identity is linked to a different Builderlab account.",
+    "This Zion identity is linked to a different Builderlab account.",
 };
 
 export function createAgentClient(
@@ -135,12 +131,8 @@ export function createAgentClient(
   // dev broker, which has no binding signer, so linking is skipped.
   owner: OwnerIdentity | null = nativeIdentityEnabled() ? nativeOwner : null,
 ) {
-  /** The sign-in's credential, once its permissions are fresh and allow
-   * remote agents. Stop is urgent: it acts on the permissions already known. */
-  async function remoteCredential(signal: AbortSignal, urgent = false) {
-    const credential = urgent
-      ? session.credential()
-      : await session.freshCredential(signal);
+  function remoteCredential() {
+    const credential = session.credential();
     if (!credential.account.canUseRemoteAgents)
       throw new Error(
         "Builderlab remote agents are unavailable for this account.",
@@ -168,10 +160,7 @@ export function createAgentClient(
     signal: AbortSignal,
   ): Promise<Record<string, unknown>> {
     signal.throwIfAborted();
-    const credential = await remoteCredential(
-      signal,
-      path === "cancel-agent-turn",
-    );
+    const credential = remoteCredential();
     let response: HostResponse;
     try {
       response = await session.request(credential, {
@@ -213,8 +202,7 @@ export function createAgentClient(
     body: unknown,
     signal: AbortSignal,
   ) {
-    signal.throwIfAborted();
-    const credential = session.credential();
+    const credential = remoteCredential();
     return retryRead(
       (signal) => {
         check(credential, signal);
@@ -271,7 +259,7 @@ export function createAgentClient(
     if (typeof code === "string" && Object.hasOwn(LINK_ERRORS, code))
       throw new Error(LINK_ERRORS[code]);
     throw new Error(
-      `Could not link your Buzz identity to Builderlab (${
+      `Could not link your Zion identity to Builderlab (${
         typeof code === "string" ? code : `HTTP ${response.status}`
       }).`,
     );
@@ -302,7 +290,7 @@ export function createAgentClient(
     const key = await owner.key().catch(() => null);
     signal.throwIfAborted();
     if (typeof key !== "string" || !/^[0-9a-f]{64}$/.test(key))
-      throw new Error("Set up your Buzz identity before creating an agent.");
+      throw new Error("Set up your Zion identity before creating an agent.");
     const credential = session.credential();
     const bound = boundKey(await identityRequest("current", {}, signal));
     if (bound === key) {
@@ -338,7 +326,7 @@ export function createAgentClient(
       signal,
     );
     if (boundKey(verified) !== key)
-      throw new Error("Builderlab did not confirm your Buzz identity link.");
+      throw new Error("Builderlab did not confirm your Zion identity link.");
     backupLinkedIdentity();
   }
   function backupLinkedIdentity() {
@@ -432,7 +420,6 @@ export function createAgentClient(
           id: model.id,
           displayName: model.display_name,
           supportedReasoningEfforts: model.supported_reasoning_efforts,
-          fast: model.fast === true,
         })),
         // Advisory: an unknown or unsupported pair is dropped, never an error.
         ...(typeof reasoningEffort === "string" &&
@@ -596,7 +583,7 @@ export function createAgentClient(
       signal.throwIfAborted();
       const agentName = name.trim();
       if (!AGENT_NAME.test(agentName)) throw new Error(INVALID_NAME);
-      const credential = await remoteCredential(signal);
+      const credential = remoteCredential();
       const { account } = credential;
       const intent = registrationIntent(
         oauthTarget(),
@@ -700,30 +687,24 @@ export function createAgentClient(
         )
       )
         throw new Error("Builderlab returned an invalid agent list.");
-      return agents.map((row) => {
-        const createdAt = managementTimestamp(row.created_at);
-        return {
-          id: row.agent_id,
-          name: row.agent_name,
-          pubkey: row.agent_pubkey,
-          status: agentStatus(row.status),
-          ...(createdAt === undefined ? {} : { createdAt }),
-          instructions: row.agent_instructions ?? "",
-          ...(typeof row.model_id === "string"
-            ? { modelId: row.model_id }
-            : {}),
-          ...(typeof row.reasoning_effort === "string"
-            ? { reasoningEffort: row.reasoning_effort }
-            : {}),
-          ...(row.model_selection_status !== undefined
-            ? {
-                modelSelectionStatus: modelSelectionStatus(
-                  row.model_selection_status,
-                ),
-              }
-            : {}),
-        };
-      });
+      return agents.map((row) => ({
+        id: row.agent_id,
+        name: row.agent_name,
+        pubkey: row.agent_pubkey,
+        status: agentStatus(row.status),
+        instructions: row.agent_instructions ?? "",
+        ...(typeof row.model_id === "string" ? { modelId: row.model_id } : {}),
+        ...(typeof row.reasoning_effort === "string"
+          ? { reasoningEffort: row.reasoning_effort }
+          : {}),
+        ...(row.model_selection_status !== undefined
+          ? {
+              modelSelectionStatus: modelSelectionStatus(
+                row.model_selection_status,
+              ),
+            }
+          : {}),
+      }));
     },
   };
 }

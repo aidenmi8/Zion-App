@@ -146,7 +146,7 @@ export function IdentitySetup({
       >
         <div className={importing ? styles.importContent : styles.setupContent}>
           <h1 id="identity-setup-title" className="text-heading">
-            {importing ? "Use your existing identity" : "Your Buzz identity"}
+            {importing ? "Use your existing identity" : "Your Zion identity"}
           </h1>
           {state.status === "loading" ? (
             <p role="status">Opening your saved identity…</p>

@@ -19,7 +19,7 @@ pub(crate) trait Keychain: Send + Sync {
 
 /// Held for as long as this app serves the records; see [`Keychain::lease`].
 pub(crate) type Lease = Box<dyn Send + Sync>;
-pub(crate) const LEASED: &str = "Another Buzz is serving paired tools; quit it, then retry";
+pub(crate) const LEASED: &str = "Another Zion is serving paired tools; quit it, then retry";
 /// The lease could not be taken or checked, so no other app is known to hold it.
 pub(crate) const UNLEASED: &str = "Paired tools could not be checked";
 

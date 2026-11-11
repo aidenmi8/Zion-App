@@ -70,7 +70,7 @@ type ProviderState = AgentProviderSnapshot &
   }>;
 const STORAGE_KEY = "buzz.codex.provider-defaults.v1";
 const SIGN_IN_ERROR = "Codex needs you to sign in.";
-const NOT_INSTALLED = "The Codex integration isn't installed yet.";
+const NOT_INSTALLED = "Codex is not installed.";
 const CONVERSATION_LIMIT = 30;
 /** Read-only setup/catalog discovery uses the same declared native transport. */
 async function catalog(spawn: Spawn, signal: AbortSignal) {
@@ -174,7 +174,7 @@ export class CodexProvider {
           readiness: "attention",
           attentionLabel:
             reason === NOT_INSTALLED
-              ? "Install Codex integration"
+              ? "Install Codex"
               : reason === SIGN_IN_ERROR
                 ? "Log in to Codex"
                 : "Codex needs attention",
@@ -356,7 +356,7 @@ function CodexSignIn({
     login.subscribe,
     login.snapshot,
   );
-  const action = step === "install" ? "Install integration" : "Sign in";
+  const action = step === "install" ? "Install Codex" : "Sign in";
   // A step's process ends before the check that follows it, which may still
   // find the step needed; until it answers, neither button starts another.
   return (
@@ -376,7 +376,7 @@ function CodexSignIn({
       </Button>
       <Dialog
         open={open}
-        title={step === "install" ? "Codex integration" : "Sign in to Codex"}
+        title={step === "install" ? "Set up Codex" : "Sign in to Codex"}
         description={step === "login" ? "Continue in your browser." : undefined}
         onOpenChange={(next) => {
           setOpen(next);
@@ -386,7 +386,9 @@ function CodexSignIn({
         <section className="grid gap-2">
           {step === "install" && (
             <p role="status" className="m-0">
-              {checking && !running ? "Checking Codex…" : NOT_INSTALLED}
+              {checking && !running
+                ? "Checking Codex…"
+                : "Codex is not installed."}
             </p>
           )}
           {/* One button per slot, so focus stays put as Install becomes
@@ -414,9 +416,10 @@ function CodexSignIn({
           </div>
           {step === "install" && (
             <p className="m-0 text-body-sm text-subtle">
-              Downloads Buzz's own copy of Codex (about 130 MB) and keeps it on
-              the latest release. Your own installation of Codex will be
-              unaffected, and uses the same sign-in and settings.
+              Downloads Zion's own copy of Codex (about 130 MB) from
+              releases.openai.com and keeps it on the latest release. It does
+              not change the <code>codex</code> in your terminal, and uses the
+              same sign-in and settings.
             </p>
           )}
           {output && (
@@ -566,7 +569,7 @@ export function createTabs(
       check,
     } = useProvider(agent);
     // The setup's status holds through the provider's next check, so the
-    // button, and its focus, stays put as Install integration becomes Sign in.
+    // button, and its focus, stays put as Install Codex becomes Sign in.
     const { status } = useSyncExternalStore(
       login.subscribe,
       login.snapshot,
@@ -781,9 +784,11 @@ export function createTabs(
     const [draft, setDraft] = useState(state.defaults);
     const [saveError, setSaveError] = useState("");
     const [savingDefaults, setSavingDefaults] = useState(false);
+    // Keeps a ready-state sign-in's output once it ends, failed or not.
+    const [signingIn, setSigningIn] = useState(false);
     const action =
       error === NOT_INSTALLED
-        ? ({ step: "install", label: "Install integration" } as const)
+        ? ({ step: "install", label: "Install Codex" } as const)
         : error === SIGN_IN_ERROR
           ? ({ step: "login", label: "Sign in" } as const)
           : undefined;
@@ -851,7 +856,29 @@ export function createTabs(
             </p>
           )}
         </form>
-        <div className="grid gap-2" hidden={state.readiness === "ready"}>
+        {/* Signed in elsewhere, Codex is ready, but reviews need a sign-in
+            made here, which records its workspace. */}
+        {state.readiness === "ready" && (
+          <div className="grid justify-items-start gap-2">
+            <p className="m-0 text-body-sm text-subtle">
+              Security reviews need a ChatGPT sign-in made in Zion.
+            </p>
+            <Button
+              loading={installing.running === "login"}
+              disabled={installing.running === "install"}
+              onClick={() => {
+                setSigningIn(true);
+                void setup.run("login");
+              }}
+            >
+              Sign in again
+            </Button>
+          </div>
+        )}
+        <div
+          className="grid gap-2"
+          hidden={state.readiness === "ready" && !signingIn}
+        >
           {installing.running ? (
             <div className="flex flex-wrap items-center gap-2">
               <p role="status" className="m-0 text-body-sm">
@@ -871,9 +898,10 @@ export function createTabs(
           ) : null}
           {action?.step === "install" && !installing.running && (
             <p className="m-0 text-body-sm text-subtle">
-              Downloads Buzz's own copy of Codex (about 130 MB) and keeps it on
-              the latest release. Your own installation of Codex will be
-              unaffected, and uses the same sign-in and settings.
+              Downloads Zion's own copy of Codex (about 130 MB) from
+              releases.openai.com and keeps it on the latest release. It does
+              not change the <code>codex</code> in your terminal, and uses the
+              same sign-in and settings.
             </p>
           )}
           {installing.output && (
@@ -1327,7 +1355,7 @@ export function createTabs(
               description={
                 bound
                   ? "The adapter selects a workspace for each conversation session."
-                  : "Codex starts here with full access to your files and network. Buzz tools run inside the app. Inherited MCP/Apps/plugin tools are disabled."
+                  : "Codex starts here with full access to your files and network. Zion tools run inside the app. Inherited MCP/Apps/plugin tools are disabled."
               }
             >
               <Input

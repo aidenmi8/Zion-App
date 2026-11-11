@@ -341,7 +341,7 @@ export function applyApps(
             : []),
           ...(shared.length
             ? [
-                `So can members of the ${shared.length === 1 ? "Buzz community" : `${shared.length} Buzz communities`} it is shared with.`,
+                `So can members of the ${shared.length === 1 ? "Zion community" : `${shared.length} Zion communities`} it is shared with.`,
               ]
             : []),
         ].join(" "),
@@ -351,14 +351,14 @@ export function applyApps(
   ctx.agents.addTool({
     name: "apps_community",
     description:
-      "Share an app with a Buzz community your owner belongs to, or stop sharing it. Its members can then open the app whatever its visibility. Only when asked.",
+      "Share an app with a Zion community your owner belongs to, or stop sharing it. Its members can then open the app whatever its visibility. Only when asked.",
     inputSchema: {
       type: "object",
       properties: {
         app_id: { type: "string" },
         community_id: {
           type: "string",
-          description: "The Buzz community's Builderlab ID.",
+          description: "The Zion community's Builderlab ID.",
         },
         action: { type: "string", enum: ["grant", "revoke"] },
       },
@@ -383,7 +383,7 @@ export function applyApps(
   ctx.agents.addTool({
     name: "apps_open",
     description:
-      "Open a deployed app beside this conversation in your owner's Buzz, when they are viewing it. Use it after a deploy is ready, and still post the URL in your reply.",
+      "Open a deployed app beside this conversation in your owner's Zion, when they are viewing it. Use it after a deploy is ready, and still post the URL in your reply.",
     inputSchema: {
       type: "object",
       properties: {

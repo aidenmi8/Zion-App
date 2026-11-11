@@ -37,6 +37,7 @@ import {
   type ReactNode,
   forwardRef,
   type RefObject,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -56,27 +57,17 @@ import { canRetryPlugin, type PluginManager } from "../plugins/manager";
 import type { Catalog, PluginInfo } from "../plugins/types";
 import type { Communities, Membership } from "../features/communities/service";
 import { PluginImport } from "./PluginImport";
-import { PluginUpdateFailure } from "./PluginUpdates";
 import { AgentPluginRequests } from "./AgentPluginRequests";
-import {
-  ManagedPluginUpdate,
-  ManagedPlugins,
-  UrlPluginInstallReview,
-  UrlPluginDetails,
-} from "./ManagedPlugins";
+import { ManagedPluginUpdate, ManagedPlugins } from "./ManagedPlugins";
 import { managedBy, pendingManaged } from "../plugins/managed";
 import { RecommendationCount } from "./RecommendationCount";
-import {
-  isUrlInstallSource,
-  type PluginInstallRequest,
-  type PluginInstallRequests,
-} from "../plugins/installer";
+import type { PluginInstallRequests } from "../plugins/installer";
 import { PluginReadme } from "./PluginReadme";
 import { bundledReadmes } from "../bundled/readmes";
 import { bundledIcons } from "../bundled/icons";
 import type { Identity } from "../features/identity/service";
 import { ProfileSettings } from "./ProfileSettings";
-import { IdentitySettings } from "./IdentitySettings";
+import { IdentitySettings, keyActivity } from "./IdentitySettings";
 import { SecuritySettings } from "./SecuritySettings";
 import type { FederatedIdentity } from "../features/federated-identity/service";
 import { CommunityLocalSettings } from "./CommunityLocalSettings";
@@ -232,7 +223,7 @@ function PluginProvenance({
   className?: string | undefined;
 }) {
   const label = [
-    source === "bundled" ? "Buzz" : publisher,
+    source === "bundled" ? "Sentra" : publisher,
     managedBy && `Managed by ${managedBy}`,
   ]
     .filter(Boolean)
@@ -398,7 +389,7 @@ function PluginDetails({
             {plugin.source === "bundled" ? (
               <span className={styles.pluginInstallBadge}>
                 <CheckCircleIcon size={14} aria-hidden="true" />
-                Made by Buzz
+                Made by Sentra
               </span>
             ) : (
               <PluginProvenance
@@ -532,33 +523,24 @@ function PluginDetails({
           {...(authorizeGit ? { authorizeGit } : {})}
         />
       )}
-      {plugin.source === "external" &&
-        !managed &&
-        plugin.updateSource &&
-        "url" in plugin.updateSource && (
-          <UrlPluginDetails source={plugin.updateSource} />
-        )}
-      {plugin.source === "external" &&
-        plugins.imports &&
-        !managed &&
-        !(plugin.updateSource && "url" in plugin.updateSource) && (
-          <PluginImport
-            key={`${plugin.revision}:${JSON.stringify(plugin.updateSource)}`}
-            initialUpdateAvailable={initialUpdateAvailable}
-            actionTarget={actionTarget}
-            onUpdateAvailableChange={onUpdateAvailableChange}
-            reviewRequested={reviewRequested}
-            onReviewHandled={onReviewHandled}
-            holdReview={holdReview}
-            statusTarget={installedStatus}
-            returnFocus={() => close.current}
-            updateId={plugin.manifest.id}
-            plugins={plugins}
-            catalog={catalog}
-            busy={busy}
-            {...(authorizeGit ? { authorizeGit } : {})}
-          />
-        )}
+      {plugin.source === "external" && plugins.imports && !managed && (
+        <PluginImport
+          key={`${plugin.revision}:${JSON.stringify(plugin.updateSource)}`}
+          initialUpdateAvailable={initialUpdateAvailable}
+          actionTarget={actionTarget}
+          onUpdateAvailableChange={onUpdateAvailableChange}
+          reviewRequested={reviewRequested}
+          onReviewHandled={onReviewHandled}
+          holdReview={holdReview}
+          statusTarget={installedStatus}
+          returnFocus={() => close.current}
+          updateId={plugin.manifest.id}
+          plugins={plugins}
+          catalog={catalog}
+          busy={busy}
+          {...(authorizeGit ? { authorizeGit } : {})}
+        />
+      )}
       {sections.length > 0 && (
         // biome-ignore lint/a11y/useSemanticElements: This names links to Settings sections, not a fieldset of form controls.
         <p
@@ -722,10 +704,6 @@ export function Settings({
     installRequests?.subscribe ?? noAccessSubscription,
     installRequests?.snapshot ?? noInstallRequest,
   );
-  const linkedPlugin =
-    navigation?.target.kind === "settings"
-      ? navigation.target.pluginImport
-      : undefined;
   const settingsMounted = useRef(false);
   useEffect(() => {
     settingsMounted.current = true;
@@ -756,7 +734,6 @@ export function Settings({
     decisions?.subscribe ?? noAccessSubscription,
     decisions?.providers ?? noDecisionProviders,
   );
-  const identityCards = contributed.filter((card) => card.identityRow);
   const client = useSyncExternalStore(
     communities.subscribe,
     communities.snapshot,
@@ -1335,17 +1312,6 @@ export function Settings({
                       {failure}
                     </p>
                   )}
-                  <PluginUpdateFailure
-                    pluginId={id}
-                    className={styles.pluginRowStatus}
-                    returnFocus={() =>
-                      Array.from(
-                        pluginSection.current?.querySelectorAll<HTMLElement>(
-                          "[data-plugin-id]",
-                        ) ?? [],
-                      ).find((row) => row.dataset.pluginId === id)
-                    }
-                  />
                 </PluginListEntry>
               );
             })}
@@ -1354,10 +1320,15 @@ export function Settings({
       </PluginListEntry>
     );
   };
-  // The current community supplies the profile shown on the identity card.
+  // A new connection's session reads activity again.
   const relay = useSyncExternalStore(
     communities.relay.subscribe,
     communities.relay.snapshot,
+  );
+  const relaySession = relay.status === "ready" ? relay.session : undefined;
+  const lastActive = useCallback(
+    (pubkey: string) => keyActivity(relaySession, pubkey),
+    [relaySession],
   );
   const authorizePluginGit = async (repository: string) => {
     const connection = communities.relay.snapshot();
@@ -1435,7 +1406,6 @@ export function Settings({
                   return (
                     <Card
                       active={active}
-                      navigation={navigation}
                       {...(!card.group && selectedCommunity
                         ? { community: selectedCommunity }
                         : {})}
@@ -1491,43 +1461,10 @@ export function Settings({
             federatedIdentity={federatedIdentity}
             memberships={client.memberships}
             builderlabIdentity={builderlabIdentity}
-            openBuilderlab={
-              openSection &&
-              contributed.some((card) => card.key === "block.builderlab/login")
-                ? () => openSection("block.builderlab/login")
-                : undefined
-            }
-            profileSession={
-              relay.viewer === client.viewer &&
-              (relay.status === "ready" || relay.cached)
-                ? relay.session
-                : undefined
-            }
-            community={selectedCommunity}
-            accountRows={
-              identityCards.length
-                ? identityCards.map(
-                    (card) =>
-                      card.identityRow && (
-                        <OwnedContribution
-                          key={card.key}
-                          entry={card}
-                          registry={cards}
-                        >
-                          {(entry, active) => {
-                            const Row = entry.identityRow;
-                            return Row ? <Row active={active} /> : null;
-                          }}
-                        </OwnedContribution>
-                      ),
-                  )
-                : undefined
-            }
+            lastActive={lastActive}
           />
         )}
-        {selected === "security" && (
-          <SecuritySettings viewer={identity ? client.viewer : undefined} />
-        )}
+        {selected === "security" && <SecuritySettings />}
         {developerMode && (
           <div hidden={selected !== "developer"}>
             <DeveloperSettings relay={communities.relay} />
@@ -1606,40 +1543,17 @@ export function Settings({
                 </motion.div>
               </motion.div>
             )}
-            {catalog && installRequest && installRequests && (
-              <UrlInstallRequestReview
-                key={installRequest.id}
-                request={installRequest}
-                requests={installRequests}
-                plugins={plugins}
-                catalog={catalog}
-                busy={busy}
-                returnFocus={() => pluginSection.current}
-              />
-            )}
-            {catalog && linkedPlugin && "url" in linkedPlugin && (
-              <UrlPluginInstallReview
-                key={`url:${navigation?.entryId}`}
-                plugins={plugins}
-                catalog={catalog}
-                busy={busy}
-                source={linkedPlugin}
-                requester="A link"
-                holdReview={installRequests?.holdReview}
-                returnFocus={() => pluginSection.current}
-                onClose={() => onPluginImportClosed?.()}
-              />
-            )}
             {catalog ? (
               <PluginImport
                 key={
-                  linkedPlugin && !("url" in linkedPlugin)
-                    ? navigation?.entryId
+                  navigation?.target.kind === "settings" &&
+                  navigation.target.pluginImport
+                    ? navigation.entryId
                     : "add"
                 }
                 initialGit={
-                  linkedPlugin && !("url" in linkedPlugin)
-                    ? linkedPlugin
+                  navigation?.target.kind === "settings"
+                    ? navigation.target.pluginImport
                     : undefined
                 }
                 requestSignal={navigation?.signal}
@@ -1655,11 +1569,7 @@ export function Settings({
                   onPluginImportClosed?.();
                 }}
                 actionTarget={pluginImportActions}
-                request={
-                  installRequest && !isUrlInstallSource(installRequest.source)
-                    ? { ...installRequest, source: installRequest.source }
-                    : undefined
-                }
+                request={installRequest}
                 onRequestSettled={installRequests?.settle}
                 onRequestClaimed={installRequests?.claim}
                 onRequestConfirmed={installRequests?.confirm}
@@ -1899,28 +1809,5 @@ export function Settings({
         </div>
       </Panel>
     </div>
-  );
-}
-
-function UrlInstallRequestReview({
-  request,
-  requests,
-  ...props
-}: Omit<
-  Parameters<typeof UrlPluginInstallReview>[0],
-  "source" | "requester" | "request" | "holdReview"
-> & {
-  request: PluginInstallRequest;
-  requests: PluginInstallRequests;
-}) {
-  if (!isUrlInstallSource(request.source)) return null;
-  return (
-    <UrlPluginInstallReview
-      {...props}
-      source={request.source}
-      requester={request.origin.name}
-      holdReview={requests.holdReview}
-      request={{ ...requests, id: request.id }}
-    />
   );
 }

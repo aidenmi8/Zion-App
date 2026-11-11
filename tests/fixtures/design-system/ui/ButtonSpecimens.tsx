@@ -224,16 +224,6 @@ export function ButtonSpecimen() {
         </Button>
       </ExamplePreview>
       <ExamplePreview
-        code={`<Button size="text" variant="link">Manage account</Button>`}
-      >
-        <Button size="text" variant="link">
-          Manage account
-        </Button>
-        <Button size="text" variant="link" disabled>
-          Manage account
-        </Button>
-      </ExamplePreview>
-      <ExamplePreview
         code={`<Button size="inline" variant="plain" aria-expanded={expanded}>Previous steps <CaretDownIcon aria-hidden="true" /></Button>`}
       >
         <Button
@@ -300,9 +290,6 @@ export function ButtonSpecimen() {
     <Button disabled={!loading} onClick={() => setLoading(false)}>
       Complete saving
     </Button>
-    <Button loading disabled loadingAppearance="disabled">
-      Disabled while loading
-    </Button>
   </div>
   <Button
     aria-expanded={expanded}
@@ -332,9 +319,6 @@ export function ButtonSpecimen() {
               </Button>
               <Button disabled={!loading} onClick={() => setLoading(false)}>
                 Complete saving
-              </Button>
-              <Button loading disabled loadingAppearance="disabled">
-                Disabled while loading
               </Button>
             </div>
             <Button

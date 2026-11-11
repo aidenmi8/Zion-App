@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import type {
   HostProcess,
   HostProcessOptions,
@@ -8,19 +8,7 @@ import { fakeSpawn, MODELS, sessionState } from "./claude-testing";
 import script from "./claude.sh?raw";
 import manifest from "./manifest.json";
 import { PROTECTED_CLAUDE_ROOT, PROTECTED_CLAUDE_VERSION } from "./security";
-import { ClaudeAuth, type Step } from "./auth";
 import { checkClaude, ClaudeSetup, MIN_VERSION, withScript } from "./setup";
-
-/** Native's Claude key store (`claude_key.rs`): whether a key is saved. */
-const nativeKey = vi.hoisted(() => ({ saved: true }));
-vi.mock("@tauri-apps/api/core", () => ({
-  isTauri: () => true,
-  invoke: async (command: string) =>
-    command === "claude_api_key_status" ? nativeKey.saved : null,
-}));
-beforeEach(() => {
-  nativeKey.saved = true;
-});
 
 it("declares protected file reads through the bundled helper with a positional path", () => {
   expect(
@@ -39,14 +27,18 @@ it("declares protected file reads through the bundled helper with a positional p
 
 const REVIEW_HOME =
   "/Users/me/Library/Application Support/Buzz/claude-code-review-home";
-const KEY = "sk-ant-api03-saved";
-/** `spawn` where `claude.sh review` prints the review folder, with a key
- * saved natively unless `saved` is false. */
-function signedIn(spawn: Spawn, saved = true): Spawn {
-  nativeKey.saved = saved;
+const REVIEW_TOKEN = "sk-ant-oat01-review";
+/** `spawn` where `claude.sh review` prints `lines`: by default, a review
+ * folder with a saved sign-in. */
+function signedIn(
+  spawn: Spawn,
+  lines: readonly string[] = [REVIEW_HOME, REVIEW_TOKEN],
+): Spawn {
   return async (id, options) => {
     if (id !== "review") return spawn(id, options);
-    queueMicrotask(() => options?.onStdout?.(`${REVIEW_HOME}\n`));
+    queueMicrotask(() =>
+      options?.onStdout?.(lines.map((line) => `${line}\n`).join("")),
+    );
     return {
       write: async () => undefined,
       end: async () => undefined,
@@ -125,32 +117,36 @@ it.each([true, false])(
   },
 );
 
-it("fails a review closed before any model without an API key", async () => {
-  const spawned: string[] = [];
-  const setup = new ClaudeSetup(
-    signedIn(async (id) => {
-      spawned.push(id);
-      throw new Error(`${id} started`);
-    }, false),
-    vi.fn(),
-  );
-  await expect(
-    setup.review(
-      { id: "opus" },
-      { system: "Assess.", input: "{}" },
-      new AbortController().signal,
-    ),
-  ).rejects.toThrow("Claude needs an Anthropic API key.");
-  expect(spawned).toEqual([]);
-});
+it.each([[[]], [[REVIEW_HOME]]])(
+  "fails a review closed before any model without its own sign-in: %j",
+  async (lines) => {
+    const spawned: string[] = [];
+    const setup = new ClaudeSetup(
+      signedIn(async (id) => {
+        spawned.push(id);
+        throw new Error(`${id} started`);
+      }, lines),
+      vi.fn(),
+    );
+    await expect(
+      setup.review(
+        { id: "opus" },
+        { system: "Assess.", input: "{}" },
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow(
+      "Claude security reviews need their own sign-in. Run claude setup-token in Terminal",
+    );
+    expect(spawned).toEqual([]);
+  },
+);
 
 it("fails a review with the reader's own refusal, as off macOS", async () => {
   const spawned: string[] = [];
   const setup = new ClaudeSetup(async (id, options) => {
     spawned.push(id);
-    if (id === "review")
-      options?.onStderr?.("Claude security reviews need macOS\n");
-    else throw new Error(`${id} started`);
+    if (id !== "review") throw new Error(`${id} started`);
+    options?.onStderr?.("Claude security reviews need macOS\n");
     return {
       write: async () => undefined,
       end: async () => undefined,
@@ -168,7 +164,7 @@ it("fails a review with the reader's own refusal, as off macOS", async () => {
   expect(spawned).toEqual(["review"]);
 });
 
-it("authenticates a review with its own folder and the key, over other credentials", async () => {
+it("signs a review in with its own folder and token, over other sign-ins", async () => {
   const { f, setup } = reviewWorker();
   const reviewing = setup.review(
     { id: "opus" },
@@ -180,6 +176,8 @@ it("authenticates a review with its own folder and the key, over other credentia
   if (!fake) throw new Error("Expected review worker");
   expect(fake.options.env).toMatchObject({
     CLAUDE_CONFIG_DIR: REVIEW_HOME,
+    CLAUDE_CODE_OAUTH_TOKEN: REVIEW_TOKEN,
+    ANTHROPIC_API_KEY: null,
     ANTHROPIC_AUTH_TOKEN: null,
     ANTHROPIC_BASE_URL: null,
     CLAUDE_CODE_API_BASE_URL: null,
@@ -194,12 +192,8 @@ it("authenticates a review with its own folder and the key, over other credentia
     CLAUDE_CODE_USE_ANTHROPIC_AWS: null,
     CLAUDE_CODE_USE_ANTHROPIC_GOOGLE_CLOUD: null,
   });
-  // Native code sets the key itself, over the environment.
-  expect(fake.options.secrets).toEqual(["anthropic-api-key"]);
-  expect(fake.options.env?.ANTHROPIC_API_KEY).toBeNull();
   expect(fake.options.cwd).toBe("~");
-  expect(fake.options.env).not.toHaveProperty("CLAUDE_CODE_OAUTH_TOKEN");
-  expect(fake.options.args?.join(" ")).not.toContain(KEY);
+  expect(fake.options.args?.join(" ")).not.toContain(REVIEW_TOKEN);
   fake.emit({
     type: "result",
     subtype: "success",
@@ -212,16 +206,13 @@ it("authenticates a review with its own folder and the key, over other credentia
 
 it.each([
   [
-    'Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}',
-    "Anthropic rejected the Claude API key.",
+    'Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"Invalid bearer token"}}',
+    "Claude rejected the security-review sign-in.",
   ],
-  [
-    "Invalid API key · invalid x-api-key",
-    "Anthropic rejected the Claude API key.",
-  ],
+  ["OAuth token has expired", "Claude rejected the security-review sign-in."],
   ["Overloaded", "Overloaded"],
 ])(
-  "reports a review's key only when Anthropic refused it: %s",
+  "reports a review's sign-in only when Claude refused it: %s",
   async (error, reported) => {
     const { f, setup } = reviewWorker();
     const reviewing = setup.review(
@@ -240,6 +231,43 @@ it.each([
     });
     sessionState(fake, "idle");
     await expect(reviewing).rejects.toThrow(reported);
+  },
+);
+
+it.each([
+  [0, "Saved the sign-in for Claude security reviews.\n", undefined],
+  [1, "That is not a Claude token.\n", "That is not a Claude token."],
+])(
+  "saves reviews' sign-in on stdin alone, without blocking or checking Claude: exit %i",
+  async (code, line, error) => {
+    const spawned: { id: string; options: HostProcessOptions }[] = [];
+    const stdin: string[] = [];
+    const setup = new ClaudeSetup(async (id, options = {}) => {
+      spawned.push({ id, options });
+      return {
+        write: async (text) => void stdin.push(text),
+        end: async (text = "") => {
+          stdin.push(text);
+          (code ? options.onStderr : options.onStdout)?.(line);
+        },
+        kill: async () => undefined,
+        exited: Promise.resolve(code),
+      };
+    }, vi.fn());
+    const states: unknown[] = [];
+    setup.subscribe(() => states.push(setup.providerSnapshot()));
+    const saving = setup.saveReviewSignIn(
+      REVIEW_TOKEN,
+      new AbortController().signal,
+    );
+    if (error) await expect(saving).rejects.toThrow(error);
+    else await expect(saving).resolves.toBe(line.trim());
+    expect(spawned).toEqual([
+      { id: "review-token", options: expect.anything() },
+    ]);
+    expect(spawned[0]?.options.args).toBeUndefined();
+    expect(stdin).toEqual([`${REVIEW_TOKEN}\n`]);
+    expect(states).toEqual([]);
   },
 );
 
@@ -270,14 +298,12 @@ function scripted(
 
 it("finds Claude missing when Buzz has no copy", async () => {
   const { spawn } = scripted({ "claude --version": { code: 127 } });
-  await expect(checkClaude(spawn, new ClaudeAuth(spawn))).resolves.toEqual({
-    state: "missing",
-  });
+  await expect(checkClaude(spawn)).resolves.toEqual({ state: "missing" });
   const setup = new ClaudeSetup(spawn);
   await setup.check();
   expect(setup.providerSnapshot()).toEqual({
     readiness: "attention",
-    attentionLabel: "Install Claude integration",
+    attentionLabel: "Install Claude Code",
   });
 });
 
@@ -285,33 +311,32 @@ it("finds a copy older than Buzz needs outdated", async () => {
   const { spawn } = scripted({
     "claude --version": { stdout: "2.1.168 (Claude Code)\n" },
   });
-  await expect(checkClaude(spawn, new ClaudeAuth(spawn))).resolves.toEqual({
+  await expect(checkClaude(spawn)).resolves.toEqual({
     state: "outdated",
     version: "2.1.168",
   });
 });
 
-it("reports the version and whether an API key is saved", async () => {
+it("reports the version and whether it is signed in", async () => {
   const signedOut = scripted({
     "claude --version": { stdout: "2.1.200 (Claude Code)\n" },
+    "claude auth status --json": { stdout: '{"loggedIn":false}', code: 1 },
   });
-  nativeKey.saved = false;
-  await expect(
-    checkClaude(signedOut.spawn, new ClaudeAuth(signedOut.spawn)),
-  ).resolves.toEqual({ state: "signed-out", version: "2.1.200" });
-  const signedOutSetup = new ClaudeSetup(signedOut.spawn);
-  await signedOutSetup.check();
-  expect(signedOutSetup.providerSnapshot()).toEqual({
-    readiness: "attention",
-    attentionLabel: "Add Claude API key",
+  await expect(checkClaude(signedOut.spawn)).resolves.toEqual({
+    state: "signed-out",
+    version: "2.1.200",
   });
-  nativeKey.saved = true;
   const ready = scripted({
     "claude --version": { stdout: "2.1.200 (Claude Code)\n" },
+    "claude auth status --json": {
+      stdout: '{"loggedIn":true,"email":"a@example.com","orgName":"Example"}',
+    },
   });
-  await expect(
-    checkClaude(ready.spawn, new ClaudeAuth(ready.spawn)),
-  ).resolves.toEqual({ state: "ready", version: "2.1.200" });
+  await expect(checkClaude(ready.spawn)).resolves.toEqual({
+    state: "ready",
+    version: "2.1.200",
+    account: "a@example.com · Example",
+  });
   const setup = new ClaudeSetup(ready.spawn);
   await setup.check();
   const refreshing = setup.check();
@@ -319,26 +344,15 @@ it("reports the version and whether an API key is saved", async () => {
   await refreshing;
 });
 
-/** An authentication that signs in interactively, as a build may. */
-class InteractiveAuth extends ClaudeAuth {
-  override readonly signIn = (step: Step) =>
-    step("claude", ["auth", "login"], "Sign-in");
-  override async check() {
-    return {};
-  }
-  override authorize(spawn: Spawn) {
-    return spawn;
-  }
-}
-
-it("runs an interactive sign-in, shows its output, and checks again after", async () => {
+it("runs sign-in, shows its output, and checks again after", async () => {
   const { spawn, calls } = scripted({
     "claude auth login": { stdout: "Opening browser…\n" },
     "claude --version": { stdout: "2.1.200\n" },
+    "claude auth status --json": { stdout: '{"loggedIn":true}' },
   });
-  const setup = new ClaudeSetup(spawn, undefined, new InteractiveAuth(spawn));
-  const run = setup.run("sign-in");
-  expect(setup.snapshot().running).toBe("sign-in");
+  const setup = new ClaudeSetup(spawn);
+  const run = setup.run("login");
+  expect(setup.snapshot().running).toBe("login");
   await run;
   expect(setup.snapshot()).toMatchObject({
     running: undefined,
@@ -348,6 +362,7 @@ it("runs an interactive sign-in, shows its output, and checks again after", asyn
   expect(calls.map((call) => call.args.join(" "))).toEqual([
     "auth login",
     "--version",
+    "auth status --json",
   ]);
 });
 
@@ -366,15 +381,15 @@ it("stops a step cancelled before its process was returned", async () => {
       resolveExit = resolve;
     }),
   };
-  const spawn: Spawn = (id, options) =>
+  const setup = new ClaudeSetup((id, options) =>
     id === "claude" && options?.args?.[0] === "auth"
       ? new Promise((resolve) => {
           resolveSpawn = resolve;
         })
-      : check(id, options);
-  const setup = new ClaudeSetup(spawn, undefined, new InteractiveAuth(spawn));
-  const run = setup.run("sign-in");
-  expect(setup.snapshot().running).toBe("sign-in");
+      : check(id, options),
+  );
+  const run = setup.run("login");
+  expect(setup.snapshot().running).toBe("login");
   await setup.cancel();
   resolveSpawn(process);
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -402,6 +417,7 @@ it("explains that it needs the desktop app", async () => {
 it("caches failed model discovery until retry and closes a late probe on disposal", async () => {
   const checks = scripted({
     "claude --version": { stdout: "2.1.200" },
+    "claude auth status --json": { stdout: '{"loggedIn":true}' },
   });
   let release!: (process: HostProcess) => void;
   const late = new Promise<HostProcess>((resolve) => {
@@ -414,8 +430,7 @@ it("caches failed model discovery until retry and closes a late probe on disposa
   await setup.loadModels();
   expect(setup.snapshot().modelsError).toBe("probe failed");
   await setup.loadModels();
-  // The version and the failed probe.
-  expect(spawn).toHaveBeenCalledTimes(2);
+  expect(spawn).toHaveBeenCalledTimes(3);
   spawn.mockImplementationOnce(() => late);
   const pending = setup.loadModels(true);
   expect(setup.snapshot().modelsChecking).toBe(true);
@@ -436,10 +451,11 @@ it("caches failed model discovery until retry and closes a late probe on disposa
 function discoverable() {
   const checks = scripted({
     "claude --version": { stdout: "2.1.200" },
+    "claude auth status --json": { stdout: '{"loggedIn":true}' },
   });
   const claude = fakeSpawn();
   const spawn = vi.fn<Spawn>(async (id, options) =>
-    options?.args?.[0] === "--version"
+    options?.args?.[0] === "--version" || options?.args?.[0] === "auth"
       ? checks.spawn(id, options)
       : claude.spawn(id, options),
   );
@@ -475,6 +491,7 @@ it("looks for the catalog again after a discovery that listed nothing", async ()
 it("bounds a stalled discovery and releases it for an explicit retry", async () => {
   const checks = scripted({
     "claude --version": { stdout: "2.1.200" },
+    "claude auth status --json": { stdout: '{"loggedIn":true}' },
   });
   let exit!: (code: number | null) => void;
   const exited = new Promise<number | null>((resolve) => {
@@ -544,6 +561,8 @@ function releases(
         : version === broken
           ? { stderr: "Killed: 9", code: 137 }
           : { stdout: `${version} (Claude Code)\n`, code: 0 };
+    else if (args[0] === "auth")
+      result = { stdout: '{"loggedIn":true}', code: 0 };
     if (id === "use") state.used.push(args.join(" "));
     queueMicrotask(() => {
       if (result.stdout) options.onStdout?.(result.stdout);
@@ -605,7 +624,7 @@ it("keeps the copy in use when a new release fails its test", async () => {
   expect(state.used).toEqual([]);
   expect(setup.snapshot()).toMatchObject({
     notice:
-      "Claude 2.1.300 failed its test: Killed: 9. Buzz keeps using 2.1.200.",
+      "Claude 2.1.300 failed its test: Killed: 9. Zion keeps using 2.1.200.",
     status: { state: "ready", version: "2.1.200" },
   });
   // A refused release is not downloaded again, unless the person asks.
@@ -627,7 +646,7 @@ it("refuses a release older than Buzz needs", async () => {
   await setup.run("install");
   expect(state.fetched).toEqual([]);
   expect(setup.snapshot().output).toContain(
-    `Claude 2.1.100 is older than Buzz needs (${MIN_VERSION}).`,
+    `Claude 2.1.100 is older than Zion needs (${MIN_VERSION}).`,
   );
 });
 

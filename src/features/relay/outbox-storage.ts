@@ -18,7 +18,7 @@ function openDatabase() {
     };
     request.onerror = () => reject(request.error);
     request.onblocked = () =>
-      reject(new Error("Close other Buzz windows to upgrade the outbox"));
+      reject(new Error("Close other Zion windows to upgrade the outbox"));
   });
 }
 

@@ -31,13 +31,12 @@ import type { OutgoingEvent } from "../relay/outbox";
 import { MessageEditScope, useMessageEditScope } from "./MessageEditScope";
 import { useAfterMessageMenuClose } from "./MessageActionBar";
 import { lastEditableMessage } from "./useMessageEdit";
-import { readingDocumentActive } from "./use-reading";
 import styles from "./Messages.module.css";
 
 // A channel tab and its thread can coexist, but unread state owns one visit.
 const visits = new WeakMap<
   RelaySession,
-  Map<string, { count: number; ready: Promise<void>; dispose: () => void }>
+  Map<string, { count: number; ready: Promise<void> }>
 >();
 function enterVisit(session: RelaySession, channelId: string) {
   let channels = visits.get(session);
@@ -47,24 +46,7 @@ function enterVisit(session: RelaySession, channelId: string) {
   }
   let visit = channels.get(channelId);
   if (!visit) {
-    const update = () =>
-      session.unread.setChannelActive(channelId, readingDocumentActive());
-    const ready = session.unread.enterChannel(
-      channelId,
-      readingDocumentActive(),
-    );
-    window.addEventListener("focus", update);
-    window.addEventListener("blur", update);
-    document.addEventListener("visibilitychange", update);
-    visit = {
-      count: 0,
-      ready,
-      dispose() {
-        window.removeEventListener("focus", update);
-        window.removeEventListener("blur", update);
-        document.removeEventListener("visibilitychange", update);
-      },
-    };
+    visit = { count: 0, ready: session.unread.enterChannel(channelId) };
     channels.set(channelId, visit);
   }
   visit.count++;
@@ -73,7 +55,6 @@ function enterVisit(session: RelaySession, channelId: string) {
     leave() {
       if (--visit.count === 0) {
         channels.delete(channelId);
-        visit.dispose();
         session.unread.leaveChannel(channelId);
       }
     },
@@ -781,7 +762,7 @@ function DeleteMessageDialog({
       description={
         unsent
           ? "This message wasn’t sent. Deleting it removes it from this device. This cannot be undone."
-          : "This requests removal of this message from Buzz’s relay. People may still have copies. This cannot be undone."
+          : "This requests removal of this message from Zion’s relay. People may still have copies. This cannot be undone."
       }
       pending={pending}
       finalFocus={() =>

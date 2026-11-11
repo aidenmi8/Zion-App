@@ -1,30 +1,14 @@
 import { Service, type Context } from "@deepseek-ai/cordis";
 import type { PluginManager } from "./manager";
 import { providePluginReviewHold } from "./review-access";
-import {
-  createPluginUpdateCapabilityBridge,
-  type PluginUpdateCapability,
-} from "./updates";
 
-export type GitPluginInstallSource = Readonly<{
+export type PluginInstallSource = Readonly<{
   repository: string;
   reference: string;
   path?: string;
   /** Install exactly this commit; the import is refused if the fetched head differs. */
   commit?: string;
 }>;
-/**
- * One plugin artifact (`buzzodz plugin pack`) over HTTPS, for people without access
- * to the Git host. Buzz installs it only if it hashes to `sha256` and its manifest ID is `id`.
- */
-export type UrlPluginInstallSource = Readonly<{
-  id: string;
-  url: string;
-  sha256: string;
-}>;
-export type PluginInstallSource =
-  | GitPluginInstallSource
-  | UrlPluginInstallSource;
 export type PluginInstallOutcome =
   | "installed"
   | "updated"
@@ -32,8 +16,6 @@ export type PluginInstallOutcome =
   | "unavailable";
 type PluginInstallationStatus = "installed" | "absent" | "unavailable";
 export type PluginInstaller = Readonly<{
-  /** The source kinds `requestInstall` accepts. Missing on hosts that accept only Git. */
-  sources?: readonly ("git" | "url")[];
   /** Opens Settings → Plugins for the user to review; it never installs silently. */
   requestInstall(source: PluginInstallSource): Promise<PluginInstallOutcome>;
   /**
@@ -46,8 +28,6 @@ export type PluginInstaller = Readonly<{
     id: string,
     listener: (status: PluginInstallationStatus) => void,
   ): () => void;
-  /** Optional on older hosts; the current host always exposes an unavailable-capable bridge. */
-  updates?: PluginUpdateCapability;
 }>;
 
 declare module "@deepseek-ai/cordis" {
@@ -131,58 +111,11 @@ function relativePath(value: unknown) {
     : null;
 }
 
-const pluginId = /^[a-z][a-z0-9.-]{0,127}$/;
-const sha256 = /^[0-9a-f]{64}$/;
-
-export function pluginArtifactUrl(value: unknown) {
-  if (typeof value !== "string" || value.length > 2048) return null;
-  if (/[\s\p{Cc}\p{Cf}\P{ASCII}]/u.test(value)) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" &&
-      url.hostname &&
-      !url.hostname.startsWith("-") &&
-      !url.username &&
-      !url.password &&
-      !url.search &&
-      !url.hash &&
-      url.pathname.replaceAll("/", "") !== ""
-      ? value
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function urlInstallSource(
-  input: Record<string, unknown>,
-): UrlPluginInstallSource | null {
-  const { id, url, sha256: digest, ...rest } = input;
-  if (Object.keys(rest).length) return null;
-  const normalizedUrl = pluginArtifactUrl(url);
-  if (
-    !normalizedUrl ||
-    typeof id !== "string" ||
-    !pluginId.test(id) ||
-    typeof digest !== "string" ||
-    !sha256.test(digest.toLowerCase())
-  )
-    return null;
-  return { id, url: normalizedUrl, sha256: digest.toLowerCase() };
-}
-
-export function isUrlInstallSource(
-  source: PluginInstallSource,
-): source is UrlPluginInstallSource {
-  return "url" in source;
-}
-
 /** The normalized request, or null when any field is outside the accepted grammar. */
 export function parsePluginInstallSource(
   input: unknown,
 ): PluginInstallSource | null {
   if (!input || typeof input !== "object") return null;
-  if ("url" in input) return urlInstallSource(input as Record<string, unknown>);
   const {
     repository,
     reference: ref,
@@ -214,10 +147,6 @@ export type PluginInstallRequest = Readonly<{
   source: PluginInstallSource;
   origin: PluginInstallOrigin;
 }>;
-export type GitPluginInstallRequest = PluginInstallRequest &
-  Readonly<{ source: GitPluginInstallSource }>;
-export type UrlPluginInstallRequest = PluginInstallRequest &
-  Readonly<{ source: UrlPluginInstallSource }>;
 
 export function createPluginInstallRequests({
   ttlMs = 60_000,
@@ -235,27 +164,9 @@ export function createPluginInstallRequests({
     | undefined;
   let nextId = 0;
   let reviews = 0;
-  let reviewRevision = 0;
-  const updateBridge = createPluginUpdateCapabilityBridge();
   const listeners = new Set<() => void>();
-  const reviewListeners = new Set<() => void>();
   const emit = () => {
     for (const listener of listeners) listener();
-  };
-  const emitReview = () => {
-    reviewRevision++;
-    for (const listener of reviewListeners) listener();
-  };
-  const holdReview = () => {
-    reviews++;
-    emitReview();
-    let held = true;
-    return () => {
-      if (!held) return;
-      held = false;
-      reviews--;
-      emitReview();
-    };
   };
   const settle = (id: number, outcome: PluginInstallOutcome) => {
     if (current?.request.id !== id) return;
@@ -264,22 +175,9 @@ export function createPluginInstallRequests({
     current = undefined;
     resolve(outcome);
     emit();
-    emitReview();
   };
   return {
-    updates: updateBridge.capability,
-    updatesFor: updateBridge.forCaller,
-    registerUpdates: updateBridge.register,
     snapshot: () => current?.request,
-    reviewRevision: () => reviewRevision,
-    subscribeReview(listener: () => void) {
-      reviewListeners.add(listener);
-      return () => reviewListeners.delete(listener);
-    },
-    /** Acquires the shared review slot only when no request or review is active. */
-    tryHoldReview() {
-      return current !== undefined || reviews > 0 ? undefined : holdReview();
-    },
     subscribe(listener: () => void) {
       listeners.add(listener);
       return () => {
@@ -342,7 +240,15 @@ export function createPluginInstallRequests({
       else settle(id, "cancelled");
     },
     /** Marks a plugin review dialog as open until the returned function runs. */
-    holdReview,
+    holdReview() {
+      reviews++;
+      let held = true;
+      return () => {
+        if (!held) return;
+        held = false;
+        reviews--;
+      };
+    },
     settle,
   };
 }
@@ -361,7 +267,7 @@ type InstallHost = Readonly<{
 }>;
 
 const invalidSource =
-  "A plugin install request needs either an HTTPS, SSH or scp-style Git repository, a branch or tag, and optionally a relative folder and a commit; or a plugin id, an HTTPS artifact url and its sha256";
+  "A plugin install request needs an HTTPS, SSH or scp-style Git repository, a branch or tag, and optionally a relative folder and a commit";
 
 export function createPluginInstallCore({
   plugins,
@@ -380,9 +286,6 @@ export function createPluginInstallCore({
 
   return {
     holdReview: requests.holdReview,
-    updates: requests.updates,
-    updatesFor: requests.updatesFor,
-    registerUpdates: requests.registerUpdates,
     getInstallationStatus,
     subscribeInstallationStatus(
       id: string,
@@ -455,42 +358,7 @@ export function createPluginInstallerService(
   ctx: Context,
   host: Readonly<{ core: PluginInstallCore }>,
 ): PluginInstaller {
-  const callerUpdates = new WeakMap<Context, PluginUpdateCapability>();
   class PluginInstallerService extends Service implements PluginInstaller {
-    readonly sources = Object.freeze(["git", "url"] as const);
-
-    get updates() {
-      const caller = this.ctx;
-      let capability = callerUpdates.get(caller);
-      if (capability) return capability;
-      const updates = caller.pluginOwner
-        ? host.core.updatesFor(caller.pluginOwner.id)
-        : host.core.updates;
-      capability = {
-        get ownerId() {
-          return updates.ownerId;
-        },
-        getSnapshot: updates.getSnapshot,
-        refresh: updates.refresh,
-        queueUpdates: updates.queueUpdates,
-        getQueueRequest: updates.getQueueRequest,
-        getQueue: updates.getQueue,
-        cancelQueue: updates.cancelQueue,
-        subscribe(listener) {
-          const stop = caller.effect(() => updates.subscribe(listener));
-          return () => void stop();
-        },
-        subscribeQueue(id, listener) {
-          const stop = caller.effect(() =>
-            updates.subscribeQueue(id, listener),
-          );
-          return () => void stop();
-        },
-      };
-      callerUpdates.set(caller, capability);
-      return capability;
-    }
-
     constructor() {
       super(ctx, "pluginInstaller");
     }

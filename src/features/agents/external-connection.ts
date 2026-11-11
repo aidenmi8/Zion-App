@@ -24,7 +24,7 @@ export type ExternalScope = "read" | "post" | "create" | "agent";
 export const fullAgentAccess = (scopes: readonly ExternalScope[]) =>
   scopes.length === 1 && scopes[0] === "agent";
 export const legacyRequest =
-  "This app asks for limited access, which Buzz no longer grants. Update the app, then start setup again.";
+  "This app asks for limited access, which Zion no longer grants. Update the app, then start setup again.";
 export type ExternalAuthorization = McpAuthorization &
   Readonly<{
     version: 1 | 2;
@@ -211,7 +211,7 @@ export function createExternalApps() {
     } catch {
       update({
         ...state,
-        error: "Cannot revoke the saved approval. Retry in Buzz.",
+        error: "Cannot revoke the saved approval. Retry in Zion.",
       });
     }
   };
@@ -443,7 +443,7 @@ export function createExternalApps() {
           update({ ...state, grant: { ...grant, phase: "ended" } });
         });
         if (!result.authorize)
-          throw new Error("This Buzz host cannot authorize external apps.");
+          throw new Error("This Zion host cannot authorize external apps.");
         try {
           await result.authorize(nativeRequest(pending.request));
         } finally {

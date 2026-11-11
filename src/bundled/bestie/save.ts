@@ -121,7 +121,12 @@ export async function saveFeature(
     };
   }
   if (Object.keys(attention).length)
-    await agents.save(agent.key, { attention });
+    await agents.save(agent.key, {
+      attention,
+      // Its timer runs only while the agent's Attention is on. Off leaves it
+      // on: the agent's other watches may need it.
+      ...(timer && { attentionEnabled: true }),
+    });
   if (timerOnly) return;
   const instructions = instructionsOf(agent);
   const next = on
@@ -134,7 +139,7 @@ export async function saveFeature(
     await saveInstructions(agents, agent, next);
   } catch (cause) {
     // A failed On undoes what it saved, so no timer runs behind a switch
-    // that reads off.
+    // that reads off. Attention goes back off only if this turned it on.
     if (timer)
       await agents
         .save(agent.key, {
@@ -144,6 +149,7 @@ export async function saveFeature(
               agent.attention[slug]?.value ?? null,
             ]),
           ),
+          ...(!agent.attentionEnabled && { attentionEnabled: false }),
         })
         .catch(() => {
           throw new Error(

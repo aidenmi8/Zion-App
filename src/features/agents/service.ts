@@ -14,6 +14,7 @@ import { respond } from "../../buzz-mcp/rpc";
 import { respondExternal } from "../../buzz-mcp/external";
 import type { ExternalScope } from "./external-connection";
 import { externalMcpEnabled } from "./external-connection";
+import { createOwnerAccess, ownerMcpEnabled } from "./owner-access";
 import { connectMcp } from "../../buzz-mcp/connection";
 import { type HarnessKit, harnessKit } from "../agent-harness/kit";
 import { repositoriesContext } from "../communities/repositories";
@@ -193,6 +194,7 @@ import {
 import { readInterrupted, writeInterrupted } from "./interrupted";
 import { AttentionSources, type AttentionProducer } from "./attention-sources";
 import { type AddedTool, BUZZ_SESSION } from "../../buzz-mcp/session-tools";
+import type { OwnerAccess } from "../../buzz-mcp/client";
 import { nameSoloChat } from "./solo-chat-name";
 import { visibleTeams } from "./visible-teams";
 import {
@@ -242,8 +244,7 @@ export type Agent<Config = unknown> = Readonly<{
   timers: Readonly<Record<string, TimerState>>;
   sourceRuns?: Readonly<Record<string, string>>;
   attentionHistory?: AgentRecord["attentionHistory"];
-  /** Whether its watches and timers wake it: true while a plugin shows
-   * Attention. Off keeps every object. */
+  /** Whether its watches and timers wake it. Off keeps every object. */
   attentionEnabled: boolean;
   /** Its type's settings, the same in each of its communities. */
   config: Config;
@@ -257,8 +258,6 @@ export type AgentChange<Config = unknown> = Readonly<{
   /** An HTTPS image URL; `null` or empty removes the picture. */
   picture?: string | null;
   config?: Config;
-  /** @deprecated A no-op: Attention runs for every agent while a plugin
-   * shows it. Still stored, but nothing reads it. */
   attentionEnabled?: boolean;
   /** Slug to new value; `null` deletes the object. */
   attention?: Readonly<Record<string, AttentionValue | null>>;
@@ -495,7 +494,6 @@ export type AgentHandle = Readonly<{
   publish(event: AgentEventTemplate, check?: () => void): Promise<RelayEvent>;
   /** Reads the community as the agent, seeing only what it may see. */
   query(filters: readonly object[]): Promise<RelayEvent[]>;
-  effectiveEdit(id: string, channel: string): Promise<RelayEvent>;
   /** Finds profiles by `name` or `display_name`, as the agent, best match
    * first. `undefined` when its community has no profile name search. */
   searchProfiles(
@@ -531,6 +529,9 @@ export type AgentHandle = Readonly<{
   tabs(): ReturnType<typeof channelTabs> | undefined;
   /** On a run's handle only: Buzz settings on this device. */
   settings?: DeviceSettings;
+  /** On a bundled harness's run handle only, where the build enables owner
+   * tools for its community: reads with the owner's access. */
+  ownerAccess?: OwnerAccess;
   /** Takes notes for this conversation, oldest first. A thread session passes
    * its root; a channel session omits it and takes all notes in the channel. */
   notes?(channelId: string, root?: string): readonly string[];
@@ -545,9 +546,9 @@ export type AgentHandle = Readonly<{
   attention: AgentAttention;
 }>;
 /** What an agent reads and writes of its attention. Every read is current,
- * so a long run sees Attention turn off and the classifier's state change. */
+ * so a long run sees the owner's switch and the classifier's state change. */
 export type AgentAttention = Readonly<{
-  /** False while no plugin shows Attention: none of its objects wakes the
+  /** False when the owner turned attention off: none of its objects wakes the
    * agent. The handle still reads and writes them; the attention tools refuse
    * every call while it is off. */
   enabled(): boolean;
@@ -789,8 +790,6 @@ export type AgentVoiceSeat<Config = unknown> = Readonly<
     output(samples: number[]): Promise<void>;
     /** Idempotent disconnect notification, ignored after signal aborts. */
     ended(error?: Error): void;
-    /** Presentation only; never authorizes work. */
-    thinking?(active: boolean): void;
   } & Pick<Delivery<Config>, "config" | "revisions" | "synced" | "team">
 >;
 
@@ -871,8 +870,6 @@ export type AgentType<Config = unknown> = {
   /** Compact provider-owned action beside Harness. Readiness belongs to
    * CreateConfiguration; this slot only presents the provider's action. */
   CreateAction?: ComponentType<{
-    /** The agent being edited, as CreateConfiguration has it. */
-    agent?: AgentCreateProps<Config>["agent"];
     disabled: boolean;
   }>;
   /** Provider-owned account notice, pinned outside the agent's tab content.
@@ -1078,11 +1075,7 @@ export type RetypePreview = Readonly<{
 /** A proposal's picture: uploads it once the proposal is valid, giving its
  * HTTPS image URL. */
 export type ProposedPicture = () => Promise<string>;
-type AgentCreation = Readonly<{
-  type: string;
-  name: string;
-  instructions?: string;
-}>;
+type AgentCreation = Readonly<{ type: string; name: string }>;
 /** A requested agent. */
 export type AgentCreationInput = AgentCreation &
   Readonly<{ picture?: ProposedPicture }>;
@@ -1304,9 +1297,9 @@ export type Agents = {
   registerTab(tab: AgentAddedTab): void;
   /** The tabs active plugins add now. */
   addedTabs(): readonly RegisteredAgentAddedTab[];
-  /** Says the calling plugin shows Attention. Agents' Attention runs on this
-   * device only while such a plugin is on; with none, it is off for every
-   * agent. */
+  /** Says the calling plugin shows Attention and its device switch. Agents'
+   * Attention runs on this device only while such a plugin is on; with none,
+   * it is off for every agent and each keeps its saved switch. */
   controlAttention(): void;
   /** Adds a tool to every agent session in the app, beside the Buzz tools.
    * The tool acts as the agent, like the rest of a trusted plugin's code
@@ -2090,7 +2083,7 @@ export class AgentsService extends Service implements Agents {
           const type = this.types().find((type) => type.key === agent.type);
           if (!type?.retire)
             throw new Error(
-              "This runtime cannot safely change protection while Buzz is open",
+              "This runtime cannot safely change protection while Zion is open",
             );
           await this.runners.retype(agent.key, agent.name, async () => {
             if (policy !== null)
@@ -2185,6 +2178,7 @@ export class AgentsService extends Service implements Agents {
         changed: () => this.update(),
       },
       scope: (agent) => this.bindingOf(agent)?.scope,
+      saved: (key) => this.records[key],
       attentionShown: () => this.attentionShown(),
       pluginsSettled: () => this.ctx.pluginStatus.settled?.() ?? true,
       record: (key) => {
@@ -2235,8 +2229,6 @@ export class AgentsService extends Service implements Agents {
           if (!kind) throw new Error("That agent type is not available");
           if (kind.remote)
             throw new Error("A hosted agent's key stays with its provider");
-          if (input.instructions && !kind.adopt)
-            throw new Error(`${kind.title} agents have no instructions to set`);
           if (this.pendingRequests() >= 16)
             throw new Error("Review the pending agent requests first");
           return {
@@ -2247,7 +2239,6 @@ export class AgentsService extends Service implements Agents {
             community: binding.origin,
             type: input.type,
             name: input.name.trim(),
-            ...(input.instructions && { instructions: input.instructions }),
             ...(picture && { picture }),
           };
         };
@@ -2456,6 +2447,22 @@ export class AgentsService extends Service implements Agents {
         return session && channelTabs(session, ctx.navigation);
       },
       settings: () => this.deviceSettings,
+      ownerAccess: (agent) =>
+        ownerMcpEnabled(agent.relay)
+          ? createOwnerAccess(agent, () => {
+              const binding = this.bindingOf(agent);
+              return binding &&
+                ownerMcpEnabled(binding.origin) &&
+                this.communities.snapshot().viewer === agent.owner
+                ? {
+                    viewer: binding.viewer,
+                    origin: binding.origin,
+                    session: binding.session,
+                    signal: binding.controller.signal,
+                  }
+                : undefined;
+            })
+          : undefined,
       classifier: () => this.classifier(),
       decisions: () => this.decisions,
       context: (agent, event) => this.context(agent, event),
@@ -2704,7 +2711,7 @@ export class AgentsService extends Service implements Agents {
     if (
       !/^[a-z][a-z0-9_]{0,63}$/.test(tool.name ?? "") ||
       BUZZ_SESSION.tools.some((core) => core.name === tool.name) ||
-      // Reserved so a retired owner_ tool name can never reach plugin code.
+      // The owner_ prefix is reserved for tools that run with the owner's access.
       tool.name.startsWith("owner_") ||
       !tool.description ||
       tool.inputSchema?.type !== "object" ||
@@ -2712,7 +2719,7 @@ export class AgentsService extends Service implements Agents {
       typeof tool.call !== "function"
     )
       throw new Error(
-        "Agent tools need a lowercase name no Buzz tool has, a description, a JSON object inputSchema and call",
+        "Agent tools need a lowercase name no Zion tool has, a description, a JSON object inputSchema and call",
       );
     // Reserved from registration, not activation: plugins starting together
     // are not active yet, and the second to take a name must fail.
@@ -2732,7 +2739,7 @@ export class AgentsService extends Service implements Agents {
       )
     )
       throw new Error(
-        "Attention command sources are built into Buzz. Update the Attention UI plugin.",
+        "Attention command sources are built into Zion. Update the Attention UI plugin.",
       );
     if (
       !plugin ||
@@ -3137,16 +3144,16 @@ export class AgentsService extends Service implements Agents {
     scopes: readonly ExternalScope[],
   ) {
     if (this.ctx.pluginOwner?.id !== "buzz.agents")
-      throw new Error("Authorize external apps in Buzz.");
+      throw new Error("Authorize external apps in Zion.");
     const host = this.ctx.host;
     if (!host?.serveMcp)
-      throw new Error("External connections require Buzz desktop.");
+      throw new Error("External connections require Zion desktop.");
     // A run's handle: the app acts as the agent itself, with its settings,
     // plugin requests and handoff, not as a plugin acting through it. Its
     // wakes say they came from the app, not from the agent's conversations.
     const run = this.runners.handle(key, undefined, true);
     if (!run)
-      throw new Error("This agent is not running in this copy of Buzz.");
+      throw new Error("This agent is not running in this copy of Zion.");
     const { handoff } = run;
     const handle: AgentHandle = {
       ...run,
@@ -3193,7 +3200,7 @@ export class AgentsService extends Service implements Agents {
           .selectable.some((agent) => agent.pubkey === handle.pubkey)
       )
         throw new Error(
-          "The external connection has ended. Authorize the external app again in Buzz.",
+          "The external connection has ended. Authorize the external app again in Zion.",
         );
     };
     const changed = () => {
@@ -3277,7 +3284,7 @@ export class AgentsService extends Service implements Agents {
                       JSON.stringify(scopes))
                 )
                   throw new Error(
-                    "Buzz approval does not match the selected identity and access.",
+                    "Zion approval does not match the selected identity and access.",
                   );
                 return authorize(nativeRequest);
               },
@@ -4361,7 +4368,7 @@ export class AgentsService extends Service implements Agents {
       this.sessionState(key, place) === "unavailable"
     )
       throw new Error(
-        "Use session controls in the Buzz app that runs this agent.",
+        "Use session controls in the Zion app that runs this agent.",
       );
     await this.runners.control(key, async () => {
       const current = shown();
@@ -4733,7 +4740,7 @@ export class AgentsService extends Service implements Agents {
       }
     if (failed.length)
       throw new Error(
-        `${identity.name} was deleted, but Buzz couldn't clear it as your Bestie in ${failed.join(", ")}. Open Bestie to choose another.`,
+        `${identity.name} was deleted, but Zion couldn't clear it as your Bestie in ${failed.join(", ")}. Open Bestie to choose another.`,
       );
   }
   /** Archives the config channel in the agent's home community, which it is
@@ -5002,7 +5009,7 @@ export class AgentsService extends Service implements Agents {
         await handOnMainAgent(binding.session, pubkey);
       } catch {
         throw new Error(
-          `${agent.name} was deleted, but Buzz couldn't clear it as your Bestie. Open Bestie to choose another.`,
+          `${agent.name} was deleted, but Zion couldn't clear it as your Bestie. Open Bestie to choose another.`,
         );
       }
     });
@@ -5973,7 +5980,8 @@ export class AgentsService extends Service implements Agents {
       timers: record.timers ?? EMPTY,
       ...(record.sourceRuns ? { sourceRuns: record.sourceRuns } : {}),
       attentionHistory: record.attentionHistory,
-      attentionEnabled: this.attentionShown(),
+      attentionEnabled:
+        record.attentionEnabled === true && this.attentionShown(),
       config: editor?.config ?? record.config,
       ...(editor && { configBase: editor.base }),
       ...(editor?.problem && { configProblem: editor.problem }),
@@ -6556,7 +6564,8 @@ export class AgentsService extends Service implements Agents {
           prior.timers === (record.timers ?? EMPTY) &&
           prior.sourceRuns === record.sourceRuns &&
           prior.attentionHistory === record.attentionHistory &&
-          prior.attentionEnabled === this.attentionShown() &&
+          prior.attentionEnabled ===
+            (record.attentionEnabled === true && this.attentionShown()) &&
           sameConfig(prior, editor?.config ?? record.config, editor?.base) &&
           prior.configProblem === editor?.problem &&
           prior.archiveUnchecked === this.archiveUnchecked(identity.key) &&
@@ -6683,12 +6692,6 @@ export class AgentsService extends Service implements Agents {
     }
     for (const origin of this.presence.keys())
       if (!this.bound.has(origin)) this.presence.delete(origin);
-    // Hosted agents send no presence; each community shows them by type.
-    const remote = this.types().flatMap((type) =>
-      type.remote ? [type.key] : [],
-    );
-    for (const { binding } of this.bound.values())
-      binding?.session.presence?.remoteRuntimes?.(remote);
     const now = Date.now();
     for (const [origin, entry] of this.bound) {
       const binding = entry.binding;

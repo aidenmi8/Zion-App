@@ -1,6 +1,6 @@
 # Pi
 
-Create agents that run Pi on your computer, with any provider Pi supports, and answer you in Buzz. Each conversation continues its own Pi conversation.
+Create agents that run Pi on your computer, with any provider Pi supports, and answer you in Zion. Each conversation continues its own Pi conversation.
 
 ## Getting started
 
@@ -9,7 +9,7 @@ Create agents that run Pi on your computer, with any provider Pi supports, and a
 3. Mention your agent in a conversation to give it work.
 
 To give your Pi agents your own tools, hooks or providers, see
-[Add your own Pi extensions to Buzz](https://github.com/block/buzz-app/blob/main/src/bundled/pi/EXTENSIONS.md).
+[Add your own Pi extensions](https://github.com/block/buzz-app/blob/main/src/bundled/pi/EXTENSIONS.md).
 
 ---
 
@@ -45,7 +45,7 @@ npm install --package-lock-only --ignore-scripts --omit-lockfile-registry-resolv
 
 - Pi's `read`, `write`, `edit` and `bash` run in the workspace with no sandbox
   or approvals. Buzz tools are `buzz_<name>`.
-- Keys in Pi's `auth.json` must be literal: Buzz runs no `!command` key and
+- Keys in Pi's `auth.json` must be literal: Zion runs no `!command` key and
   reads no `$NAME` key. Set up a provider that needs more than a key with
   `pi`.
 - Pi packages load only from a local folder, and only their `pi.durable`

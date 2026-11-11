@@ -31,7 +31,7 @@ const FAILURES: Record<FindFailure, { message: string; retry: boolean }> = {
     message: "Could not reach the relay. Check your connection and try again.",
     retry: true,
   },
-  "not-buzz": { message: "This address isn’t a Buzz community.", retry: false },
+  "not-buzz": { message: "This address isn’t a Zion community.", retry: false },
   "no-community": {
     message: "No community is set up at this address.",
     retry: false,

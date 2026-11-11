@@ -35,8 +35,6 @@ export type ModelChoice = Readonly<{
   /** Catalog-owned family, when the plugin knows more than the ID/name matcher. */
   family?: string;
   description?: string | undefined;
-  /** Served on low-latency inference hardware; the family menu marks it Fast. */
-  fast?: boolean;
   efforts?: readonly { id: string; label: string }[];
   effortScope?: string;
   loadEfforts?: () => Promise<readonly { id: string; label: string }[]>;
@@ -51,7 +49,7 @@ const CUSTOM_MODEL_ACTION: ModelChoice = {
 /** Resolve artwork before passing an optional leading slot to a control. */
 export function modelLogo(model: string, className?: string) {
   const name = model.toLowerCase();
-  const Icon = /claude|anthropic|opus|sonnet|haiku|fable/.test(name)
+  const Icon = /claude|anthropic|opus|sonnet|haiku/.test(name)
     ? ClaudeLogoIcon
     : /(?:^|[\s/._-])(?:gpt|codex|o[134](?:[\s/._-]|$))|openai/.test(name)
       ? CodexLogoIcon

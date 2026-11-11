@@ -48,7 +48,7 @@ export const BACKUP_FAILURES = {
   },
   invalid_service: {
     message:
-      "Buzz couldn’t verify Builderlab’s backup service, so your key wasn’t sent.",
+      "Zion couldn’t verify Builderlab’s backup service, so your key wasn’t sent.",
     retryable: false,
   },
   refused: { message: "Builderlab refused this backup.", retryable: false },
@@ -57,8 +57,8 @@ export const BACKUP_FAILURES = {
     "Check your connection and try again.",
   ),
   // A retry re-sends the same encrypted bytes, which kgoose treats as stored.
-  unconfirmed: retry("Builderlab couldn’t confirm your backup."),
-  storage: retry("Buzz couldn’t save backup progress on this device."),
+  unconfirmed: retry("Builderlab didn’t confirm your backup."),
+  storage: retry("Zion couldn’t save backup progress on this device."),
   unknown: { message: "Your key wasn’t backed up.", retryable: false },
 } as const satisfies Record<
   string,

@@ -66,7 +66,7 @@ export function detailsDraftErrors(draft: ChannelDetailsDraft) {
       [...draft.description].length > 1000
         ? "Use a description of at most 1,000 characters."
         : draft.description.includes("Buzz Huddle (")
-          ? 'Remove "Buzz Huddle (" from the description; that text is used by Buzz for Huddles.'
+          ? 'Remove "Buzz Huddle (" from the description; that text is used by Zion for Huddles.'
           : undefined,
     lifetime:
       draft?.ttlSeconds !== undefined &&

@@ -1,4 +1,3 @@
-import { FadingLabel } from "./FadingLabel";
 import { prepareSoloMove } from "../../features/channel-navigation/solo-navigation";
 import { useChatConversions } from "../../features/solo/conversion";
 import { ConvertToChannel } from "../../features/solo/ConvertToChannel";
@@ -25,19 +24,16 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type ComponentProps,
   type ReactNode,
-  type ReactElement,
   type RefObject,
 } from "react";
 import type { RelaySession } from "../../features/relay/session";
 import { readView, writeView } from "../../shared/view-state";
 import { Button } from "../../shared/design-system/ui/Button";
-import { NavigationSectionHeading } from "../../shared/design-system/ui/NavigationSection";
 import { IconButton } from "../../shared/design-system/ui/IconButton";
 import {
   ContextMenuRoot,
@@ -57,13 +53,6 @@ import type { Navigation } from "../../features/navigation/controller";
 import { NewWorkspaceDialog, SoloChatMenuItems } from "./SoloChatMenu";
 import styles from "./SoloWorkspaces.module.css";
 import channelStyles from "./Channels.module.css";
-import {
-  sidebarRow,
-  type RegisteredSidebarRows,
-} from "../../features/channel-navigation/sidebar-rows-service";
-import { SidebarRowRenderer } from "../../features/channel-navigation/SidebarRowRenderer";
-
-const emptyRows: readonly RegisteredSidebarRows[] = [];
 
 /** Presentation only. The caller supplies authorized, saved chats. */
 export type ChatListItem = Readonly<{
@@ -89,7 +78,6 @@ export function SoloWorkspaces({
   onConverted,
   visit,
   draft,
-  sidebarRows = emptyRows,
 }: {
   draft?: { projectId?: string | undefined; content: ReactNode } | undefined;
   onConverted?: ((id: string) => void) | undefined;
@@ -98,7 +86,6 @@ export function SoloWorkspaces({
   navigator?: Navigation | undefined;
   scope: string;
   chats: readonly ChatListItem[];
-  sidebarRows?: readonly RegisteredSidebarRows[] | undefined;
   renderChatMenu?: ((channelId: string) => ReactNode) | undefined;
   /** A stable function lets a chat's row skip renders when nothing it shows changed. */
   renderChat: (
@@ -110,16 +97,6 @@ export function SoloWorkspaces({
 }) {
   useChatConversions(session);
   const handoff = useChannelNavigation();
-  const pluginHiddenRows = useRef(new Map<string, object>());
-  const setRowHidden = useCallback((id: string, hidden: boolean) => {
-    const registration = {};
-    if (hidden) pluginHiddenRows.current.set(id, registration);
-    else pluginHiddenRows.current.delete(id);
-    return () => {
-      if (pluginHiddenRows.current.get(id) === registration)
-        pluginHiddenRows.current.delete(id);
-    };
-  }, []);
   const preferences = session.soloPreferences;
   const collapsedKey = "solo:collapsed-projects";
   const expandedKey = "solo:expanded-projects";
@@ -302,13 +279,12 @@ export function SoloWorkspaces({
           if (trigger?.isConnected) trigger.focus({ preventScroll: true });
         },
         completed() {
-          const shown = new Set(handoff?.soloNeighbors.current?.(channel.id));
           if (leavesOpenChat && !current.attempt.signal.aborted)
             void navigationController?.open(
               soloSuccessor(
                 scope,
                 session.channels.list().channels,
-                neighbors.filter((id) => shown.has(id)),
+                neighbors,
                 channel.id,
               ),
             );
@@ -384,10 +360,7 @@ export function SoloWorkspaces({
         ? []
         : project.listed.map((item) => item.id),
     }));
-    const neighbors = (id: string) =>
-      soloNeighbors(shown, id).filter(
-        (neighbor) => !pluginHiddenRows.current.has(neighbor),
-      );
+    const neighbors = (id: string) => soloNeighbors(shown, id);
     soloNeighborsRef.current = neighbors;
     return () => {
       if (soloNeighborsRef.current === neighbors)
@@ -505,8 +478,21 @@ export function SoloWorkspaces({
             <ChatActionsMenu
               id={`project-${project.id}`}
               title={project.name}
-              className={undefined}
+              className={`${channelStyles.sectionHeader} ${styles.projectHeader}`}
               enabled={!!project.id}
+              trailing={
+                <div className={channelStyles.sectionActions}>
+                  {onNew && (
+                    <IconButton
+                      size="compact"
+                      aria-label={`New chat in ${project.name}`}
+                      title="New chat"
+                      icon={<PlusIcon size={15} strokeWidth={2.5} />}
+                      onClick={() => onNew(project.id || undefined)}
+                    />
+                  )}
+                </div>
+              }
               content={
                 <>
                   <MenuItem onClick={() => setSettingsFor(project)}>
@@ -540,47 +526,25 @@ export function SoloWorkspaces({
                 </>
               }
             >
-              {(overflow) => (
-                <NavigationSectionHeading
-                  disclosure
-                  revealActions
-                  actions={
-                    <>
-                      {overflow}
-                      {onNew && (
-                        <IconButton
-                          size="compact"
-                          aria-label={`New chat in ${project.name}`}
-                          title="New chat"
-                          icon={<PlusIcon size={15} strokeWidth={2.5} />}
-                          onClick={() => onNew(project.id || undefined)}
-                        />
-                      )}
-                    </>
-                  }
+              <Collapsible.Trigger
+                type="button"
+                className={`${channelStyles.sidebarSectionHeading} ${styles.projectHeading}`}
+                aria-expanded={
+                  !collapsed.includes(project.id) ||
+                  renamingProject === project.id
+                }
+                onClick={(event) => setAnimate(event.detail > 0)}
+              >
+                <span className={channelStyles.sectionTitle}>
+                  {project.name}
+                </span>
+                <span
+                  className={channelStyles.sectionChevron}
+                  aria-hidden="true"
                 >
-                  <Collapsible.Trigger
-                    type="button"
-                    className={styles.projectHeading}
-                    aria-expanded={
-                      !collapsed.includes(project.id) ||
-                      renamingProject === project.id
-                    }
-                    onClick={(event) => setAnimate(event.detail > 0)}
-                  >
-                    <FadingLabel className={channelStyles.sectionTitle}>
-                      {project.name}
-                    </FadingLabel>
-                    <span
-                      className={channelStyles.sectionChevron}
-                      aria-hidden="true"
-                      data-navigation-reveal=""
-                    >
-                      <CaretDownIcon size={15} strokeWidth={2.5} />
-                    </span>
-                  </Collapsible.Trigger>
-                </NavigationSectionHeading>
-              )}
+                  <CaretDownIcon size={15} strokeWidth={2.5} />
+                </span>
+              </Collapsible.Trigger>
             </ChatActionsMenu>
             <Collapsible.Panel
               className={styles.projectPanel}
@@ -621,7 +585,6 @@ export function SoloWorkspaces({
                     title={item.title}
                     pinned={item.pinned}
                     projectKey={DROP + project.id}
-                    sectionKey={project.id}
                     channel={channel}
                     renameable={canRename(project.id, channel)}
                     lifecycle={!!handoff}
@@ -629,8 +592,6 @@ export function SoloWorkspaces({
                     actions={entryActions}
                     renderChat={renderChat}
                     renderChatMenu={renderChatMenu}
-                    sidebarRows={sidebarRows}
-                    onHiddenChange={setRowHidden}
                   />
                 );
               })}
@@ -829,7 +790,6 @@ const SoloChatEntry = memo(function SoloChatEntry({
   title,
   pinned,
   projectKey,
-  sectionKey,
   channel,
   renameable,
   lifecycle,
@@ -837,14 +797,11 @@ const SoloChatEntry = memo(function SoloChatEntry({
   actions,
   renderChat,
   renderChatMenu,
-  sidebarRows,
-  onHiddenChange,
 }: {
   id: string;
   title: string;
   pinned: boolean | undefined;
   projectKey: string;
-  sectionKey: string;
   channel: ChannelSummary | undefined;
   renameable: boolean;
   lifecycle: boolean;
@@ -852,11 +809,9 @@ const SoloChatEntry = memo(function SoloChatEntry({
   actions: RefObject<ChatEntryActions>;
   renderChat: ComponentProps<typeof SoloWorkspaces>["renderChat"];
   renderChatMenu: ((channelId: string) => ReactNode) | undefined;
-  sidebarRows: readonly RegisteredSidebarRows[];
-  onHiddenChange: (id: string, hidden: boolean) => () => void;
 }) {
   const rename = renameable ? () => actions.current.rename(id) : undefined;
-  const Default = (
+  return (
     <ChatActionsMenu
       id={id}
       title={title}
@@ -901,63 +856,7 @@ const SoloChatEntry = memo(function SoloChatEntry({
       </DraggableChannel>
     </ChatActionsMenu>
   );
-  return channel && sidebarRows.some((entry) => entry.render) ? (
-    <ContributedSoloRow
-      session={session}
-      channel={channel}
-      sectionKey={sectionKey}
-      entries={sidebarRows}
-      onHiddenChange={onHiddenChange}
-    >
-      {Default}
-    </ContributedSoloRow>
-  ) : (
-    Default
-  );
 });
-
-function ContributedSoloRow({
-  session,
-  channel,
-  sectionKey,
-  entries,
-  children,
-  onHiddenChange,
-}: {
-  session: RelaySession;
-  channel: ChannelSummary;
-  sectionKey: string;
-  entries: readonly RegisteredSidebarRows[];
-  children: ReactElement;
-  onHiddenChange: (id: string, hidden: boolean) => () => void;
-}) {
-  const target = useMemo(
-    () => ({ kind: "channel" as const, channelId: channel.id }),
-    [channel.id],
-  );
-  const subscribe = useCallback(
-    (listener: () => void) => session.unread.subscribe(target, listener),
-    [session, target],
-  );
-  const snapshot = useCallback(
-    () => session.unread.snapshot(target),
-    [session, target],
-  );
-  const unread = useSyncExternalStore(subscribe, snapshot, snapshot);
-  const row = useMemo(
-    () => sidebarRow(channel, sectionKey, unread),
-    [channel, sectionKey, unread],
-  );
-  return (
-    <SidebarRowRenderer
-      row={row}
-      entries={entries}
-      onHiddenChange={onHiddenChange}
-    >
-      {children}
-    </SidebarRowRenderer>
-  );
-}
 
 /** A drop reports only its destination, so it saves exactly like Move to. */
 function DropProject({
@@ -985,16 +884,17 @@ export function ChatActionsMenu({
   content,
   indicator,
   enabled = true,
+  trailing,
 }: {
   id: string;
   title: string;
   className: string | undefined;
-  /** A function places the overflow action itself, such as in a heading's
-   * actions; otherwise it follows the children. */
-  children: ReactNode | ((overflow: ReactNode) => ReactNode);
+  children: ReactNode;
   content: ReactNode;
   indicator?: ReactNode;
   enabled?: boolean;
+  /** Follows the overflow action, preserving header action keyboard order. */
+  trailing?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<HTMLElement>();
@@ -1009,35 +909,10 @@ export function ChatActionsMenu({
   if (!enabled)
     return (
       <div className={className} data-solo-menu-id={id}>
-        {typeof children === "function" ? children(null) : children}
+        {children}
+        {trailing}
       </div>
     );
-  const overflow = (
-    <MenuRoot>
-      <MenuTrigger
-        render={(props) => (
-          <IconButton
-            {...props}
-            // A heading reveals its own actions; rows reveal theirs here.
-            data-solo-row-action={
-              typeof children === "function" ? undefined : ""
-            }
-            variant="bare"
-            size="compact"
-            aria-label={`Actions for ${title}`}
-            icon={<DotsThreeIcon size={15} strokeWidth={2.5} />}
-          />
-        )}
-      />
-      <MenuPopup
-        aria-label={`Actions for ${title}`}
-        align="end"
-        finalFocus={restoreFocus}
-      >
-        {content}
-      </MenuPopup>
-    </MenuRoot>
-  );
   return (
     <ContextMenuRoot
       open={open}
@@ -1060,15 +935,31 @@ export function ChatActionsMenu({
           }
         }}
       >
-        {typeof children === "function" ? (
-          children(overflow)
-        ) : (
-          <>
-            {children}
-            {indicator}
-            {overflow}
-          </>
-        )}
+        {children}
+        {indicator}
+        <MenuRoot>
+          <MenuTrigger
+            render={(props) => (
+              <IconButton
+                {...props}
+                data-solo-row-action=""
+                variant="bare"
+                size="compact"
+                data-solo-overflow-action=""
+                aria-label={`Actions for ${title}`}
+                icon={<DotsThreeIcon size={15} strokeWidth={2.5} />}
+              />
+            )}
+          />
+          <MenuPopup
+            aria-label={`Actions for ${title}`}
+            align="end"
+            finalFocus={restoreFocus}
+          >
+            {content}
+          </MenuPopup>
+        </MenuRoot>
+        {trailing}
       </ContextMenuTrigger>
       <MenuPopup
         aria-label={`Actions for ${title}`}

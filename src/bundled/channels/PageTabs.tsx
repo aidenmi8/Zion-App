@@ -29,7 +29,6 @@ import {
   type ConversationTab,
 } from "./useChannelTabState";
 import { useConversationTabs } from "./useConversationTabs";
-import { useCoveredByDock } from "./useCoveredByDock";
 import styles from "./Channels.module.css";
 
 export type { PageTabOptions, PageTabsProps, PageTabTarget };
@@ -216,11 +215,10 @@ export function PageTabs({
     focusPage.current = true;
     return true;
   };
-  // The page owns the close-all command while its workspace is shown, even
-  // while a floating pane covers the page.
+  // The page owns the close-all command while its workspace is shown.
   useLayoutEffect(() => {
     const close = (event: Event) => {
-      const workspace = split.ref.current;
+      const workspace = fallbackFocus.current;
       if (
         event.defaultPrevented ||
         !workspace?.isConnected ||
@@ -277,7 +275,6 @@ export function PageTabs({
   const split = usePanelSplit(scope, `page:${id}`);
   const hasTabs = secondary.items.length > 0;
   const showingPanel = tabState.paneOpen && hasTabs;
-  const covered = useCoveredByDock(split.ref, fallbackFocus, showingPanel);
   // As in a plain channel visit, the page reads its visible selected side tab
   // while focus stays anywhere on the page, such as the row that opened it.
   // A conversation moved to the main pane still reads only by its own focus.
@@ -332,8 +329,6 @@ export function PageTabs({
             ref={fallbackFocus}
             tabIndex={-1}
             className={styles.conversation}
-            inert={covered}
-            aria-hidden={covered || undefined}
           >
             <PanelWorkspace
               main

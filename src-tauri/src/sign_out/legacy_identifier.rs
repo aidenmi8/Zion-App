@@ -14,11 +14,11 @@ pub(crate) const LEGACY: &str = "dev.local.buzz.foundation";
 pub(crate) const CURRENT: &str = "xyz.block.buzz.desktop";
 /// What `just desktop` and debug bundles run as (`scripts/desktop-config.mjs`).
 pub(crate) const DEV: &str = "xyz.block.buzz.desktop.dev";
-const BUSY: &str = "Quit every other Buzz window, then open Buzz again to finish moving its storage. Nothing was moved.";
+const BUSY: &str = "Quit every other Zion window, then open Zion again to finish moving its storage. Nothing was moved.";
 const AGENT_STOPPING: &str =
-    "An agent is still stopping. Open Buzz again in a moment to finish moving its storage.";
-const FAILED: &str = "Buzz couldn't finish moving its storage. Open Buzz again to retry.";
-const SIGN_OUT_PENDING: &str = "Open the installed Buzz to finish signing out, then open this build again. Nothing was copied.";
+    "An agent is still stopping. Open Zion again in a moment to finish moving its storage.";
+const FAILED: &str = "Zion couldn't finish moving its storage. Open Zion again to retry.";
+const SIGN_OUT_PENDING: &str = "Open the installed Zion to finish signing out, then open this build again. Nothing was copied.";
 
 /// Each path the legacy identifier names, with its new name. The release
 /// identifier takes them all; development (`.dev`) only its own pending sign-out,
@@ -163,7 +163,7 @@ fn due(moves: &[(PathBuf, PathBuf)]) -> Result<Vec<&(PathBuf, PathBuf)>, String>
     }
     if !conflicts.is_empty() {
         return Err(format!(
-            "Buzz found storage from before 1.0 beside this version's:{conflicts}\nMove one of each pair elsewhere, then open Buzz again. Nothing was moved."
+            "Zion found storage from before 1.0 beside this version's:{conflicts}\nMove one of each pair elsewhere, then open Zion again. Nothing was moved."
         ));
     }
     Ok(due)

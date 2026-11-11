@@ -176,9 +176,9 @@ export const apply: PluginModule["apply"] = (ctx) => {
     ) => {
       const snapshot = agents.relay(agent)?.snapshot();
       if (snapshot?.status !== "ready")
-        throw new Error("Buzz is not connected to this community");
+        throw new Error("Zion is not connected to this community");
       const source = ownerReads(agents.relay(agent), pubkeyOf(agent));
-      if (!source) throw new Error("Buzz is not connected to this community");
+      if (!source) throw new Error("Zion is not connected to this community");
       const listing = await memoryReads.read(source, agent, signal, slug);
       if (agents.relay(agent)?.snapshot() !== snapshot)
         throw new Error("Community changed during memory read");
@@ -247,7 +247,7 @@ export const apply: PluginModule["apply"] = (ctx) => {
       id: "mesh",
       title: "Shared Compute",
       description:
-        "Runs on this community's shared compute: plain chat, or goose with shell, file and Buzz tools.",
+        "Runs on this community's shared compute: plain chat, or goose with shell, file and Zion tools.",
       defaults: () => ({ config: DEFAULT_MESH_AGENT_CONFIG }),
       summary: () => "Shared compute",
       Create: ({ disabled }) => (
@@ -591,7 +591,7 @@ export const apply: PluginModule["apply"] = (ctx) => {
         }
         status={
           !isTauri()
-            ? "Open Buzz desktop to use shared compute."
+            ? "Open Zion desktop to use shared compute."
             : !status
               ? "Checking shared compute…"
               : leaseReady
@@ -661,7 +661,7 @@ export const apply: PluginModule["apply"] = (ctx) => {
               machine. Auto picks the best model for your hardware; you can also
               choose one. Members serving your helper’s model can read its
               prompts, conversation history and, in Agent mode, tool output and
-              core memory. Sharing resumes when you reopen Buzz.
+              core memory. Sharing resumes when you reopen Zion.
             </p>
             {status.sharing && status.download && !status.download.done && (
               <DownloadProgress download={status.download} />
@@ -790,8 +790,8 @@ function shareStatus(
       ? ` ${status.lifecycle.reason}.`
       : "";
     return enabled
-      ? `Mesh needs recovery.${cause} Sharing is still enabled for next launch; turn it off to disable automatic sharing. Restart Buzz before starting Mesh again.`
-      : `Mesh needs recovery.${cause} Shutdown could not be confirmed. Restart Buzz before starting Mesh again.`;
+      ? `Mesh needs recovery.${cause} Sharing is still enabled for next launch; turn it off to disable automatic sharing. Restart Zion before starting Mesh again.`
+      : `Mesh needs recovery.${cause} Shutdown could not be confirmed. Restart Zion before starting Mesh again.`;
   }
   if (phase === "stopping")
     return status.finishingJoin

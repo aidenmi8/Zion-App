@@ -142,15 +142,15 @@ function ConsentDialog({
           />
           {fullAgentAccess(request.scope) && (
             <p className="m-0 text-body-sm text-secondary">
-              Full access as the selected agent: the app can use every Buzz tool
+              Full access as the selected agent: the app can use every Zion tool
               the agent has, including tools plugins add later. It reads, posts
               and manages channels where the agent can, uses its memory,
               attention and Git access to its community's repositories, wakes
               the agent in its conversations, runs the Nexus workers the agent
-              may run, and can change Buzz settings on this device. It can post
+              may run, and can change Zion settings on this device. It can post
               any file the agent can read on this device, including outside its
               workspace. It can disable plugins; installing, updating, enabling
-              or removing one needs your confirmation. Keys stay in Buzz.
+              or removing one needs your confirmation. Keys stay in Zion.
               {request.version === 2 &&
                 " The app can renew valid approval for another 30 days. Approval expires after 30 days without renewal. The app can restore this access after either app restarts. You can revoke it in External apps."}
             </p>
@@ -158,7 +158,7 @@ function ConsentDialog({
           {children}
           {!state.available && (
             <p role="alert" className="m-0 text-body-sm text-danger">
-              Enable Agents in Buzz desktop to authorize external apps.
+              Enable Agents in Zion desktop to authorize external apps.
             </p>
           )}
         </div>
@@ -236,7 +236,7 @@ function ReadyConsent({
               disabled: !available.has(agent.key),
               description: available.has(agent.key)
                 ? undefined
-                : "Unavailable in this copy of Buzz.",
+                : "Unavailable in this copy of Zion.",
             })),
           },
         ]}
@@ -244,7 +244,7 @@ function ReadyConsent({
       />
       {usable.length < eligible.length && (
         <p className="m-0 text-body-sm text-secondary">
-          Enable its runtime plugin, or use the Buzz copy that runs this agent.
+          Enable its runtime plugin, or use the Zion copy that runs this agent.
           You can deny this request and start setup there.
         </p>
       )}

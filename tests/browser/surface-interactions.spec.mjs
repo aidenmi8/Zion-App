@@ -1,5 +1,4 @@
 import { test, expect } from "./source-fixture.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 // Requires real CSS inheritance, pseudo states, portals and Tailwind layers.
 // The viewer composes production controls; it is not product-flow acceptance.
@@ -28,9 +27,9 @@ for (const mode of ["light", "dark"]) {
           }
         : {
             panel: "rgb(245, 245, 246)",
-            fill: "rgb(232, 232, 232)",
-            hover: "rgb(218, 218, 218)",
-            pressed: "rgb(204, 204, 204)",
+            fill: "rgb(245, 245, 246)",
+            hover: "rgb(241, 241, 242)",
+            pressed: "rgb(218, 218, 218)",
             selected: "rgb(218, 218, 218)",
             row: "rgb(245, 245, 246)",
             border: "rgb(128, 128, 128)",
@@ -54,7 +53,11 @@ for (const mode of ["light", "dark"]) {
       });
       await expect(surface).toBeVisible();
       // Finish the actual container entrance before retaining mouse coordinates.
-      await animationsSettled(surface);
+      await surface.evaluate(async (el) => {
+        await Promise.all(
+          el.getAnimations().map((animation) => animation.finished),
+        );
+      });
       const action = surface.getByRole("button", {
         name: "Secondary action",
         exact: true,

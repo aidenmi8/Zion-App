@@ -80,7 +80,7 @@ it("the default service sends desktop banners via the native bridge and shared p
   await submit("first");
   await flush();
   expect(sdk.show).toHaveBeenCalledExactlyOnceWith("notification_show", {
-    title: "Buzz",
+    title: "Zion",
     body: "New mentions",
     id: expect.any(String),
     onEvent: expect.objectContaining({ onmessage: expect.any(Function) }),
