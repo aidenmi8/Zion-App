@@ -57,6 +57,19 @@ test("Inbox rows open their conversation in one side tab beside the list", async
   });
   const roots = app.histories.get("primary/alpha");
   const root = (content) => roots.find((event) => event.content === content);
+  const savedFirstThreadDraft = () =>
+    page.evaluate((threadId) => {
+      const prefix = "buzz-view.v1:";
+      const draftKey = `draft:alpha:thread:${threadId}`;
+      for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index);
+        if (!key?.startsWith(prefix)) continue;
+        const pair = JSON.parse(key.slice(prefix.length));
+        if (pair[1] === draftKey)
+          return JSON.parse(localStorage.getItem(key))?.text ?? "";
+      }
+      return "";
+    }, root("Thread root 1").id);
 
   await rows
     .filter({ hasText: "Unread reply 1" })
@@ -78,6 +91,9 @@ test("Inbox rows open their conversation in one side tab beside the list", async
   await expect(page.getByRole("region", { name: "Channels" })).toHaveCount(0);
 
   await reply.fill("Thread root 1 draft");
+  // The draft must be durable before a fast tab switch, not merely visible in
+  // the current editor. This catches lost edits under a loaded browser run.
+  expect(await savedFirstThreadDraft()).toBe("Thread root 1 draft");
   // Thread root 0's row shows whichever of its replies loaded as newest.
   const other = rows
     .filter({ hasText: "#Alpha" })
@@ -99,6 +115,7 @@ test("Inbox rows open their conversation in one side tab beside the list", async
   );
   await expect(reply).toBeVisible();
   await expect(reply).not.toHaveText("Thread root 1 draft");
+  expect(await savedFirstThreadDraft()).toBe("Thread root 1 draft");
   await expectList();
 
   await rows
