@@ -2316,6 +2316,12 @@ export function ChannelMembersDialog({
                             aria-label={`${action} ${channelText(item)}`}
                             loading={share.busy && active}
                             disabled={share.busy || !share.eligible}
+                            onFocus={(event) =>
+                              event.currentTarget.scrollIntoView({
+                                block: "nearest",
+                                inline: "nearest",
+                              })
+                            }
                             onClick={(event) => {
                               shareAction.current = event.currentTarget;
                               void share.submit(item.id);

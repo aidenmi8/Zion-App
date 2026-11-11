@@ -408,7 +408,9 @@ test("Share opens View only and posts a link without promoting or moving the Sol
         requestAnimationFrame(() => requestAnimationFrame(resolve)),
       ),
   );
-  await share.focus();
+  // Simulate WebKit declining to scroll a nested overflow ancestor on focus.
+  // The app must reveal the keyboard target itself at enlarged text sizes.
+  await share.evaluate((element) => element.focus({ preventScroll: true }));
   await expect(share).toBeInViewport({ ratio: 1 });
   await expect
     .poll(() =>
