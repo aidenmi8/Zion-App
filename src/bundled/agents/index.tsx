@@ -99,7 +99,6 @@ export const apply: PluginModule["apply"] = (ctx) => {
     },
     component: ({ navigation }) => (
       <AgentsPage
-        linkRenderers={ctx.conversation.links}
         agents={agents}
         relay={relay}
         communities={ctx.communityReader}

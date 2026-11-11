@@ -96,7 +96,7 @@ mod tests {
     #[test]
     fn unavailable_is_not_empty_success() {
         assert!(project(MeshAvailability::unavailable(
-            "Buzz shared compute status is malformed"
+            "Zion shared compute status is malformed"
         ))
         .unavailable
         .is_some());

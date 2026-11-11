@@ -1,6 +1,6 @@
 import { ExamplePreview } from "./ExamplePreview";
 import { Section } from "./primitives";
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Field } from "../../../../src/shared/design-system/ui/Field";
 import { InputGroup } from "../../../../src/shared/design-system/ui/InputGroup";
 import {
@@ -68,7 +68,6 @@ export function FormExample({
 }
 
 export function InputExamples() {
-  const suffixId = useId();
   return (
     <div className="component-specimen-stack">
       <FormExample
@@ -119,21 +118,6 @@ export function InputExamples() {
         </Field>
         <Field label="Filled">
           <Input defaultValue="Design studio" />
-        </Field>
-        <Field label="Site address" description="The domain stays fixed.">
-          <InputGroup wrap>
-            <Input
-              textSize="large"
-              placeholder="studio"
-              aria-describedby={suffixId}
-            />
-            <span
-              id={suffixId}
-              className="min-w-0 wrap-anywhere text-body-lg text-primary"
-            >
-              .example.org
-            </span>
-          </InputGroup>
         </Field>
         <Field
           label="Read-only"

@@ -35,6 +35,11 @@ function fixture() {
 it("correlates out-of-order JSONL responses across chunk boundaries and rejects interactive requests once", async () => {
   const f = fixture();
   await f.open();
+  expect(
+    f.sent.find((wire) => wire.method === "initialize")?.params,
+  ).toMatchObject({
+    clientInfo: { name: "buzz_codex_plugin", title: "Zion Codex" },
+  });
   const first = f.rpc.request("first");
   const second = f.rpc.request("second");
   const a = f.sent.find((w) => w.method === "first");
@@ -54,7 +59,14 @@ it("correlates out-of-order JSONL responses across chunk boundaries and rejects 
     params: {},
   });
   expect(f.sent.filter((w) => w.id === "interactive")).toEqual([
-    { id: "interactive", error: { code: -32601, message: expect.any(String) } },
+    {
+      id: "interactive",
+      error: {
+        code: -32601,
+        message:
+          "Zion Codex runs with approvalPolicy=never; interactive requests are unsupported",
+      },
+    },
   ]);
   expect(one).not.toHaveBeenCalled();
   expect(two).not.toHaveBeenCalled();

@@ -1,6 +1,5 @@
 import { expect, it } from "vitest";
 import { messageActivity } from "./message-activity";
-import { requestWork } from "../../features/agents/request-work";
 import type { RelaySession } from "../../features/relay/session";
 const request = "a".repeat(64),
   sibling = "b".repeat(64);
@@ -59,9 +58,9 @@ it("stops animation on interrupted or stale evidence, retires success and retain
     messageActivity({ ...source, status: "interrupted" }, "channel", request)[0]
       ?.working,
   ).toBe(false);
-  const uncertain = { ...source, turns: [] };
-  expect(requestWork(uncertain, "channel", request)[0]?.state).toBe("unknown");
-  expect(messageActivity(uncertain, "channel", request)).toEqual([]);
+  expect(
+    messageActivity({ ...source, turns: [] }, "channel", request)[0]?.working,
+  ).toBe(false);
   const start = source.records[0];
   if (!start) throw new Error("Missing start fixture");
   for (const kind of ["turn_completed", "turn_error", "agent_panic"]) {

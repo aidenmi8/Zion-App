@@ -3,7 +3,7 @@
   "collections": [
     {
       "id": "buzzies",
-      "label": "Buzzies",
+      "label": "Characters",
       "coverAvatarId": "buzzies-1",
       "avatarIds": [
         "buzzies-1",
@@ -112,7 +112,7 @@
   "assets": [
     {
       "id": "buzzies-1",
-      "label": "Buzzies 1",
+      "label": "Character 1",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-1.png",
       "sha256": "1a8bf9323410689382de8d0b6718da8432af15b085c767e5e0f0187e4602b31c",
@@ -131,7 +131,7 @@
     },
     {
       "id": "buzzies-2",
-      "label": "Buzzies 2",
+      "label": "Character 2",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-2.png",
       "sha256": "ac0edf1ffa360ee8a12cf12113336c68f397bcc12d1d3a9d5ac914dd643d483e",
@@ -150,7 +150,7 @@
     },
     {
       "id": "buzzies-3",
-      "label": "Buzzies 3",
+      "label": "Character 3",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-3.png",
       "sha256": "f833a6f5213421627968202304bca3f10d6bbf08f79de70aa528a818f318efc3",
@@ -169,7 +169,7 @@
     },
     {
       "id": "buzzies-4",
-      "label": "Buzzies 4",
+      "label": "Character 4",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-4.png",
       "sha256": "244451caf8578d58611924aea418a8b280903a00f2035ff3bf294dee9bca0f4f",
@@ -188,7 +188,7 @@
     },
     {
       "id": "buzzies-5",
-      "label": "Buzzies 5",
+      "label": "Character 5",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-5.png",
       "sha256": "cd1a907abee050b90d3ff4357ad8478c6e7004b07ce881caa8bd9f8eed43fc1e",
@@ -207,7 +207,7 @@
     },
     {
       "id": "buzzies-6",
-      "label": "Buzzies 6",
+      "label": "Character 6",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-6.png",
       "sha256": "1130e056ab05d9c8ae22689cf2e8ba66a9f86eb293743c89cd83fc21149a2f7a",
@@ -226,7 +226,7 @@
     },
     {
       "id": "buzzies-7",
-      "label": "Buzzies 7",
+      "label": "Character 7",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-7.png",
       "sha256": "4fab3101753d4311e0db04ec3b4c807b68b9bd7d4b93e08ef0780a9eee4b54b8",
@@ -245,7 +245,7 @@
     },
     {
       "id": "buzzies-8",
-      "label": "Buzzies 8",
+      "label": "Character 8",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-8.png",
       "sha256": "b9b09acb0db67c36c57fc1fedf75f07a189957051d66f2799aa602e2bdd38321",
@@ -264,7 +264,7 @@
     },
     {
       "id": "buzzies-9",
-      "label": "Buzzies 9",
+      "label": "Character 9",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-9.png",
       "sha256": "d814a7b5da0041e297791a8662e3bb39a320846b22040e86c16b74c709b2bc84",
@@ -283,7 +283,7 @@
     },
     {
       "id": "buzzies-10",
-      "label": "Buzzies 10",
+      "label": "Character 10",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-10.png",
       "sha256": "d014fb5ea2b39e4d9b1c9cc0d30ad02291e38e278639daea208f3f709be7ffa2",
@@ -302,7 +302,7 @@
     },
     {
       "id": "buzzies-11",
-      "label": "Buzzies 11",
+      "label": "Character 11",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-11.png",
       "sha256": "7a0b386dafa6fb9ebefc60d3c6abc0b6db7d13ecc6d0f8e2d5cf37bc9fbc1680",
@@ -321,7 +321,7 @@
     },
     {
       "id": "buzzies-12",
-      "label": "Buzzies 12",
+      "label": "Character 12",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-12.png",
       "sha256": "6797c18972a34eb5220790da2d73aec065f4c893a75aba00f7f8cffff489ee87",
@@ -340,7 +340,7 @@
     },
     {
       "id": "buzzies-13",
-      "label": "Buzzies 13",
+      "label": "Character 13",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-13.png",
       "sha256": "71742c7944c89234694b5ac3a14b5d947f601a88cf537a481fbd765782a13d40",
@@ -359,7 +359,7 @@
     },
     {
       "id": "buzzies-14",
-      "label": "Buzzies 14",
+      "label": "Character 14",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-14.png",
       "sha256": "a31790e0c04f74a3cb259a4a62ea14dc6533f345e4ed1c4dfeea38a5b5db124d",
@@ -378,7 +378,7 @@
     },
     {
       "id": "buzzies-15",
-      "label": "Buzzies 15",
+      "label": "Character 15",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-15.png",
       "sha256": "23ef66704ec40d361ffada6d84df5d495dcf42078deafb9846719d098620e02e",
@@ -397,7 +397,7 @@
     },
     {
       "id": "buzzies-16",
-      "label": "Buzzies 16",
+      "label": "Character 16",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-16.png",
       "sha256": "0aa6e5d482dd17fe52351ef270b4cfe42130d84cb17cc4e1ffc21dffb1b98a4f",
@@ -416,7 +416,7 @@
     },
     {
       "id": "buzzies-17",
-      "label": "Buzzies 17",
+      "label": "Character 17",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-17.png",
       "sha256": "0576c7c8071061804b0479cb742109a215656cad09a27fd1592bfc94bd8fdd5c",
@@ -435,7 +435,7 @@
     },
     {
       "id": "buzzies-18",
-      "label": "Buzzies 18",
+      "label": "Character 18",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-18.png",
       "sha256": "75f7aada8aedfc6ab7af6521378f267f63b729c0d415762a28d0fc2fed30af00",
@@ -454,7 +454,7 @@
     },
     {
       "id": "buzzies-19",
-      "label": "Buzzies 19",
+      "label": "Character 19",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-19.png",
       "sha256": "39538ba85fdf9d1977d061c5c5d3ff2ff6c51816b56668fcc678b51ddd2370a6",
@@ -473,7 +473,7 @@
     },
     {
       "id": "buzzies-20",
-      "label": "Buzzies 20",
+      "label": "Character 20",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-20.png",
       "sha256": "d168dedcc4308e9ee3fe38ad66c62dde41351685e4406c87dec0cd24e743266c",
@@ -492,7 +492,7 @@
     },
     {
       "id": "buzzies-21",
-      "label": "Buzzies 21",
+      "label": "Character 21",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-21.png",
       "sha256": "e48ccab67ccb8b985801a235937ef379df9c9a4dce687b8a58c1d57c4ba62c8c",
@@ -511,7 +511,7 @@
     },
     {
       "id": "buzzies-22",
-      "label": "Buzzies 22",
+      "label": "Character 22",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-22.png",
       "sha256": "8411d23643cda073d38bc1925e99fb99a344e931e6ac64634692f5abd6b8c771",
@@ -530,7 +530,7 @@
     },
     {
       "id": "buzzies-23",
-      "label": "Buzzies 23",
+      "label": "Character 23",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-23.png",
       "sha256": "497e399399378b2a8b41af70100df50808fc3a143c0689faf6582d4c52450e3d",
@@ -549,7 +549,7 @@
     },
     {
       "id": "buzzies-24",
-      "label": "Buzzies 24",
+      "label": "Character 24",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-24.png",
       "sha256": "c34560dd69213514fd0b2acab133f0b3f57c5f6a836b29ac1318d9e6c0139abd",
@@ -568,7 +568,7 @@
     },
     {
       "id": "buzzies-25",
-      "label": "Buzzies 25",
+      "label": "Character 25",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-25.png",
       "sha256": "cd3fccfeb3ded0b3fedd38fe0def41d83682fe227ceb9745f903f2989fd33395",
@@ -587,7 +587,7 @@
     },
     {
       "id": "buzzies-26",
-      "label": "Buzzies 26",
+      "label": "Character 26",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-26.png",
       "sha256": "f5818ad6838c7691f74e69b87d392201301839e23aab1329f8ad3a97b6b6c9fc",
@@ -606,7 +606,7 @@
     },
     {
       "id": "buzzies-27",
-      "label": "Buzzies 27",
+      "label": "Character 27",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-27.png",
       "sha256": "f999b87327020bf0af17b86ecd341ccdead4cb426ea03c8e1132b98a0c86357b",
@@ -625,7 +625,7 @@
     },
     {
       "id": "buzzies-28",
-      "label": "Buzzies 28",
+      "label": "Character 28",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-28.png",
       "sha256": "5b7ee4da7643bad801d30d155ecd9d8bc5697584bfa23f4d8314b613495a3620",
@@ -644,7 +644,7 @@
     },
     {
       "id": "buzzies-32",
-      "label": "Buzzies 32",
+      "label": "Character 32",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-32.png",
       "sha256": "ce97b91a163b42f3ef2345d625a5430adc94970ba8ac510cf150dfb3e7ec9184",
@@ -663,7 +663,7 @@
     },
     {
       "id": "buzzies-33",
-      "label": "Buzzies 33",
+      "label": "Character 33",
       "collectionId": "buzzies",
       "url": "https://dwwgwmfqqjotj.cloudfront.net/avatars/20261030T174937230Z/poster/buzzies/buzzies-33.png",
       "sha256": "2c8e3e781671891d34135dc2ea5fbd09c27dc856882993f1d0ec5bb17d1e8359",

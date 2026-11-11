@@ -880,11 +880,7 @@ it("lists active primary pages in the app dock", async () => {
     value: () => {},
   });
   vi.stubEnv("VITE_BUZZ_LIVE", "1");
-  // An existing install with Bestie explicitly enabled, not first-run setup.
-  localStorage.setItem(
-    "buzzodz.plugins.v1",
-    JSON.stringify({ version: 3, enabled: { "buzz.bestie": true } }),
-  );
+  // Personal space with a saved community, not the first-run join screen.
   localStorage.setItem(
     `buzz-client.v1:${viewer}`,
     JSON.stringify({
@@ -904,11 +900,7 @@ it("lists active primary pages in the app dock", async () => {
   services = createServices();
   const current = services;
   render(<App services={current} />);
-  // Activity is a row in the Messages sidebar; the others are dock apps.
-  await within(
-    await screen.findByRole("navigation", { name: "Pages" }),
-  ).findByRole("button", { name: "Activity" });
-  expect(screen.queryByRole("tab", { name: "Activity" })).toBeNull();
+  await screen.findByRole("tab", { name: "Activity" });
   expect(screen.getByRole("tab", { name: "Bestie" })).toBeInTheDocument();
 
   expect(
@@ -952,22 +944,17 @@ it("lists active primary pages in the app dock", async () => {
   );
 
   await act(() => current.plugins.change("disable", "buzz.agents"));
-  expect(
-    within(screen.getByRole("navigation", { name: "Pages" })).getByRole(
-      "button",
-      { name: "Activity" },
-    ),
-  ).toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "Activity" })).toBeInTheDocument();
   expect(screen.getByRole("tab", { name: "Bestie" })).toBeInTheDocument();
 
   expect(screen.queryByRole("tab", { name: "Agents" })).not.toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Search Buzz" }));
-  const search = await screen.findByRole("dialog", { name: "Search Buzz" });
+  await userEvent.click(screen.getByRole("button", { name: "Search Zion" }));
+  const search = await screen.findByRole("dialog", { name: "Search Zion" });
   expect(
     within(search).queryByRole("option", { name: "Fixture notes" }),
   ).not.toBeInTheDocument();
   await userEvent.type(
-    within(search).getByRole("combobox", { name: "Search Buzz" }),
+    within(search).getByRole("combobox", { name: "Search Zion" }),
     "Fixture notes",
   );
   expect(
@@ -978,14 +965,11 @@ it("lists active primary pages in the app dock", async () => {
   ).not.toBeInTheDocument();
   await userEvent.keyboard("{Escape}");
 
-  // Disabling optional pages removes their entries without hiding Messages.
+  // Disabling optional pages removes their dock entries without hiding Messages.
   for (const id of ["buzz.inbox", "buzz.bestie", "buzz.repos"])
     await act(() => current.plugins.change("disable", id));
   expect(
-    within(screen.getByRole("navigation", { name: "Pages" })).queryByRole(
-      "button",
-      { name: "Activity" },
-    ),
+    screen.queryByRole("tab", { name: "Activity" }),
   ).not.toBeInTheDocument();
   expect(screen.queryByRole("tab", { name: "Bestie" })).not.toBeInTheDocument();
   expect(screen.getByRole("tab", { name: "Messages" })).toBeInTheDocument();
@@ -993,17 +977,6 @@ it("lists active primary pages in the app dock", async () => {
     screen.getByRole("complementary", { name: "Sidebar" }),
   ).toBeInTheDocument();
 });
-
-/** Activity is a row at the top of the Messages sidebar. While the app
- * starts, that sidebar remounts once it becomes resizable, so find the row
- * after that. */
-async function findActivityRow() {
-  await screen.findByRole("separator", { name: "Resize sidebar" });
-  return within(screen.getByRole("navigation", { name: "Pages" })).getByRole(
-    "button",
-    { name: "Activity" },
-  );
-}
 
 function legacyPageFixture(
   memberships = [{ id: origin, name: "Fixture community" }],
@@ -1051,13 +1024,8 @@ it.each(
 )(
   "normalizes old $name links in the same visit and caller, retaining $scope scope",
   async ({ name, scope }) => {
-    if (name === "Bestie")
-      localStorage.setItem(
-        "buzzodz.plugins.v1",
-        JSON.stringify({ version: 3, enabled: { "buzz.bestie": true } }),
-      );
     const current = legacyPageFixture();
-    await findActivityRow();
+    await screen.findByRole("tab", { name: "Activity" });
     const pageId = name.toLowerCase();
 
     act(() => {
@@ -1133,11 +1101,7 @@ it("opens a community-scoped page from another community, but not after leaving 
     ],
     other,
   );
-  await waitFor(() =>
-    expect(member.plugins.snapshot().activation["fixture.notes"]?.status).toBe(
-      "active",
-    ),
-  );
+  await screen.findByRole("tab", { name: "Activity" });
   let result!: ReturnType<typeof member.navigation.open>;
   act(() => {
     result = member.navigation.open(target);
@@ -1153,11 +1117,7 @@ it("opens a community-scoped page from another community, but not after leaving 
     [{ id: other, name: "Other community" }],
     other,
   );
-  await waitFor(() =>
-    expect(left.plugins.snapshot().activation["fixture.notes"]?.status).toBe(
-      "active",
-    ),
-  );
+  await screen.findByRole("tab", { name: "Activity" });
   act(() => {
     result = left.navigation.open(target);
   });
@@ -1243,7 +1203,7 @@ it("cold Settings Close uses required Messages when Inbox is disabled", async ()
 
 it("Close returns to the immediately preceding failed destination, not an older retained workspace", async () => {
   const current = legacyPageFixture();
-  await findActivityRow();
+  await screen.findByRole("tab", { name: "Activity" });
   await act(async () => {
     void current.navigation.open({
       version: 1,
@@ -1305,7 +1265,7 @@ async function activityTurnedOff() {
 /** Turns Activity off while it's open, then goes to Messages and Back. */
 async function backOntoTurnedOffActivity() {
   const current = legacyPageFixture();
-  await userEvent.click(await findActivityRow());
+  await userEvent.click(await screen.findByRole("tab", { name: "Activity" }));
   await waitFor(() =>
     expect(current.navigation.snapshot()).toMatchObject({
       status: "opened",
@@ -1428,7 +1388,7 @@ it("keeps the unavailable card for a turned-off external plugin while external p
         }
       : result;
   const current = legacyPageFixture();
-  await findActivityRow();
+  await screen.findByRole("tab", { name: "Activity" });
   expect(current.plugins.snapshot().configuration).toMatchObject({
     status: "ready",
     externalPluginsPaused: true,
@@ -1447,7 +1407,7 @@ it("keeps the unavailable card for a turned-off external plugin while external p
   if (!card) throw new Error("Expected the failure alert");
   expect(
     within(card).getByText(
-      "It may have been removed, or you may need to update Buzz.",
+      "It may have been removed, or you may need to update Zion.",
     ),
   ).toBeVisible();
   expect(

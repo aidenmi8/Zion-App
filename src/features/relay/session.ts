@@ -19,7 +19,6 @@ import {
   type ChannelCreationInput,
 } from "../channel-templates/setup";
 import { createPresence } from "../presence/presence";
-import { createHostedAgents, withHostedAgents } from "../presence/hosted";
 import { createAgentMemories } from "../agents/memory";
 import type { PresenceActivity } from "../presence/activity";
 import { bindNames, type IdentityNames } from "../identity-names/service";
@@ -220,8 +219,6 @@ export function createRelaySession(
   } = {},
 ) {
   let closed = false;
-  // Thread views share the store's clock; thread() shadows `options`.
-  const storeNow = options.now;
   const lifetime = new AbortController();
   let uploadLifetime = new AbortController();
   function cancelUploads() {
@@ -977,7 +974,7 @@ export function createRelaySession(
         timers.add(timer);
       });
   }
-  const observedPresence = createPresence(
+  const presence = createPresence(
     transport,
     options.presenceActivity,
     (status, signal) =>
@@ -997,18 +994,6 @@ export function createRelaySession(
             traffic?.syncVerifiedProfiles?.(filter, sink),
         }
       : undefined,
-  );
-  const presence = withHostedAgents(
-    observedPresence,
-    createHostedAgents({
-      owner: (pubkey) => profiles.queries.owner?.(pubkey),
-      subscribeOwners: profiles.queries.subscribe,
-      limited: observedPresence.limited,
-      subscribeSelection: observedPresence.subscribeSelection,
-      activity: options.presenceActivity,
-      read: (filters, signal) => readVerified(filters, { signal }, false),
-      notify,
-    }),
   );
   const emoji = createEmojiDirectory(
     verified,
@@ -2616,11 +2601,6 @@ export function createRelaySession(
     soloPreferences: soloPreferences.queries,
     reminders: reminders?.capability,
     live,
-    /** Wake, network and focus hint that the live socket, which may still look
-     * open, could have died unseen: it must answer a probe or be replaced. */
-    checkLive(network = false) {
-      traffic?.check?.(network);
-    },
     /** The one automatic retry owner for background reads. Undefined offline. */
     recovery,
     profiling,
@@ -2843,7 +2823,6 @@ export function createRelaySession(
         visible: (events) => events.filter(visibility(events)),
         notify,
         dropped: streamDropped,
-        now: storeNow,
       });
       threads.add(thread);
       thread.receive(recent.entries().map(([, item]) => item.event));
@@ -3631,20 +3610,16 @@ export function createRelaySession(
       );
       // Signed membership notifications are hints, not roster authority. Schedule
       // before visibility filtering, because a newly granted channel may be denied locally.
-      const hints = events.filter(
-        (event) =>
-          [44100, 44101].includes(event.kind) &&
-          event.pubkey === transport.relayAuthor &&
-          event.tags.some(
-            ([name, value]) => name === "p" && value === transport.viewer,
-          ),
+      confirmMembershipHints(
+        events.filter(
+          (event) =>
+            [44100, 44101].includes(event.kind) &&
+            event.pubkey === transport.relayAuthor &&
+            event.tags.some(
+              ([name, value]) => name === "p" && value === transport.viewer,
+            ),
+        ),
       );
-      confirmMembershipHints(hints);
-      // Before anything the batch it re-sends delivers (see `granted`).
-      for (const hint of hints)
-        if (hint.kind === 44100)
-          for (const [name, id] of hint.tags)
-            if (name === "h" && id) channels.granted(id);
       const epoch = accessEpoch;
       const generation = liveGeneration;
       const visible = accept(
@@ -3822,7 +3797,7 @@ export function createRelaySession(
       revalidatePreviews(previews);
       publishLive();
     },
-    established(channelId, global, continuous) {
+    established(channelId, global) {
       if (closed) return;
       streamDropped = false;
       if (!channelId) {
@@ -3858,24 +3833,17 @@ export function createRelaySession(
         ? [channelId]
         : channelId) {
         if (!channels.canAccess(id)) continue;
-        // The replay delivered every event in the channel since the dropped
-        // connection last heard the relay: a view live at the drop is
-        // contiguous again with no read. Any other view catches up.
-        const resumed = !!continuous?.includes(id);
         for (const thread of threads)
-          if (thread.channelId === id) void thread.established(resumed);
+          if (thread.channelId === id) void thread.established();
         const job = {
           generation: liveGeneration,
           state: "pending" as "pending" | "verified" | "deferred" | "error",
           error: undefined as string | undefined,
         };
+        channels.catchUpQueued(id);
         catchups.set(id, job);
-        if (resumed && channels.resume(id)) job.state = "verified";
-        else {
-          channels.catchUpQueued(id);
-          if (channels.retainedChannels().includes(id)) catchupQueue.add(id);
-          else job.state = "deferred";
-        }
+        if (channels.retainedChannels().includes(id)) catchupQueue.add(id);
+        else job.state = "deferred";
       }
       publishLive();
       queueMicrotask(() => void catchUpNext());

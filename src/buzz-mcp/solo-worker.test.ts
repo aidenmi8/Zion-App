@@ -254,7 +254,9 @@ describe("solo_worker_connections", () => {
     const before = published.length;
     await expect(
       call("solo_worker_send", { retry: first.retry }),
-    ).rejects.toThrow(/No owner has authorized you/);
+    ).rejects.toThrow(
+      /No owner has authorized you.*Only the owner can, in Zion/,
+    );
     expect(published).toHaveLength(before);
   });
 

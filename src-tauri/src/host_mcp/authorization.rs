@@ -80,7 +80,7 @@ pub(crate) async fn plugin_host_mcp_authorize<R: tauri::Runtime>(
             super::pairing::authorize(&app, &request, expected_revision, &shared)
         })
         .await
-        .map_err(|_| "Cannot save Buzz approval")??
+        .map_err(|_| "Cannot save Zion approval")??
     } else {
         None
     };
@@ -148,7 +148,7 @@ async fn authorize_with_pairing(
     let sent = if let Some(shared) = shared.as_ref().filter(|_| durable) {
         tokio::select! {
             biased;
-            () = shared.stop.cancelled() => return Err("Buzz approval is cancelled".into()),
+            () = shared.stop.cancelled() => return Err("Zion approval is cancelled".into()),
             result = sending => result,
         }
     } else {

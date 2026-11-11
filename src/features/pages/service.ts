@@ -47,11 +47,10 @@ export type Page = Readonly<{
    * listed in search and reachable by deep link or from another page.
    */
   primary?: boolean;
-  /** Preferred navigation location for a primary page: a row in the Messages
-   * sidebar (the default) or an app in the dock. `topbar` and `toolbar` are
-   * pre-dock aliases for `dock`, still accepted.
+  /** Preferred navigation location for a primary page; omitted means sidebar.
+   * The host renders topbar and toolbar entries in its app dock.
    */
-  placement?: "sidebar" | "dock" | "topbar" | "toolbar";
+  placement?: "sidebar" | "topbar" | "toolbar";
   /**
    * A `data:image/<subtype>[;params],<payload>` URL shown beside the page in
    * search and primary navigation. Any other value is dropped with a warning,
@@ -130,13 +129,12 @@ export class PagesService extends Service implements Pages {
     if (
       placement === undefined ||
       placement === "sidebar" ||
-      placement === "dock" ||
       placement === "topbar" ||
       placement === "toolbar"
     )
       return page;
     console.warn(
-      `Ignoring page placement for ${this.ctx.pluginOwner?.id}/${page.id}: expected sidebar or dock`,
+      `Ignoring page placement for ${this.ctx.pluginOwner?.id}/${page.id}: expected sidebar, topbar, or toolbar`,
     );
     return rest;
   }

@@ -110,11 +110,11 @@ const REASONS = {
   team: {
     communities: "Its agents are in different communities.",
     unsupported: "This community's relay doesn't sync teams.",
-    failed: "Moving it to the community failed; Buzz will try again.",
+    failed: "Moving it to the community failed; Zion will try again.",
   },
   agent: {
     unsupported: "This community's relay doesn't sync agent settings.",
-    failed: "Copying it to the community failed; Buzz will try again.",
+    failed: "Copying it to the community failed; Zion will try again.",
   },
 } satisfies {
   team: Record<LocalReason, string>;

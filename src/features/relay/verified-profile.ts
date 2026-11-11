@@ -152,29 +152,23 @@ export type VerifiedProfileFilter = Readonly<{
   authors: readonly [string];
   "#d": readonly string[];
   limit: number;
-  /** A resume: only heads changed since a cursor. Absence means unchanged. */
-  since?: number;
 }>;
 export type VerifiedProfileSink = {
   event(event: RelayEvent): void;
   eose(): void;
-  /** `resume` comes only with `disconnected:` for a sync that reached EOSE:
-   * a replacement from `since` misses no head this sync would have sent. */
-  closed(reason: string, resume?: Readonly<{ since: number }>): void;
+  closed(reason: string): void;
 };
 
 export function verifiedProfileFilter(
   authority: string,
   subjects: readonly string[],
-  since?: number,
 ): VerifiedProfileFilter {
   const unique = [...new Set(subjects)];
   if (
     !key.test(authority) ||
     !unique.length ||
     unique.length > VERIFIED_PROFILE_BATCH ||
-    unique.some((id) => !key.test(id)) ||
-    (since !== undefined && !(Number.isSafeInteger(since) && since >= 0))
+    unique.some((id) => !key.test(id))
   )
     throw new Error("Invalid verified-profile subscription");
   return {
@@ -182,6 +176,5 @@ export function verifiedProfileFilter(
     authors: [authority],
     "#d": unique,
     limit: unique.length,
-    ...(since !== undefined ? { since } : {}),
   };
 }

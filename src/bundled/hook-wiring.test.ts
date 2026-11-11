@@ -86,8 +86,8 @@ it.each(["claude", "codex", "pi"] as const)(
     expect(hook).toBeTypeOf("function");
     expect(await hook?.("a".repeat(64), "session", "PreToolUse", {})).toEqual(
       name === "pi"
-        ? { block: "[Buzz plugin: reply-first] Wait" }
-        : { decision: "block", reason: "[Buzz plugin: reply-first] Wait" },
+        ? { block: "[Zion plugin: reply-first] Wait" }
+        : { decision: "block", reason: "[Zion plugin: reply-first] Wait" },
     );
     expect(dispatchHook).toHaveBeenCalledOnce();
     if (name === "pi") {
@@ -101,7 +101,7 @@ it.each(["claude", "codex", "pi"] as const)(
         await hook?.("a".repeat(64), "session", "afterTool", { call: {} }),
       ).toEqual({
         output: [
-          { type: "text", text: "[Buzz plugin: reply-first]" },
+          { type: "text", text: "[Zion plugin: reply-first]" },
           { type: "text", text: '{"ok":true}' },
         ],
       });

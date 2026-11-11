@@ -1,4 +1,3 @@
-import { writeJSON } from "../../features/agent-protection/json-stream";
 import type { Model } from "./config";
 import type {
   HostProcess,
@@ -96,7 +95,7 @@ export class AppServer {
       {
         clientInfo: {
           name: "buzz_codex_plugin",
-          title: "Buzz Codex",
+          title: "Zion Codex",
           version: "0.1.0",
         },
         capabilities: {
@@ -178,7 +177,7 @@ export class AppServer {
             error: {
               code: -32601,
               message:
-                "Buzz Codex runs with approvalPolicy=never; interactive requests are unsupported",
+                "Zion Codex runs with approvalPolicy=never; interactive requests are unsupported",
             },
           }).catch((error) => this.fail(error));
         } else this.emit(message);
@@ -236,7 +235,7 @@ export class AppServer {
     if (this.failure) return Promise.reject(this.failure);
     if (!this.process)
       return Promise.reject(new Error("Codex is not connected"));
-    return writeJSON(this.process, message);
+    return this.process.write(`${JSON.stringify(message)}\n`);
   }
   request<T = unknown>(method: string, params: unknown = {}): Promise<T> {
     if (this.failure) return Promise.reject(this.failure);

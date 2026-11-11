@@ -1,8 +1,8 @@
 import { ActivityNavigationProvider } from "./ActivityNavigation";
+import { DraftsSentNavigation } from "../../features/drafts-sent/DraftsSentNavigation";
 import { PageNavigation } from "./PageNavigation";
-import { navigationOwner, orderPages, pagePlacement } from "./presentation";
+import { orderPages, pagePlacement } from "./presentation";
 import {
-  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -23,12 +23,9 @@ import type { AccountActionsService } from "../../features/account-actions/servi
 import type { Communities } from "../../features/communities/service";
 import type { FederatedIdentity } from "../../features/federated-identity/service";
 import { ResizableSidebar } from "../../features/channel-navigation/ResizableSidebar";
-import type { JoinRequest } from "../../features/communities/invite-intent";
+import type { InviteLink } from "../../features/communities/invite-link";
 import type { OpenTarget } from "../../features/navigation/targets";
-import {
-  CommunityPicker,
-  OpenCommunitySwitcher,
-} from "../../features/communities/CommunityPicker";
+import { CommunityPicker } from "../../features/communities/CommunityPicker";
 import { ProfileButton } from "./ProfileButton";
 import { CommunityShortcuts } from "./CommunityShortcuts";
 import { MarkAllReadShortcut } from "./MarkAllReadShortcut";
@@ -63,6 +60,7 @@ export function AppShell(props: ComponentProps<typeof AppShellContent>) {
 function AppShellContent({
   pages,
   selected,
+  target,
   navigationAttempt,
   onSelect,
   tone,
@@ -90,6 +88,8 @@ function AppShellContent({
 }: {
   pages: readonly RegisteredPage[];
   selected: string;
+  /** The retained workspace target, including while Settings is open. */
+  target?: OpenTarget;
   navigationAttempt: string;
   onSelect: (
     key: string,
@@ -101,7 +101,7 @@ function AppShellContent({
   workspaceRef?: Ref<HTMLDivElement>;
   sidebar?: (pages: ReactNode, creationAction: ReactNode) => ReactNode;
   communities: Communities;
-  invite?: (JoinRequest & { requestId: number }) | undefined;
+  invite?: (InviteLink & { requestId: number }) | undefined;
   onInviteClose?: ((requestId: number) => void) | undefined;
   settingsCards?: SettingsCards | undefined;
   federatedIdentity?: FederatedIdentity | undefined;
@@ -178,12 +178,9 @@ function AppShellContent({
   const [creationContainer, setCreationContainer] =
     useState<HTMLDivElement | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
-  const openSwitcher = useCallback(() => setSwitcherOpen(true), []);
   const connection = useRelayConnection(communities.relay);
   const sidebarScope = connection.scope ?? "disconnected";
-  const owner = navigationOwner(pages, selected);
-  const channelsNavigation = owner === "buzz.channels/channels";
+  const channelsNavigation = selected === "buzz.channels/channels";
   const hasNavigation =
     channelsNavigation ||
     pages.some((page) => page.key === selected && !!page.sidebar);
@@ -254,6 +251,15 @@ function AppShellContent({
     const content = sidebar
       ? sidebar(
           <nav aria-label="Pages" className="shell-pages">
+            {target &&
+              searchServices &&
+              pages.some((page) => page.key === "buzz.channels/channels") && (
+                <DraftsSentNavigation
+                  relay={communities.relay}
+                  navigator={searchServices.navigation}
+                  target={target}
+                />
+              )}
             <PageNavigation
               pages={orderPages(
                 pages.filter((page) => pagePlacement(page) === "sidebar"),
@@ -273,12 +279,22 @@ function AppShellContent({
     ) : (
       content
     );
-  }, [pages, selected, sidebar, sidebarScope, onSelect, creationInNavigation]);
+  }, [
+    pages,
+    selected,
+    sidebar,
+    sidebarScope,
+    onSelect,
+    creationInNavigation,
+    searchServices,
+    communities.relay,
+    target,
+  ]);
   const dockPages = orderPages(
     pages.filter((page) => page.primary && pagePlacement(page) !== "sidebar"),
     "dock",
   );
-  const selectedDockPage = dockPages.some((page) => page.key === owner);
+  const selectedDockPage = dockPages.some((page) => page.key === selected);
   return (
     <div
       data-shell-tone={tone}
@@ -361,8 +377,7 @@ function AppShellContent({
           <div className="shell-dock-pages">
             <PageNavigation
               pages={dockPages}
-              selected={owner}
-              currentPage={selected}
+              selected={selected}
               onSelect={onSelect}
               placement="dock"
               previews
@@ -377,8 +392,6 @@ function AppShellContent({
               federatedIdentity={federatedIdentity}
               onSelect={onCommunitySelect}
               onOpenTarget={onOpenTarget}
-              open={switcherOpen}
-              onOpenChange={setSwitcherOpen}
             />
             <ProfileButton
               communities={communities}
@@ -440,12 +453,12 @@ function AppShellContent({
                   <Panel as="div" joined>
                     <PanelFrame scope={connection.scope} companion={companion}>
                       <div
-                        id={`shell-page-${owner}`}
+                        id={`shell-page-${selected}`}
                         {...(selectedDockPage
                           ? {
                               role: "tabpanel",
                               "data-focus-inset": "",
-                              "aria-labelledby": `shell-page-${owner}-tab`,
+                              "aria-labelledby": `shell-page-${selected}-tab`,
                               tabIndex: 0,
                             }
                           : {})}
@@ -462,9 +475,7 @@ function AppShellContent({
                               : "mx-auto w-full max-w-4xl"
                           }
                         >
-                          <OpenCommunitySwitcher value={openSwitcher}>
-                            {children}
-                          </OpenCommunitySwitcher>
+                          {children}
                         </div>
                       </div>
                     </PanelFrame>

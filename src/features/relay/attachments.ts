@@ -202,11 +202,10 @@ async function prepareMedia(
 export function brokerUpload(
   endpoint: string,
   origin: string,
-  send: typeof fetch = fetch,
 ): AttachmentUpload {
   return hostUpload(
     (file, signal) =>
-      send(`${endpoint}/upload`, {
+      fetch(`${endpoint}/upload`, {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": file.type || "application/octet-stream" },

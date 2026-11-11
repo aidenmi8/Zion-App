@@ -8,32 +8,15 @@ import {
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Must match the key and endpoints embedded by updater-enabled release builds (#312).
+// Must match the key and endpoint embedded by the updater-enabled release build (#312).
 const publicKeyBase64 =
   "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJDQjQ2RDZFMUEwOERFMTEKUldRUjNnZ2FibTIwTE10QkVaMzFyYkZlY0R4ajhmbFBjdncvNVRCYnNpSm9kaFNBaHQzemZlZHkK";
-// A version's format selects its feed, so previews and stable releases never
-// share one; betas match neither and are never served.
-const channels = {
-  preview: {
-    pattern:
-      /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-preview\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/,
-    feed: "preview-feed",
-    notes: "desktop preview",
-  },
-  stable: {
-    pattern: /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/,
-    feed: "stable-feed",
-    notes: "desktop",
-  },
-};
+const endpoint =
+  "https://github.com/block/buzz-app/releases/download/preview-feed/latest.json";
 const [command, version, assetDir, manifestPath, binaryPath, currentPath] =
   process.argv.slice(2);
-const [channelName, channel] =
-  Object.entries(channels).find(([, { pattern }]) => pattern.test(version)) ??
-  [];
-assert.ok(channel, `Invalid feed version: ${version}`);
-const versionPattern = channel.pattern;
-const endpoint = `https://github.com/block/buzz-app/releases/download/${channel.feed}/latest.json`;
+const versionPattern =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-preview\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const release = `v${version}`;
 // Linux entries are installer-specific: a deb install must never receive an AppImage.
 const assets = {
@@ -46,15 +29,15 @@ const assets = {
 const usage =
   "Usage: preview-feed.mjs generate|verify <version> <asset-dir> <manifest-file> <macos-app-binary-file> [current-manifest-file]";
 
-function versionNumbers(value) {
+function previewNumber(value) {
   const match = versionPattern.exec(value);
-  assert.ok(match, `Invalid ${channelName} version: ${value}`);
+  assert.ok(match, `Invalid preview version: ${value}`);
   return match.slice(1).map(BigInt);
 }
 
 function compareVersions(left, right) {
-  const a = versionNumbers(left);
-  const b = versionNumbers(right);
+  const a = previewNumber(left);
+  const b = previewNumber(right);
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== b[i]) return a[i] > b[i] ? 1 : -1;
   }
@@ -148,6 +131,7 @@ function validate(manifest, platforms) {
   assert.deepEqual(manifest.platforms, platforms);
 }
 
+previewNumber(version);
 if (command !== "generate" && command !== "verify") throw new Error(usage);
 assert.ok(assetDir && manifestPath && binaryPath, usage);
 const key = publicKey();
@@ -179,7 +163,7 @@ if (command === "generate") {
     `${JSON.stringify(
       {
         version,
-        notes: `Buzz ${version} ${channel.notes}`,
+        notes: `Buzz ${version} desktop preview`,
         pub_date: new Date().toISOString(),
         platforms,
       },
@@ -192,7 +176,7 @@ if (command === "generate") {
   if (currentPath) {
     const current = JSON.parse(readFileSync(currentPath, "utf8"));
     const order = compareVersions(version, current.version);
-    assert.ok(order >= 0, `Refusing ${channelName} feed rollback`);
+    assert.ok(order >= 0, "Refusing preview feed rollback");
     if (order === 0) {
       assert.equal(
         readFileSync(manifestPath, "utf8"),

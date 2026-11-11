@@ -29,20 +29,16 @@ import {
   PopoverRoot,
   PopoverTrigger,
 } from "../../shared/design-system/ui/Popover";
-import { EmptyBestieAvatar } from "../../bundled/bestie/EmptyBestieAvatar";
 
 export function PageNavigation({
   pages,
   selected,
-  currentPage = selected,
   onSelect,
   placement = "sidebar",
   previews = false,
 }: {
   pages: readonly RegisteredPage[];
   selected: string;
-  /** The open destination when `selected` is the app that lists it. */
-  currentPage?: string;
   onSelect(key: string, options?: Pick<NavigationOpenOptions, "focus">): void;
   /** The app dock is a vertical icon tablist; the sidebar lists rows. */
   placement?: "sidebar" | "dock";
@@ -61,21 +57,14 @@ export function PageNavigation({
         orientation="vertical"
         value={pages.some((page) => page.key === selected) ? selected : null}
         onValueChange={(key) => onSelect(key, { focus: "preserve" })}
-        // The selected app returns from a page opened in its navigation.
-        onReselect={(key) => {
-          if (key !== currentPage) onSelect(key, { focus: "preserve" });
-        }}
         items={pages.map((page) => {
           const Badge = page.badge;
           const Preview = page.preview;
-          const { icon, image, avatar, label, placeholder } =
-            presentation(page);
+          const { icon, image, avatar, label } = presentation(page);
           return {
             value: page.key,
             label,
-            icon: placeholder ? (
-              <EmptyBestieAvatar key={page.key} compact />
-            ) : avatar ? (
+            icon: avatar ? (
               <Avatar
                 src={avatar.src}
                 alt=""
@@ -83,6 +72,15 @@ export function PageNavigation({
                 shape={avatar.shape}
                 size="small"
               />
+            ) : page.key === ACTIVITY_PAGE ? (
+              <ActivityNavigationIcon>
+                <PageIcon
+                  icon={icon}
+                  image={image}
+                  size={20}
+                  strokeWidth={2.5}
+                />
+              </ActivityNavigationIcon>
             ) : (
               <PageIcon icon={icon} image={image} size={20} strokeWidth={2.5} />
             ),
@@ -119,7 +117,7 @@ export function PageNavigation({
     );
   }
   return pages.map((page) => {
-    const { label, icon, image, avatar, placeholder } = presentation(page);
+    const { label, icon, image, avatar } = presentation(page);
     const Badge = page.badge;
     const badge = Badge && (
       <ContributionBoundary key={contributionKey(page)} fallback={null}>
@@ -130,9 +128,7 @@ export function PageNavigation({
       onSelect(page.key);
       document.getElementById("main-content")?.focus({ preventScroll: true });
     };
-    const pageIcon = placeholder ? (
-      <EmptyBestieAvatar key={page.key} compact />
-    ) : avatar ? (
+    const pageIcon = avatar ? (
       <Avatar
         key={page.key}
         src={avatar.src}
@@ -141,10 +137,6 @@ export function PageNavigation({
         shape={avatar.shape}
         size="compact"
       />
-    ) : page.key === ACTIVITY_PAGE ? (
-      <ActivityNavigationIcon key={page.key}>
-        <PageIcon icon={icon} image={image} size={16} strokeWidth={2.5} />
-      </ActivityNavigationIcon>
     ) : (
       <PageIcon
         key={page.key}
@@ -217,8 +209,6 @@ function PagePreview({
   children: ReactElement<ComponentProps<"button">>;
 }) {
   const [open, setOpen] = useState(false);
-  // Previews stay below the window header, in the workspace that holds the row.
-  const [boundary, setBoundary] = useState<Element | null>(null);
   useEffect(() => {
     if (!enabled) setOpen(false);
   }, [enabled]);
@@ -255,10 +245,7 @@ function PagePreview({
       actionsRef={actions}
       onOpenChange={(next, details) => {
         // Hover only: pressing the row selects the page instead.
-        if (next) {
-          handoff.current = false;
-          setBoundary(details.trigger?.closest(".shell-workspace") ?? null);
-        }
+        if (next) handoff.current = false;
         setOpen(enabled && next && details.reason !== "trigger-press");
       }}
     >
@@ -286,7 +273,6 @@ function PagePreview({
         // preview's header meets the background's top edge. Offsets ignore the
         // open animation's transform.
         sideOffset={6}
-        collisionBoundary={boundary ?? undefined}
         alignOffset={() => {
           const header = popup.current?.querySelector("header");
           return header ? 1 - header.offsetTop - header.offsetHeight : 0;

@@ -1,5 +1,4 @@
 import { test, expect } from "./fixture.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 const button = (page, name) => page.getByRole("button", { name, exact: true });
 // The palette scales in and its content slides in after a delay. Both hold
@@ -7,17 +6,27 @@ const button = (page, name) => page.getByRole("button", { name, exact: true });
 // mid-entrance. Finish the entrance before measuring rows or moving the pointer.
 const entered = async (dialog) => {
   await expect(dialog).not.toHaveAttribute("data-starting-style");
-  await animationsSettled(dialog, { subtree: true });
+  await dialog.evaluate((node) =>
+    Promise.all(
+      node
+        .getAnimations({ subtree: true })
+        .filter(
+          (animation) =>
+            animation.effect?.getComputedTiming().endTime !== Infinity,
+        )
+        .map((animation) => animation.finished),
+    ),
+  );
 };
 test("search arrows traverse the conversation action and recent activity, Enter opens and Escape restores focus", async ({
   page,
   app,
 }) => {
   await page.goto(app.origin);
-  const trigger = button(page, "Search Buzz");
+  const trigger = button(page, "Search Zion");
   await trigger.click();
-  const dialog = page.getByRole("dialog", { name: "Search Buzz" });
-  const input = dialog.getByRole("combobox", { name: "Search Buzz" });
+  const dialog = page.getByRole("dialog", { name: "Search Zion" });
+  const input = dialog.getByRole("combobox", { name: "Search Zion" });
   await expect(input).toHaveAttribute("spellcheck", "false");
   await expect(input).toHaveAttribute("autocorrect", "off");
   await expect(input).toHaveAttribute("autocapitalize", "off");
@@ -86,9 +95,9 @@ test("changing search scope returns focus to the input without clearing the quer
   app,
 }) => {
   await page.goto(app.origin);
-  await button(page, "Search Buzz").click();
+  await button(page, "Search Zion").click();
   const scopeAction = page
-    .getByRole("dialog", { name: "Search Buzz" })
+    .getByRole("dialog", { name: "Search Zion" })
     .locator(
       '[role="group"][aria-label="This conversation"], [role="rowgroup"][aria-label="This conversation"]',
     )
@@ -108,8 +117,8 @@ test("changing search scope returns focus to the input without clearing the quer
   });
   await chip.focus();
   await chip.press("Enter");
-  const global = page.getByRole("dialog", { name: "Search Buzz" });
-  const input = global.getByRole("combobox", { name: "Search Buzz" });
+  const global = page.getByRole("dialog", { name: "Search Zion" });
+  const input = global.getByRole("combobox", { name: "Search Zion" });
   await expect(input).toBeFocused();
   await expect(input).toHaveValue("hello");
   // Relevance can put an inline setting or plugin ahead of the scope action.
@@ -137,8 +146,8 @@ test.describe("public search destination", () => {
     await expect(page.locator("[data-message-id]").first()).toBeVisible();
     let previewSurface;
     for (const mode of ["cold", "warm"]) {
-      await button(page, "Search Buzz").click();
-      const input = page.getByRole("combobox", { name: "Search Buzz" });
+      await button(page, "Search Zion").click();
+      const input = page.getByRole("combobox", { name: "Search Zion" });
       await input.fill("crew-search");
       await expect(input).toHaveValue("crew-search");
       const result = page.getByRole("option", {
@@ -238,8 +247,8 @@ test.describe("public search destination", () => {
     app,
   }) => {
     await page.goto(app.origin);
-    await button(page, "Search Buzz").click();
-    await page.getByRole("combobox", { name: "Search Buzz" }).fill("ope");
+    await button(page, "Search Zion").click();
+    await page.getByRole("combobox", { name: "Search Zion" }).fill("ope");
     const result = page
       .locator(
         '[role="group"][aria-label="Channels"], [role="rowgroup"][aria-label="Channels"]',
@@ -333,8 +342,8 @@ test.describe("public search destination", () => {
   }) => {
     const release = app.holdJoin();
     await page.goto(app.origin);
-    await button(page, "Search Buzz").click();
-    await page.getByRole("combobox", { name: "Search Buzz" }).fill("ope");
+    await button(page, "Search Zion").click();
+    await page.getByRole("combobox", { name: "Search Zion" }).fill("ope");
     await page
       .locator(
         '[role="group"][aria-label="Channels"], [role="rowgroup"][aria-label="Channels"]',
@@ -378,9 +387,9 @@ test.describe("public search destination", () => {
     await page.setViewportSize({ width: 1100, height: 360 });
     await page.goto(app.origin);
     await expect(page.locator("[data-message-id]").first()).toBeVisible();
-    await button(page, "Search Buzz").click();
+    await button(page, "Search Zion").click();
     await page
-      .getByRole("combobox", { name: "Search Buzz" })
+      .getByRole("combobox", { name: "Search Zion" })
       .fill("crew-search");
     await page
       .getByRole("option", { name: /crew-search exact public reply/ })
@@ -408,7 +417,23 @@ test.describe("public search destination", () => {
       .toBe(true);
     // The reveal can leave the reply at the end without following it. Scroll
     // away and back as a reader does, so the thread follows its end.
-    await history.hover();
+    // A centered hover can reveal the top-layer message toolbar, which owns
+    // wheel input rather than scrolling history. Aim at a clear reading lane.
+    const probe = await history.evaluate((el) => ({
+      x: el.clientWidth - 48,
+      y: 80,
+    }));
+    await history.hover({ position: probe });
+    expect(
+      await history.evaluate((el, point) => {
+        const bounds = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          bounds.left + point.x,
+          bounds.top + point.y,
+        );
+        return !!hit && el.contains(hit) && !hit.closest("[popover]");
+      }, probe),
+    ).toBe(true);
     await page.mouse.wheel(0, -2000);
     await expect.poll(() => history.evaluate((el) => el.scrollTop)).toBe(0);
     await page.mouse.wheel(0, 2000);
@@ -480,12 +505,12 @@ test("keyboard selection follows its page while matching conversations arrive", 
   try {
     await page.goto(app.origin);
     await expect(rail).toBeVisible();
-    await button(page, "Search Buzz").click();
+    await button(page, "Search Zion").click();
     const dialog = page.getByRole("dialog", {
-      name: "Search Buzz",
+      name: "Search Zion",
       exact: true,
     });
-    const input = dialog.getByRole("combobox", { name: "Search Buzz" });
+    const input = dialog.getByRole("combobox", { name: "Search Zion" });
     await expect(
       dialog.getByText("Connecting to this community…", { exact: true }),
     ).toHaveCount(0);
@@ -540,9 +565,9 @@ test("a resting pointer does not steal the typed selection when results move und
   app,
 }) => {
   await page.goto(app.origin);
-  await button(page, "Search Buzz").click();
-  const dialog = page.getByRole("dialog", { name: "Search Buzz" });
-  const input = dialog.getByRole("combobox", { name: "Search Buzz" });
+  await button(page, "Search Zion").click();
+  const dialog = page.getByRole("dialog", { name: "Search Zion" });
+  const input = dialog.getByRole("combobox", { name: "Search Zion" });
   const rows = dialog.locator("[data-search-result]");
   // Measure where the row stays: after the entrance and recent activity load.
   await expect(
@@ -605,8 +630,8 @@ test.describe("message search operators", () => {
     // The same unproven ordering mitigation for the WebKit lost-fill failure
     // as the public search destination test above.
     await expect(page.locator("[data-message-id]").first()).toBeVisible();
-    await button(page, "Search Buzz").click();
-    const input = page.getByRole("combobox", { name: "Search Buzz" });
+    await button(page, "Search Zion").click();
+    const input = page.getByRole("combobox", { name: "Search Zion" });
     const query = `crew-search in:${app.openChannelId} from:${app.searchTarget.pubkey} after:2023-11-14 before:2023-11-15`;
     await input.fill(query);
     // Attribute a missing result to the typed query or to the search.
@@ -683,9 +708,9 @@ test("inline search exposes selected grid rows and hands focus to the destinatio
   app,
 }) => {
   await page.goto(app.origin);
-  await button(page, "Search Buzz").click();
-  const dialog = page.getByRole("dialog", { name: "Search Buzz" });
-  const input = dialog.getByRole("combobox", { name: "Search Buzz" });
+  await button(page, "Search Zion").click();
+  const dialog = page.getByRole("dialog", { name: "Search Zion" });
+  const input = dialog.getByRole("combobox", { name: "Search Zion" });
   await input.fill("color mode");
   const grid = dialog.getByRole("grid", { name: "Search results" });
   const row = grid.getByRole("row", {

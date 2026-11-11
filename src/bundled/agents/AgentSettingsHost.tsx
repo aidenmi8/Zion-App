@@ -155,7 +155,6 @@ function TypeField({
   const [error, setError] = useState("");
   const [helpOpen, setHelpOpen] = useState<"Remote" | "Local">();
   const providerButton = useRef<HTMLButtonElement>(null);
-  const cancel = useRef<HTMLButtonElement>(null);
   const [checking, setChecking] = useState(false);
   const [configuring, setConfiguring] = useState(false);
   const [migration, setMigration] = useState<{
@@ -318,7 +317,6 @@ function TypeField({
       )}
       <Dialog
         open={Boolean(migration) && !configuring}
-        initialFocus={cancel}
         preventClose={checking}
         onOpenChange={(open) => {
           if (!open) {
@@ -334,11 +332,7 @@ function TypeField({
         headerGap="compact"
         actions={
           <>
-            <Button
-              ref={cancel}
-              disabled={checking}
-              onClick={() => setMigration(undefined)}
-            >
+            <Button disabled={checking} onClick={() => setMigration(undefined)}>
               Cancel
             </Button>
             <Button
@@ -513,7 +507,7 @@ export function MigrationPreview({
       </div>
       <p className="m-0 text-body-sm text-secondary">
         The provider changes when you save settings. Your agent will continue
-        the conversation in Buzz.
+        the conversation in Zion.
         {warning && ` ${warning}`}
       </p>
       {discardDraft && (

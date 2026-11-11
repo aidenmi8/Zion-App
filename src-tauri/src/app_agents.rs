@@ -425,7 +425,7 @@ fn confirm_protection_storage(
         return Ok(());
     }
     if !confirm() {
-        return Err("Agent storage upgrade cancelled. Saved agents and defaults were left unchanged. Restart Buzz to retry a cancelled startup upgrade.".into());
+        return Err("Agent storage upgrade cancelled. Saved agents and defaults were left unchanged. Restart Zion to retry a cancelled startup upgrade.".into());
     }
     agents.upgrade_protection_storage()
 }
@@ -434,7 +434,7 @@ fn protection_upgrade_dialog() -> bool {
     let result = rfd::MessageDialog::new()
         .set_level(rfd::MessageLevel::Warning)
         .set_title("Upgrade local agents for protection?")
-        .set_description("This is a one-way upgrade for ALL agents on this device. Older Buzz builds will no longer be able to list, run or remove any of these agents, even after protection is turned off.\n\nDevelopment Buzz shares these agents with the installed app. Close other Buzz builds before continuing and keep a compatible build installed. Agent identities and keys will be preserved.\n\nCancel leaves the saved files unchanged.")
+        .set_description("This is a one-way upgrade for ALL agents on this device. Older Buzz builds will no longer be able to list, run or remove any of these agents, even after protection is turned off.\n\nDevelopment Zion shares these agents with the installed app. Close other Buzz builds before continuing and keep a compatible build installed. Agent identities and keys will be preserved.\n\nCancel leaves the saved files unchanged.")
         .set_buttons(rfd::MessageButtons::OkCancelCustom("Upgrade agents".into(), "Cancel".into()))
         .show();
     // Windows without common-controls-v6 falls back to the standard OK label.
@@ -518,7 +518,7 @@ impl Hosting {
     ) -> Result<T, String> {
         let held = self.held();
         if !held.contains_key(pubkey) {
-            return Err("Change protection in the Buzz app that runs this agent".into());
+            return Err("Change protection in the Zion app that runs this agent".into());
         }
         let dir = self.dir.as_ref().map_err(Clone::clone)?;
         let other = open_lock(&dir.join(format!(
@@ -526,7 +526,7 @@ impl Hosting {
             if self.packaged { "lock" } else { "packaged" }
         )))?;
         if !lock(other.try_lock())? {
-            return Err("Quit the other copy of Buzz before changing protection".into());
+            return Err("Quit the other copy of Zion before changing protection".into());
         }
         // Both hosting locks stay held across the native CAS write.
         change()

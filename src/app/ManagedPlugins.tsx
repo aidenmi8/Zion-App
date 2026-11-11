@@ -14,7 +14,6 @@ import type {
   PluginInfo,
 } from "../plugins/types";
 import { PluginAccessReview } from "./PluginAccessReview";
-import type { UrlPluginSource } from "../features/navigation/targets";
 import { importRollbackWarning } from "./PluginImport";
 import importStyles from "./PluginImport.module.css";
 import styles from "./Settings.module.css";
@@ -23,14 +22,8 @@ type Authorize = (
   repository: string,
 ) => Promise<{ repository: string; token: string } | null>;
 
-const location = (entry: ManagedEntry) =>
-  "url" in entry
-    ? entry.url
-    : [
-        entry.repository,
-        entry.reference,
-        ...(entry.path === "." ? [] : [entry.path]),
-      ].join(" · ");
+const location = ({ repository, reference, path }: ManagedEntry) =>
+  [repository, reference, ...(path === "." ? [] : [path])].join(" · ");
 
 export function ManagedPlugins({
   plugins,
@@ -49,15 +42,6 @@ export function ManagedPlugins({
 }) {
   const [reviewingId, setReviewingId] = useState<string>();
   const trigger = useRef<HTMLElement | null>(null);
-  // Opening Settings after a failed first fetch retries once, so restored
-  // connectivity shows up without waiting for the next scheduled attempt.
-  const retried = useRef(false);
-  const unavailable = !!plugins.imports && managed?.status === "unavailable";
-  useEffect(() => {
-    if (!unavailable || busy || retried.current) return;
-    retried.current = true;
-    void plugins.refreshManaged();
-  }, [unavailable, busy, plugins]);
   if (!plugins.imports || !managed) return null;
   // Rendered outside the group: installing the last pending row empties the group.
   const review = reviewingId ? (
@@ -82,41 +66,7 @@ export function ManagedPlugins({
       ? managed.plugins.filter(({ state }) => state !== "current")
       : [];
   const section =
-    managed.status === "loading" ? (
-      <section
-        aria-labelledby="managed-plugins-title"
-        className={styles.pluginCoreSection}
-      >
-        <InlineHeader id="managed-plugins-title" title="Recommended plugins" />
-        <p role="status" className="m-0 text-body-sm text-muted break-words">
-          Loading the recommended plugin list…
-        </p>
-      </section>
-    ) : managed.status === "unavailable" ? (
-      <section
-        aria-labelledby="managed-plugins-title"
-        className={styles.pluginCoreSection}
-      >
-        <InlineHeader
-          id="managed-plugins-title"
-          title="Recommended plugins unavailable"
-          actions={
-            <Button
-              size="sm"
-              variant="subtle"
-              disabled={busy}
-              onClick={() => void plugins.refreshManaged()}
-            >
-              Retry
-            </Button>
-          }
-        />
-        <p role="status" className="m-0 text-body-sm text-muted break-words">
-          Buzz couldn’t load the recommended plugin list from {managed.url}.{" "}
-          {managed.reason}
-        </p>
-      </section>
-    ) : managed.status === "invalid" ? (
+    managed.status === "invalid" ? (
       <section
         aria-labelledby="managed-plugins-title"
         className={styles.pluginCoreSection}
@@ -126,7 +76,7 @@ export function ManagedPlugins({
           title="Recommended plugins unavailable"
         />
         <p role="status" className="m-0 text-body-sm text-muted break-words">
-          Buzz couldn’t use the managed plugin file {managed.path}.{" "}
+          Zion couldn’t use the managed plugin file {managed.path}.{" "}
           {managed.reason}
         </p>
       </section>
@@ -265,11 +215,8 @@ type Review =
   | { status: "error"; reason: string }
   | { status: "ready"; preview: ImportPreview; path: string; key: string };
 
-const entryKey = (entry: ManagedEntry) =>
-  ("url" in entry
-    ? [entry.url, entry.sha256]
-    : [entry.repository, entry.reference, entry.commit, entry.path]
-  ).join("\n");
+const entryKey = ({ repository, reference, commit, path }: ManagedEntry) =>
+  [repository, reference, commit, path].join("\n");
 
 export function ManagedPluginReview({
   plugins,
@@ -281,7 +228,6 @@ export function ManagedPluginReview({
   holdReview,
   requestedBy,
   recheck,
-  confirm,
   returnFocus,
   onInstalled,
   onClose,
@@ -298,13 +244,10 @@ export function ManagedPluginReview({
   requestedBy?: Readonly<{ name: string; reason: string }> | undefined;
   /** Run as the owner confirms; a returned reason refuses the install. */
   recheck?: (() => string | undefined) | undefined;
-  /** Marks the install as confirmed until the returned function runs. */
-  confirm?: (() => () => void) | undefined;
   returnFocus: () => HTMLElement | null;
   onInstalled?: () => void;
   onClose: () => void;
 }) {
-  const cancel = useRef<HTMLButtonElement>(null);
   const imports = plugins.imports;
   const key = entry && entryKey(entry);
   useEffect(() => holdReview?.(), [holdReview]);
@@ -328,31 +271,6 @@ export function ManagedPluginReview({
     async (current: { active: boolean }, wanted: ManagedEntry) => {
       if (!imports) return;
       try {
-        if ("url" in wanted) {
-          const preview = await imports.url(wanted.url, wanted.sha256);
-          if (!preview) throw new Error("No plugin found at this URL.");
-          if (!current.active) {
-            discard(preview.token);
-            return;
-          }
-          const found = preview.candidates[0];
-          if (found?.manifest.id === wanted.id) {
-            token.current = preview.token;
-            setReview({
-              status: "ready",
-              preview,
-              path: found.path,
-              key: entryKey(wanted),
-            });
-            return;
-          }
-          discard(preview.token);
-          throw new Error(
-            found
-              ? `The plugin at this URL is ${found.manifest.id}, not ${wanted.id}.`
-              : (preview.warnings[0] ?? "No plugin found at this URL."),
-          );
-        }
         const signed = await authorizeGit?.(wanted.repository);
         const preview = await imports.git(
           signed?.repository ?? wanted.repository,
@@ -461,7 +379,6 @@ export function ManagedPluginReview({
     setInstalling(true);
     working.current = true;
     const value = review.preview.token;
-    const unconfirm = confirm?.();
     try {
       const success = await plugins.installImport(value, candidate.path);
       if (!success) {
@@ -481,7 +398,6 @@ export function ManagedPluginReview({
       onInstalled?.();
       onClose();
     } finally {
-      unconfirm?.();
       working.current = false;
       setInstalling(false);
     }
@@ -495,19 +411,12 @@ export function ManagedPluginReview({
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
-      initialFocus={cancel}
       title={
-        ready ? (
-          updating ? (
-            `Update ${name}`
-          ) : (
-            <>
-              Review <strong>{name} Plugin</strong> access
-            </>
-          )
-        ) : (
-          `Review ${entry?.id ?? "plugin"}`
-        )
+        ready
+          ? updating
+            ? `Update ${name}`
+            : "Review plugin access"
+          : `Review ${entry?.id ?? "plugin"}`
       }
       description={
         ready && !updating
@@ -539,7 +448,7 @@ export function ManagedPluginReview({
               Try again
             </Button>
           )}
-          <Button ref={cancel} disabled={installing} onClick={onClose}>
+          <Button disabled={installing} onClick={onClose}>
             {ready ? "Cancel" : "Close"}
           </Button>
           {ready && (
@@ -557,9 +466,8 @@ export function ManagedPluginReview({
     >
       {!ready && review.status !== "error" && (
         <p role="status">
-          {entry && "url" in entry
-            ? "Downloading the plugin…"
-            : "Reading the plugin at the pinned commit… Git imports may take up to a minute."}
+          Reading the plugin at the pinned commit… Git imports may take up to a
+          minute.
         </p>
       )}
       {review.status === "error" && (
@@ -569,7 +477,7 @@ export function ManagedPluginReview({
       )}
       {ready && candidate && entry && (
         <section aria-label="Managed plugin source" className="text-body-sm">
-          {requestedBy?.reason && (
+          {requestedBy && (
             <p className="mb-4 mt-0 break-words">
               {updating && `${requestedBy.name}: `}
               {requestedBy.reason}
@@ -579,13 +487,11 @@ export function ManagedPluginReview({
             {location(entry)}
           </code>
           <p className="mb-4 mt-1 break-all text-caption text-muted">
-            {"url" in entry
-              ? `SHA-256: ${entry.sha256}`
-              : `Commit: ${review.preview.commit}`}
+            Commit: {review.preview.commit}
           </p>
           {existing?.source === "bundled" ? (
             <p className="m-0">
-              This plugin is included with Buzz. Update Buzz to get its latest
+              This plugin is included with Zion. Update Zion to get its latest
               version.
             </p>
           ) : (
@@ -609,126 +515,5 @@ export function ManagedPluginReview({
         </section>
       )}
     </Dialog>
-  );
-}
-
-/**
- * Reviews a plugin's or a link's request to install a single artifact from a URL.
- * Git requests use the import dialog instead.
- */
-export function UrlPluginInstallReview({
-  plugins,
-  catalog,
-  busy,
-  source,
-  requester,
-  holdReview,
-  request,
-  returnFocus,
-  onClose,
-}: {
-  plugins: PluginManager;
-  catalog: Catalog;
-  busy: boolean;
-  source: UrlPluginSource;
-  requester: string;
-  holdReview?: (() => () => void) | undefined;
-  /** A plugin's pending request, settled by this review. */
-  request?:
-    | Readonly<{
-        id: number;
-        claim(id: number): boolean;
-        confirm(id: number): () => void;
-        settle(id: number, outcome: "installed" | "updated"): void;
-        end(id: number): void;
-      }>
-    | undefined;
-  returnFocus: () => HTMLElement | null;
-  onClose?: (() => void) | undefined;
-}) {
-  const [claimed, setClaimed] = useState(!request);
-  const [closed, setClosed] = useState(false);
-  const latest = useRef(catalog);
-  latest.current = catalog;
-  const [updating] = useState(() =>
-    catalog.plugins.some((plugin) => plugin.manifest.id === source.id),
-  );
-  const mounted = useRef(false);
-  const claimOnce = useEffectEvent(() => {
-    if (request && !claimed && request.claim(request.id)) setClaimed(true);
-  });
-  const endOnce = useEffectEvent(() => {
-    if (!mounted.current) request?.end(request.id);
-  });
-  useEffect(() => {
-    mounted.current = true;
-    claimOnce();
-    return () => {
-      mounted.current = false;
-      queueMicrotask(endOnce);
-    };
-  }, []);
-  if (!claimed || closed || !plugins.imports) return null;
-  return (
-    <ManagedPluginReview
-      plugins={plugins}
-      catalog={catalog}
-      busy={busy}
-      source={requester}
-      entry={{ ...source, state: updating ? "outdated" : "missing" }}
-      holdReview={holdReview}
-      requestedBy={{ name: requester, reason: "" }}
-      recheck={() => {
-        const current = latest.current.plugins.find(
-          (plugin) => plugin.manifest.id === source.id,
-        );
-        const saved = current?.updateSource;
-        if (current?.source !== "external" || (saved && "url" in saved))
-          return undefined;
-        return `${current.manifest.name} is already installed from ${
-          saved && "repository" in saved
-            ? saved.repository
-            : saved
-              ? saved.root
-              : "an unknown source"
-        }; remove it first to install it from ${source.url}.`;
-      }}
-      confirm={request && (() => request.confirm(request.id))}
-      returnFocus={returnFocus}
-      onInstalled={() =>
-        request?.settle(request.id, updating ? "updated" : "installed")
-      }
-      onClose={() => {
-        setClosed(true);
-        if (request) request.end(request.id);
-        onClose?.();
-      }}
-    />
-  );
-}
-
-/** Details for a plugin installed from a pinned artifact URL, which has no update check. */
-export function UrlPluginDetails({
-  source,
-}: {
-  source: Readonly<{ url: string; sha256: string }>;
-}) {
-  return (
-    <section aria-label="Plugin updates" className="text-body-sm">
-      <h3 className={`${importStyles.sourceHeading} text-caption`}>
-        Source URL
-      </h3>
-      <code className={`${importStyles.sourcePath} break-all`}>
-        {source.url}
-      </code>
-      <p className="mb-2 mt-1 break-all text-caption text-muted">
-        SHA-256: {source.sha256}
-      </p>
-      <p className="m-0 text-muted">
-        This plugin was installed from a single pinned file. To update it,
-        install the newer version from the plugin marketplace or a new install
-        link.
-      </p>
-    </section>
   );
 }

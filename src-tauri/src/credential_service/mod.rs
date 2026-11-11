@@ -251,7 +251,7 @@ impl CredentialService {
             return Ok(None);
         }
         if self.0.agents.caller_closed() {
-            return Err("Buzz has signed out for good".into());
+            return Err("Zion has signed out for good".into());
         }
         let url = self
             .0
@@ -346,7 +346,7 @@ impl CredentialService {
             .caller_live(&agent.pubkey, &agent.relay, incarnation, caller.retirements)
         {
             caller.revoked = true;
-            return Err("This Buzz credential was revoked".into());
+            return Err("This Zion credential was revoked".into());
         }
         match &caller.agent {
             Some(bound) if bound.pubkey == agent.pubkey && bound.relay == agent.relay => Ok(()),
@@ -439,7 +439,7 @@ impl CredentialService {
         #[cfg(unix)]
         if let Some(home) = home {
             advertise::write(&home, &self.0.instance, &url)
-                .map_err(|_| "Could not advertise the Buzz credential service")?;
+                .map_err(|_| "Could not advertise the Zion credential service")?;
             *self
                 .0
                 .advertised
@@ -460,12 +460,6 @@ impl CredentialService {
         if let Some(home) = advertised {
             advertise::remove(&home, &self.0.instance);
         }
-    }
-    /// A new page in the main webview: a request the old page left waiting is
-    /// declined, and until the new page's prompt is mounted, `pair` is refused
-    /// without asking.
-    pub(crate) fn page_load(&self) {
-        self.0.pairings.page_load();
     }
     /// Saves the revocation of every pairing promptly when the human signs
     /// out of NIP-FI or changes account. Requests fence on their own (see
@@ -493,7 +487,7 @@ impl CredentialService {
 
     async fn listen(&self) -> Result<String, String> {
         let (listener, authority) =
-            loopback::bind().map_err(|_| "Could not start the Buzz credential service")?;
+            loopback::bind().map_err(|_| "Could not start the Zion credential service")?;
         let url = format!("http://{authority}{ENDPOINT}");
         let (service, authority): (_, Arc<str>) = (self.clone(), authority.into());
         let answer = move |request| {
@@ -706,7 +700,7 @@ fn full_budgets() -> [Budget; METHODS.len() + 1] {
 /// A fresh 256-bit token, base64url.
 fn new_token() -> Result<Zeroizing<String>, String> {
     let mut secret = Zeroizing::new([0u8; 32]);
-    getrandom::fill(secret.as_mut()).map_err(|_| "Could not issue a Buzz credential")?;
+    getrandom::fill(secret.as_mut()).map_err(|_| "Could not issue a Zion credential")?;
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
     Ok(Zeroizing::new(URL_SAFE_NO_PAD.encode(secret.as_ref())))
 }
@@ -768,7 +762,7 @@ impl Failure {
         }
     }
     fn revoked() -> Self {
-        Self::new("revoked", "This Buzz credential was revoked")
+        Self::new("revoked", "This Zion credential was revoked")
     }
     fn unavailable(message: String) -> Self {
         Self::new("unavailable", &message)
@@ -853,7 +847,7 @@ async fn respond(
         if !version.is_some_and(|version| VERSIONS.contains(&version)) {
             return Err(Failure::new(
                 "unsupported_version",
-                "Use a version this Buzz supports",
+                "Use a version this Zion supports",
             ));
         }
         let message = message.map_err(|_| Failure::new("invalid_request", "Invalid request"))?;
@@ -915,12 +909,6 @@ pub(crate) async fn credential_pairing_communities(
 ) -> Result<(), ()> {
     service.0.pairings.set_communities(communities).await;
     Ok(())
-}
-
-/// The page's pairing prompt began (`mounted`) or stopped listening.
-#[tauri::command]
-pub(crate) fn credential_pair_prompt(service: tauri::State<'_, CredentialService>, mounted: bool) {
-    service.0.pairings.prompt(mounted);
 }
 
 #[tauri::command]

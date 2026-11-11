@@ -1,9 +1,3 @@
-import {
-  capabilitiesFrom,
-  createPermissions,
-  settledOrAborted,
-  type Permissions,
-} from "./capabilities";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 // Public projection of the development server's login; the parent credential stays in Node.
 // Trusted local callers can still use its dedicated native viewer/Decisions routes.
@@ -31,21 +25,21 @@ export const brokerBuilderlab = () =>
 type State = {
   revision: string;
   pending: boolean;
-  capabilitiesCheckedAt?: number;
   error?: string;
   auth: null | {
     subject: string;
     email?: string;
-    name?: string;
     expiresAt: string;
-    capabilities?: unknown;
+    capabilities?: {
+      can_use_remote_agents?: boolean;
+      can_use_builderlab_decisions?: boolean;
+    };
   };
 };
 
 export function createDevSession() {
   let state: LoginSnapshot = { status: "pending", checking: true };
   let owner: Credential | undefined;
-  let permissions: Permissions | undefined;
   let viewer: BuilderlabViewerSession | undefined;
   let lifetime = new AbortController();
   let disposed = false;
@@ -60,7 +54,6 @@ export function createDevSession() {
     lifetime.abort();
     lifetime = new AbortController();
     owner = undefined;
-    permissions = undefined;
     viewer = undefined;
   };
   const check = (expected: Credential) => {
@@ -87,43 +80,15 @@ export function createDevSession() {
     publish({ status: "pending", checking: true });
     const storage = await accountStorage(next.auth.subject);
     if (disposed || version !== at) return;
-    let account: Account = Object.freeze({
+    const account: Account = Object.freeze({
       subject: next.auth.subject,
       email: next.auth.email ?? "",
-      ...(next.auth.name ? { name: next.auth.name } : {}),
-      expiresAt: next.auth.expiresAt,
-      ...capabilitiesFrom(next.auth.capabilities),
+      canUseRemoteAgents:
+        next.auth.capabilities?.can_use_remote_agents === true,
+      canUseBuilderlabDecisions:
+        next.auth.capabilities?.can_use_builderlab_decisions === true,
     });
-    const current = Object.freeze({
-      get account() {
-        return account;
-      },
-      revision: next.revision,
-    });
-    owner = current;
-    permissions = createPermissions({
-      initial: account,
-      async read() {
-        const response = await fetch(
-          `/api/builderlab/capabilities?revision=${encodeURIComponent(current.revision)}`,
-          { signal: lifetime.signal },
-        );
-        if (!response.ok) throw new Error("Capability check failed");
-        const result = await response.json();
-        if (result?.revision !== current.revision)
-          throw new Error("Builderlab session changed");
-        return result;
-      },
-      changed(capabilities) {
-        if (disposed || owner !== current) return;
-        account = Object.freeze({ ...account, ...capabilities });
-      },
-      settled() {
-        if (!disposed && owner === current && state.status === "signed-in")
-          publish({ status: "signed-in", account });
-      },
-      checkedAt: next.capabilitiesCheckedAt,
-    });
+    owner = Object.freeze({ account, revision: next.revision });
     viewer = {
       broker: { origin: window.location.origin, revision: next.revision },
       storage,
@@ -183,22 +148,7 @@ export function createDevSession() {
     return result;
   }
   const session: BuilderlabSession = {
-    snapshot() {
-      if (
-        owner &&
-        state.status === "signed-in" &&
-        !state.checkingPermissions &&
-        permissions?.revalidate()
-      ) {
-        // Readers may be rendering: they see the flag now, listeners later.
-        const current = owner;
-        state = Object.freeze({ ...state, checkingPermissions: true });
-        queueMicrotask(() => {
-          if (owner === current) for (const listener of listeners) listener();
-        });
-      }
-      return state;
-    },
+    snapshot: () => state,
     subscribe(listener) {
       listeners.add(listener);
       return () => {
@@ -208,13 +158,6 @@ export function createDevSession() {
     credential() {
       if (!owner || disposed) throw new Error("Sign in to Builderlab first.");
       return owner;
-    },
-    async freshCredential(signal) {
-      const expected = session.credential();
-      session.snapshot();
-      if (permissions) await settledOrAborted(permissions, signal);
-      check(expected);
-      return expected;
     },
     async request(expected, input) {
       check(expected);

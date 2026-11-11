@@ -1,6 +1,5 @@
 import { test, expect } from "./source-fixture.mjs";
 import { wcagRatio } from "../../scripts/design-system/apca.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 // The browser moves the caret through prose, words and lines; the editor takes
 // over only at a mention's edge. That handoff is a native selection contract,
@@ -289,7 +288,9 @@ async function settleComposer(page, composer) {
 async function paint(page, input) {
   // The chip fades its background away to reveal the token's selection paint.
   // Sample the settled state, not whichever frame the screenshot happens to win.
-  await animationsSettled(input, { subtree: true });
+  await input.evaluate((el) =>
+    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)),
+  );
   await page.evaluate(() => new Promise(requestAnimationFrame));
   const points = await input.evaluate((el) => {
     const paragraph = el.querySelector("p");

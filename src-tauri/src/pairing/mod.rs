@@ -1,9 +1,10 @@
 mod identity;
+mod qr;
 mod relay;
 
 use buzz_pairing::{AbortReason, PairingSession, PayloadType, SessionState};
 use futures_util::FutureExt;
-use nostr::event::Event;
+use nostr_pairing::Event;
 use serde::Serialize;
 use std::{
     sync::{
@@ -81,9 +82,9 @@ impl Pairing {
         let mut active = self
             .0
             .lock()
-            .map_err(|_| "Pairing is unavailable. Restart Buzz.")?;
+            .map_err(|_| "Pairing is unavailable. Restart Zion.")?;
         if self.1.load(Ordering::Relaxed) {
-            return Err("Buzz is signing out.".into());
+            return Err("Zion is signing out.".into());
         }
         if let Some(old) = active.take() {
             old.cancel.cancel();
@@ -142,7 +143,7 @@ impl Pairing {
             let mut active = self
                 .0
                 .lock()
-                .map_err(|_| "Pairing is unavailable. Restart Buzz.")?;
+                .map_err(|_| "Pairing is unavailable. Restart Zion.")?;
             if active.as_ref().is_some_and(|a| a.id == id) {
                 stop(&mut active)
             } else {
@@ -170,7 +171,7 @@ pub fn pairing_status(pairing: tauri::State<'_, Pairing>, id: String) -> Result<
     let active = pairing
         .0
         .lock()
-        .map_err(|_| "Pairing is unavailable. Restart Buzz.")?;
+        .map_err(|_| "Pairing is unavailable. Restart Zion.")?;
     Ok(active
         .as_ref()
         .filter(|a| a.id == id)
@@ -188,7 +189,7 @@ fn decide(pairing: &Pairing, id: &str, decision: Decision) -> Result<(), String>
     let mut active = pairing
         .0
         .lock()
-        .map_err(|_| "Pairing is unavailable. Restart Buzz.")?;
+        .map_err(|_| "Pairing is unavailable. Restart Zion.")?;
     let active = active
         .as_mut()
         .filter(|a| a.id == id && matches!(a.status, Status::Code { .. }))
@@ -224,7 +225,7 @@ pub fn pairing_start(
         return Err("Unsupported pairing request.".into());
     }
     if viewer.len() != 64 || !viewer.bytes().all(|c| c.is_ascii_hexdigit()) {
-        return Err("Choose your Buzz account before pairing.".into());
+        return Err("Choose your Zion account before pairing.".into());
     }
     let origin = relay::community(&community)?;
     let (tx, rx) = mpsc::channel(1);
@@ -308,8 +309,7 @@ async fn run(
         let mut socket = relay::connect(&relay_url, Duration::from_secs(10)).await?;
         let (pending, auth) = relay::subscribe(&mut socket, &session, &relay_url).await?;
         let uri = Zeroizing::new(buzz_pairing::qr::encode_qr(&qr));
-        let svg = crate::qr::render(&uri, crate::qr::Variant::Light)
-            .map_err(|()| "Couldn’t create the pairing code.")?;
+        let svg = qr::render(&uri)?;
         Ok::<_, Failure>((
             Exchange {
                 session,

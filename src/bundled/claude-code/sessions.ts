@@ -130,10 +130,10 @@ export class AgentSessions {
     const saved = this.options.store.get(key);
     return (contextRoot ? saved?.threads?.[contextRoot] : saved?.seen) ?? 0;
   }
-  captureProtectionContext(key: string) {
+  protectionContext(key: string) {
     const live = this.live.get(key) ?? this.once.get(key);
     if (!live) throw new Error("The protected Claude session is unavailable");
-    return live.process.captureProtectionContext();
+    return live.process.protectionContext();
   }
   active(key: string) {
     return this.opening.has(key) || !!this.live.get(key)?.process.active;

@@ -172,7 +172,7 @@ export function createIdentity() {
       | "identity_create"
       | "identity_import"
       | "identity_import_legacy",
-    args: Readonly<Record<string, string>> = {},
+    nsec?: string,
   ) {
     if (busy || disposed) return;
     const restoring = command === "identity_restore";
@@ -182,9 +182,11 @@ export function createIdentity() {
       restoring ? { status: "loading" } : { status: "missing", busy: true },
     );
     try {
-      const viewer = await invoke<string | null>(command, args);
-      // Restore finds no key; an expected old Buzz import finds another one.
-      if (viewer === null && (restoring || "expected" in args))
+      const viewer = await invoke<string | null>(
+        command,
+        nsec === undefined ? {} : { nsec },
+      );
+      if (viewer === null && restoring)
         update({ status: "missing", busy: false });
       else if (typeof viewer === "string" && /^[a-f0-9]{64}$/.test(viewer))
         update({ status: "ready", viewer });
@@ -214,17 +216,12 @@ export function createIdentity() {
       };
     },
     retry: () => run("identity_restore"),
-    importKey: (nsec: string) => run("identity_import", { nsec }),
+    importKey: (nsec: string) => run("identity_import", nsec),
     create: () => run("identity_create"),
     /** Whether installed old Buzz left data here; never opens secure storage. */
     legacyAvailable: () => invoke<boolean>("identity_legacy_available"),
-    /**
-     * Reads old Buzz's saved key only now, so any OS prompt follows this click.
-     * With `expected`, saves it only when it is that key, and otherwise leaves
-     * no key and no error.
-     */
-    importLegacy: (expected?: string) =>
-      run("identity_import_legacy", expected === undefined ? {} : { expected }),
+    /** Reads old Buzz's saved key only now, so any OS prompt follows this click. */
+    importLegacy: () => run("identity_import_legacy"),
     backupAvailable: () => invoke<boolean>("nsec_backup_available"),
     beginRecovery,
     installRecovery,

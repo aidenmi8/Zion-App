@@ -2,7 +2,6 @@ import type { Plugin } from "vite";
 export function relayBrokerPlugin(options?: {
   archiveFile?: string;
   authorizedViewer?: string | undefined;
-  browserOrigin?: string | undefined;
   agentLibrary?: () => Promise<
     import("../src/features/agents/library").AgentLibrary
   >;

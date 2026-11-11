@@ -93,7 +93,7 @@ it.each(["adapter-refused", "grant-refused", "invalid-response"])(
   async (refusal) => {
     const h = await refusedLive(refusal);
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Restart Buzz to try again",
+      "Restart Zion to try again",
     );
     expect(screen.getByRole("button", { name: "Chats" })).toBeVisible();
     expect(

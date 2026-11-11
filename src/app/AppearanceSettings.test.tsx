@@ -291,7 +291,7 @@ it("selects and restores an accent color, including retry after a failed save", 
   ).toHaveLength(6);
 
   expect(
-    screen.getByRole("button", { name: "Citrus accent color" }),
+    screen.getByRole("button", { name: "Iris accent color" }),
   ).toHaveAttribute("aria-pressed", "true");
   const save = vi
     .spyOn(Storage.prototype, "setItem")
@@ -464,7 +464,7 @@ it("switches contrast through the shared select and restores it", async () => {
   expect(
     screen.queryByRole("option", { name: "Hummin’" }),
   ).not.toBeInTheDocument();
-  await user.click(await screen.findByRole("option", { name: "Buzzin’" }));
+  await user.click(await screen.findByRole("option", { name: "Vibrant" }));
   expect(appearance.snapshot().contrast).toBe("high");
   expect(localStorage.getItem("buzz-contrast.v1")).toBe("high");
   const restored = createAppearance();

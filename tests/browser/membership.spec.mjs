@@ -160,10 +160,11 @@ keyboardTest(
   "one keyboard scroll leaves bottom follow and live membership preserves the reader",
   async ({ page, app }) => {
     await openMessages(page, app);
-    // The open channel's row is quiet, and its identity locates it.
+    // Unread evidence contributes to the accessible name; channel identity does not change.
     const alpha = page.locator('button[data-channel-id="alpha"]');
-    await expect(alpha).toHaveAttribute("aria-current", "page");
-    await expect(alpha.getByRole("img")).toHaveCount(0);
+    await expect(alpha.getByRole("img")).toHaveAccessibleName(
+      /observed unread messages/,
+    );
     await alpha.click();
     const feed = page.getByRole("region", { name: "Channel message history" });
     const distance = () =>

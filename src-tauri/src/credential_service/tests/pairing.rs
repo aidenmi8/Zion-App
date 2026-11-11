@@ -89,65 +89,6 @@ async fn a_declined_pairing_is_denied_and_saves_nothing() {
     assert!(fixture.keychain.value.lock().unwrap().is_none());
 }
 
-#[tokio::test]
-async fn nothing_is_asked_while_no_prompt_is_mounted() {
-    let fixture = fixture();
-    // One unmount more than mounted leaves none, not a negative count.
-    fixture.service.0.pairings.prompt(false);
-    fixture.service.0.pairings.prompt(false);
-    for _ in 0..3 {
-        let reply = pair_request(&fixture.service, &[CLIENT, RELAY]).await;
-        assert_eq!(
-            error(&reply),
-            (StatusCode::SERVICE_UNAVAILABLE, "unavailable")
-        );
-        assert_eq!(
-            reply.1["message"],
-            "Buzz can't ask you yet; finish signing in or setting up in Buzz, then pair again"
-        );
-    }
-    assert!(!fixture
-        .notices
-        .lock()
-        .unwrap()
-        .iter()
-        .any(|notice| matches!(notice, Notice::Ask(_))));
-    // A fourth request in the window pairs: the refusals spent no rate slot.
-    fixture.service.0.pairings.prompt(true);
-    paired(&fixture).await;
-}
-
-#[tokio::test]
-async fn a_page_load_unmounts_every_prompt() {
-    let fixture = fixture();
-    fixture.service.0.pairings.prompt(true);
-    fixture.service.page_load();
-    let reply = pair_request(&fixture.service, &[CLIENT, RELAY]).await;
-    assert_eq!(
-        error(&reply),
-        (StatusCode::SERVICE_UNAVAILABLE, "unavailable")
-    );
-    // The new page's prompt.
-    fixture.service.0.pairings.prompt(true);
-    paired(&fixture).await;
-}
-
-#[tokio::test]
-async fn a_page_load_declines_the_request_it_left_waiting() {
-    let fixture = fixture();
-    let service = fixture.service.clone();
-    let pairing = tokio::spawn(async move { pair_request(&service, &[CLIENT, RELAY]).await });
-    asked(&fixture.notices).await;
-    // The new page never heard it, so nobody can answer it.
-    fixture.service.page_load();
-    let reply = pairing.await.unwrap();
-    assert_eq!(error(&reply), (StatusCode::FORBIDDEN, "denied"));
-    assert_eq!(reply.1["message"], "Pairing was declined in Buzz");
-    // A retry isn't held behind it as "another pairing request is waiting".
-    fixture.service.0.pairings.prompt(true);
-    paired(&fixture).await;
-}
-
 #[tokio::test(start_paused = true)]
 async fn an_unanswered_pairing_needs_approval_and_closes_its_prompt() {
     let fixture = fixture();
@@ -663,7 +604,7 @@ async fn an_approval_saved_during_a_community_removal_returns_no_token() {
     assert_eq!(status, StatusCode::FORBIDDEN, "{reply}");
     assert_eq!(
         reply["message"],
-        format!("{RELAY} isn't a community in Buzz; add it first")
+        format!("{RELAY} isn't a community in Zion; add it first")
     );
     assert!(reply["result"].is_null() || reply["result"].as_str().unwrap().is_empty());
 }
@@ -960,7 +901,7 @@ async fn an_expired_sign_in_asks_for_a_new_one() {
     assert!(reply.1["message"]
         .as_str()
         .unwrap()
-        .contains("sign in again in Buzz"));
+        .contains("sign in again in Zion"));
 }
 
 #[tokio::test]
@@ -977,7 +918,7 @@ async fn a_community_not_saved_here_is_refused_before_anyone_is_asked() {
         assert_eq!(reply["error"], "denied");
         assert_eq!(
             reply["message"],
-            format!("{relay} isn't a community in Buzz; add it first")
+            format!("{relay} isn't a community in Zion; add it first")
         );
     }
     assert!(fixture.notices.lock().unwrap().is_empty());
@@ -1002,7 +943,7 @@ async fn a_saved_community_matches_as_a_whole_normalized_url() {
     fixture.service.0.pairings.answer(&id, false);
     assert_eq!(
         pairing.await.unwrap().1["message"],
-        "Pairing was declined in Buzz"
+        "Pairing was declined in Zion"
     );
 }
 
@@ -1026,7 +967,7 @@ async fn removing_the_community_declines_the_waiting_request() {
     assert_eq!(status, StatusCode::FORBIDDEN, "{reply}");
     assert_eq!(
         reply["message"],
-        format!("{RELAY} isn't a community in Buzz; add it first")
+        format!("{RELAY} isn't a community in Zion; add it first")
     );
     // The prompt closed, and a late Allow issues nothing.
     assert!(fixture
@@ -1073,7 +1014,7 @@ async fn a_removal_left_nothing_waiting(fixture: &Fixture, code: &str) {
     fixture.service.0.pairings.answer(&id, false);
     let (status, reply) = next.await.unwrap();
     assert_eq!(status, StatusCode::FORBIDDEN, "{reply}");
-    assert_eq!(reply["message"], "Pairing was declined in Buzz");
+    assert_eq!(reply["message"], "Pairing was declined in Zion");
 }
 
 #[tokio::test]

@@ -65,11 +65,6 @@ const audience = {
   description:
     "agents: only other agents need this (delegating, asking or answering an agent)",
 } as const;
-const request = {
-  type: "string",
-  description:
-    "Id of the message that started this turn, which this post answers or works on, even when the reply targets an earlier thread root.",
-} as const;
 const final = {
   type: "boolean",
   description: "Your last message this turn; ends the turn.",
@@ -141,7 +136,7 @@ export async function captureToolBody(
 export const TOOLS: readonly Tool[] = [
   tool(
     "buzz_help",
-    "Read the bundled guide to using Buzz: chats, communities, identity, agents, and settings.",
+    "Read the bundled guide to using Zion: chats, communities, identity, agents, and settings.",
     {},
   ),
   tool(
@@ -151,8 +146,8 @@ export const TOOLS: readonly Tool[] = [
   ),
   tool(
     "agent_create",
-    "Submit an unsaved agent-creation draft for your owner to review. Nothing is created until they save it. Use a type key from agent_types; instructions are optional; picture is a local image file for its avatar.",
-    { type: str, name: str, instructions: str, picture: str },
+    "Submit an unsaved agent-creation draft for your owner to review. Nothing is created until they save it. Use a type key from agent_types; picture is a local image file for its avatar.",
+    { type: str, name: str, picture: str },
     ["type", "name"],
   ),
   tool(
@@ -188,14 +183,13 @@ export const TOOLS: readonly Tool[] = [
       files: strs,
       mentions: strs,
       audience,
-      request,
       final,
     },
     ["audience"],
   ),
   tool(
     "reply_in_subthread",
-    "Reply under a specific message, nested in a subthread below it rather than in the main thread. Use when asked to reply in a subthread, or to keep a side discussion under the message it is about. Takes send's text, path, files, mentions, audience, request and final; the channel is the parent's.",
+    "Reply under a specific message, nested in a subthread below it rather than in the main thread. Use when asked to reply in a subthread, or to keep a side discussion under the message it is about. Takes send's text, path, files, mentions, audience and final; the channel is the parent's.",
     {
       parent: { ...str, description: "Id of the message to reply under" },
       text: str,
@@ -203,7 +197,6 @@ export const TOOLS: readonly Tool[] = [
       files: strs,
       mentions: strs,
       audience,
-      request,
       final,
     },
     ["parent", "audience"],
@@ -236,7 +229,8 @@ export const TOOLS: readonly Tool[] = [
       thread: str,
       message_url: {
         type: "string",
-        description: "Buzz message link; replaces channel and thread.",
+        description:
+          "Zion message link (`buzz://`); replaces channel and thread.",
       },
       q: str,
       author: {
@@ -401,7 +395,7 @@ export const TOOLS: readonly Tool[] = [
   ),
   tool(
     "media_get",
-    "Get a file of any type from a Buzz media URL: saves it locally and gives its path; an image is also shown.",
+    "Get a file of any type from a Zion media URL: saves it locally and gives its path; an image is also shown.",
     { url: str },
     ["url"],
   ),
@@ -494,15 +488,9 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
     const type = text(args.type)?.trim();
     const name = text(args.name)?.trim();
     if (!type || !name) throw new Error("type and name are required");
-    const instructions = text(args.instructions);
     const picture = proposedPicture(client, args.picture);
     return JSON.stringify(
-      await client.createAgent({
-        type,
-        name,
-        ...(instructions && { instructions }),
-        ...(picture && { picture }),
-      }),
+      await client.createAgent({ type, name, ...(picture && { picture }) }),
     );
   },
   async self_handoff(tools, args) {
@@ -591,7 +579,6 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
   },
   async send(tools, args) {
     const { context } = tools;
-    args = ignoreBlankFields(args, ["channel", "reply"]);
     const reply =
       text(args.reply) ??
       (args.channel === undefined ? context.root : undefined);
@@ -607,7 +594,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
       throw new Error(
         "This chat stays at the top level: send again without reply.",
       );
-    const audienceTags = [...audienceOf(args), ...requestOf(args)];
+    const audienceTags = audienceOf(args);
     const thread = reply ? await tools.threadTags(reply) : [];
     return post(tools, channel, args, thread, audienceTags);
   },
@@ -622,7 +609,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
     if (!channel) throw new Error("No channel for that message.");
     if (context.topLevel && channel === context.channel)
       throw new Error("This chat stays at the top level: use send instead.");
-    const audienceTags = [...audienceOf(args), ...requestOf(args)];
+    const audienceTags = audienceOf(args);
     // As relay ingest reads it: the last valid marker, in either case.
     const root = target
       ? (threadReference(target)?.rootId ?? target.id)
@@ -647,23 +634,14 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
     const channel = tag(target, "h");
     if (!channel) throw new Error(`${id} is not a channel message.`);
     const content = required(args, "text");
-    if (!tools.client.effectiveEdit)
-      throw new Error("This host cannot obtain effective edit state.");
-    const effective = await tools.client.effectiveEdit(id, channel);
-    const after = (effective.created_at + 1) * 1000;
-    if (after - Date.now() > 5000)
-      throw new Error(
-        "The message was just changed; try again when the clock catches up.",
-      );
-    await waitUntil(after);
     await tools.client.publish({
       kind: 40003,
       content,
-      // An edit replaces attachments too, including an explicitly empty set.
+      // An edit replaces the attachments too, so it keeps the message's.
       tags: [
         ["h", channel],
         ["e", id],
-        ...effective.tags.filter((t) => t[0] === "imeta"),
+        ...target.tags.filter((t) => t[0] === "imeta"),
         ...(await tools.emoji(content)),
       ],
     });
@@ -723,13 +701,6 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 
   async read(tools, args) {
     const { client, context } = tools;
-    args = ignoreBlankFields(args, [
-      "channel",
-      "thread",
-      "message_url",
-      "author",
-      "before_id",
-    ]);
     if (args.message_url !== undefined) {
       if (args.channel !== undefined || args.thread !== undefined)
         throw new Error(
@@ -740,7 +711,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
           ? parseBuzzLink(args.message_url)
           : null;
       if (link?.format !== "legacy" || !link.messageId)
-        throw new Error("message_url must be a Buzz message link.");
+        throw new Error("message_url must be a Zion message link (`buzz://`).");
       args = { ...args, channel: link.channelId, thread: link.messageId };
     }
     const limit = typeof args.limit === "number" ? args.limit : undefined;
@@ -1476,7 +1447,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
   async repo(tools, args) {
     const { client } = tools;
     const { gitAuth } = client;
-    if (!gitAuth) throw new Error("Git access needs Buzz Desktop.");
+    if (!gitAuth) throw new Error("Git access needs Zion Desktop.");
     const channel = target(tools, args);
     const create = optional(args, "create");
     if (create !== undefined) {
@@ -1542,7 +1513,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
     const tabs = client.tabs;
     if (!tabs)
       throw new Error(
-        "Tabs are kept in Buzz Desktop and are unavailable here.",
+        "Tabs are kept in Zion Desktop and are unavailable here.",
       );
     // Only the channel the agent works in, so it never pulls the owner
     // toward another conversation.
@@ -1582,15 +1553,6 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
     return closed === "closed" ? "closed" : "not open";
   },
 };
-
-/** The signed request a post belongs to: the turn's triggering message,
- * which a thread reply's flattened reply link cannot name. */
-function requestOf(args: Args): string[][] {
-  if (args.request === undefined) return [];
-  const id = text(args.request)?.toLowerCase();
-  if (!id || !HEX.test(id)) throw new Error(`Not an event id: ${args.request}`);
-  return [["buzz:request", id]];
-}
 
 /** The tags for a message's required audience. */
 function audienceOf(args: Args): string[][] {
@@ -1869,7 +1831,7 @@ class Tools {
   async template(name: string) {
     if (!this.client.templates)
       throw new Error(
-        "Channel templates are kept in Buzz Desktop and are unavailable here.",
+        "Channel templates are kept in Zion Desktop and are unavailable here.",
       );
     const templates = await this.client.templates();
     const found = templates.filter(
@@ -2135,9 +2097,27 @@ class Tools {
       : [];
     const messages = edited([...events, ...edits]);
     const names = await this.names(messages.map((event) => event.pubkey));
-    return messages.map((event) =>
-      messageLine(event, names.get(event.pubkey), scope),
-    );
+    return messages.map((event) => {
+      const name = names.get(event.pubkey);
+      const channel = tag(event, "h");
+      const owner = tag(event, "auth");
+      const reference = threadReference(event);
+      const thread = reference?.rootId;
+      return [
+        event.id,
+        `from ${event.pubkey}`,
+        name && JSON.stringify(name),
+        owner && `claimed owner ${owner}`,
+        channel && channel !== scope.channel && `in ${channel}`,
+        thread && thread !== scope.root && `re ${thread}`,
+        reference &&
+          reference.parentId !== thread &&
+          `reply_to ${reference.parentId}`,
+        `at ${time(event.created_at)}: ${event.content}`,
+      ]
+        .filter(Boolean)
+        .join(" ");
+    });
   }
 
   /** NIP-30 tags for the community emoji `content` uses, as the composer
@@ -2220,32 +2200,6 @@ class Tools {
   }
 }
 
-/** A message's line in a read, omitting what `scope` names. */
-function messageLine(
-  event: BuzzEvent,
-  name: string | undefined,
-  scope: Readonly<{ channel?: string; root?: string }>,
-) {
-  const channel = tag(event, "h");
-  const owner = tag(event, "auth");
-  const reference = threadReference(event);
-  const thread = reference?.rootId;
-  return [
-    event.id,
-    `from ${event.pubkey}`,
-    name && JSON.stringify(name),
-    owner && `claimed owner ${owner}`,
-    channel && channel !== scope.channel && `in ${channel}`,
-    thread && thread !== scope.root && `re ${thread}`,
-    reference &&
-      reference.parentId !== thread &&
-      `reply_to ${reference.parentId}`,
-    `at ${time(event.created_at)}: ${event.content}`,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
 /** The root of the thread `event` is in, by its NIP-10 markers. */
 function rootOf(event: BuzzEvent) {
   const tags = event.tags.filter(
@@ -2258,26 +2212,21 @@ function rootOf(event: BuzzEvent) {
 
 /** Messages oldest first, each showing its author's latest edit. */
 function edited(events: readonly BuzzEvent[]) {
-  const messages = events.filter((event) => event.kind !== 40003);
-  const byId = new Map(messages.map((event) => [event.id, event]));
   const edits = new Map<string, BuzzEvent>();
   for (const event of events)
     if (event.kind === 40003) {
       const target = tag(event, "e");
-      const message = target ? byId.get(target) : undefined;
       const last = target && edits.get(target);
-      // Authorship first, so someone else's newer edit hides none.
-      if (
-        target &&
-        message?.pubkey === event.pubkey &&
-        (!last || last.created_at < event.created_at)
-      )
+      if (target && (!last || last.created_at < event.created_at))
         edits.set(target, event);
     }
-  return messages
+  return events
+    .filter((event) => event.kind !== 40003)
     .map((event) => {
       const edit = edits.get(event.id);
-      return edit ? { ...event, content: edit.content } : event;
+      return edit && edit.pubkey === event.pubkey
+        ? { ...event, content: edit.content }
+        : event;
     })
     .sort((a, b) => a.created_at - b.created_at);
 }
@@ -2747,8 +2696,7 @@ function joinRoleArg(args: Args) {
 /** A `since` or `before` argument: a Unix time in seconds, inclusive. */
 function unixTime(args: Args, key: string) {
   const value = args[key];
-  // 0 is left out too: no message is from before 1970.
-  if (value === undefined || value === 0) return undefined;
+  if (value === undefined) return undefined;
   // In milliseconds, a time from this century is past the year 5000.
   if (
     !Number.isSafeInteger(value) ||
@@ -2774,15 +2722,6 @@ function checkDetails(name?: string, about?: string, ttl?: number) {
 }
 const text = (value: unknown) =>
   typeof value === "string" && value.trim() ? value.trim() : undefined;
-const isBlank = (value: unknown) => typeof value === "string" && !value.trim();
-/** Some models fill in every optional field, sending "" for each one they
- * mean to leave out. Reads a blank one of `fields` as left out. */
-function ignoreBlankFields(args: Args, fields: readonly string[]): Args {
-  const checked = { ...args };
-  for (const field of fields)
-    if (isBlank(checked[field])) delete checked[field];
-  return checked;
-}
 const list = (value: unknown) =>
   Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")

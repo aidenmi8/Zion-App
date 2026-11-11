@@ -98,10 +98,10 @@ test.describe("public channel preview", () => {
     );
     await page.goto(app.origin);
     await page
-      .getByRole("button", { name: "Search Buzz", exact: true })
+      .getByRole("button", { name: "Search Zion", exact: true })
       .click();
     await page
-      .getByRole("combobox", { name: "Search Buzz" })
+      .getByRole("combobox", { name: "Search Zion" })
       .fill("crew-search");
     await page
       .getByRole("option", { name: /crew-search exact public reply/ })

@@ -4,13 +4,12 @@ import {
 } from "../../features/agents/request-work";
 
 const live = ({ state, lifecycle, dismissed }: RequestWork) =>
-  state !== "unknown" &&
-  (lifecycle
+  lifecycle
     ? state !== "done" &&
       state !== "superseded" &&
       state !== "stopped" &&
       !dismissed
-    : state === "working" || state === "error");
+    : state === "working" || state === "unknown" || state === "error";
 
 /** Message and thread displays project the same request status. Pulses alone
  * cannot establish which individual message triggered work. */
@@ -18,8 +17,8 @@ export function messageActivity(...args: Parameters<typeof requestWork>) {
   return messageWork(...args).live;
 }
 
-/** Working requests and persistent confirmed outcomes. Uncertain telemetry is
- * retained by requestWork for recovery, without becoming a conversation error. */
+/** Live work, and the local requests the owner stopped: those stay noted under
+ * their message until it is handled again. */
 export function messageWork(...args: Parameters<typeof requestWork>) {
   const work = requestWork(...args);
   return {

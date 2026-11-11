@@ -83,9 +83,6 @@ export function WorkflowCommunity({
   const eligible = channels.channels.filter(
     (item) => !item.huddle && !item.metadataPending,
   );
-  // Archived channels stay eligible, so their workflows can still be found,
-  // turned off and deleted, and an open editor keeps its draft.
-  const creatable = eligible.filter((item) => !item.archived);
   const [selected, setSelected] = useState("");
   const [selectedDefinition, setSelectedDefinition] = useState<
     WorkflowDefinition | "new" | undefined
@@ -165,11 +162,7 @@ export function WorkflowCommunity({
     setSelectedDefinition(definition);
     setSelected(next);
   };
-  // The one owner of New workflow's availability, in the header and the landing.
-  const beginCreate =
-    capability.availability.save && creatable.length
-      ? () => setCreateOpen(true)
-      : undefined;
+  const beginCreate = () => setCreateOpen(true);
   const deleteWorkflow = (definition: WorkflowDefinition) => {
     if (deleting.current) return;
     const locked = workflowOperationLocked(
@@ -225,7 +218,7 @@ export function WorkflowCommunity({
                     aria-label="New workflow"
                     title="New workflow"
                     aria-haspopup="dialog"
-                    disabled={!beginCreate}
+                    disabled={!capability.availability.save || !eligible.length}
                     icon={<PlusIcon size="1rem" aria-hidden="true" />}
                     onClick={beginCreate}
                   />
@@ -358,7 +351,7 @@ export function WorkflowCommunity({
           onCancel={() => setCreateOpen(false)}
           scope={
             <WorkflowChannelPicker
-              channels={creatable}
+              channels={eligible}
               onSelect={(id) => {
                 setCreateOpen(false);
                 openChannel(id, "new");

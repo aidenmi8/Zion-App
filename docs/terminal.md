@@ -46,7 +46,7 @@ not establish Linux or packaged desktop acceptance.
 
 ## Appearance and welcome
 
-BuzzTerm follows the host's shared Light/Dark colors,
+The Terminal pane follows the host's shared Light/Dark colors,
 including xterm's background, text, cursor and selection. Explicit ANSI colors retain
 xterm's distinct palette rather than collapsing CLI foreground/background pairs
 onto shared UI roles; xterm's minimum-contrast adjustment keeps ordinary text readable.

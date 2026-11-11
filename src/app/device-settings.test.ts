@@ -24,7 +24,7 @@ it("offers appearance and the message and agent preferences, and nothing else", 
   ).toEqual([
     { key: "appearance.mode", value: "system", saved: true },
     { key: "appearance.interface_size", value: 100, saved: true },
-    { key: "appearance.accent", value: "citrus", saved: true },
+    { key: "appearance.accent", value: "iris", saved: true },
     { key: "appearance.vibe", value: "low", saved: true },
     { key: "conversations.message_density", value: "default", saved: true },
     { key: "conversations.thread_placement", value: "side", saved: true },
@@ -80,7 +80,7 @@ it("refuses an accent's legacy alias rather than mapping it", () => {
     expect(() => set(settings, "appearance.accent", value)).toThrow(
       /appearance.accent takes/,
     );
-  expect(appearance.snapshot().accent).toBe("citrus");
+  expect(appearance.snapshot().accent).toBe("iris");
   appearance.dispose();
 });
 
@@ -114,7 +114,7 @@ it("changes nothing after the appearance it was made with is disposed", () => {
   const settings = deviceSettings(appearance);
   appearance.dispose();
   expect(() => set(settings, "appearance.mode", "dark")).toThrow(
-    "Buzz is closing",
+    "Zion is closing",
   );
   expect(localStorage.length).toBe(0);
 });

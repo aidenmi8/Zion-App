@@ -5,12 +5,9 @@ export async function openChannelDetails(
   page,
   { programmatic = false, clockPaused = false } = {},
 ) {
-  // A programmatic open reaches the trigger under a covering narrow pane,
-  // which removes it from the accessibility tree.
   const trigger = page.getByRole("button", {
     name: "Channel actions",
     exact: true,
-    includeHidden: programmatic,
   });
   if (programmatic) await trigger.evaluate((element) => element.click());
   else await trigger.click();

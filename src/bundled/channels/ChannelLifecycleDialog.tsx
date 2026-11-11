@@ -61,7 +61,8 @@ function copyFor(action: ChannelLifecycleAction, noun: LifecycleNoun) {
 }
 
 // Enter confirms unarchive and hide. Archive affects everyone, so it starts on
-// Cancel while retaining the action's prominent treatment.
+// Cancel, which takes the highlight; leave and delete start on a neutral Cancel
+// so it never competes with a red confirm.
 const reversible = new Set<ChannelLifecycleAction>(["unarchive", "hide"]);
 
 export function ChannelLifecycleDialog({
@@ -198,7 +199,12 @@ export function ChannelLifecycleDialog({
         description={description}
         actions={
           <>
-            <Button ref={cancel} type="button" onClick={close}>
+            <Button
+              ref={cancel}
+              type="button"
+              variant={action === "archive" ? "prominent" : "subtle"}
+              onClick={close}
+            >
               Cancel
             </Button>
             <Button
@@ -207,7 +213,7 @@ export function ChannelLifecycleDialog({
               variant={
                 action === "delete"
                   ? "destructive"
-                  : action === "archive" || confirms
+                  : confirms
                     ? "prominent"
                     : "subtle"
               }

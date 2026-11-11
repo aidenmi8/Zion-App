@@ -234,13 +234,13 @@ function useShortcutGroups({
   const groups: Group[] = [
     {
       id: "host",
-      label: "Buzz",
+      label: "Zion",
       sortKey: "",
       rows: host.map((shortcut) =>
         row(
           shortcut.id,
           shortcut,
-          "Buzz",
+          "Zion",
           desktop &&
             shortcut.binding.some((binding) =>
               includes(DESKTOP_CHORDS, binding),
@@ -391,7 +391,7 @@ export function ShortcutSettings({
       );
     if (desktop && includes(DESKTOP_CHORDS, binding))
       return refuse(
-        `${chord} is reserved for switching or closing tabs and quitting Buzz. Try another.`,
+        `${chord} is reserved for switching or closing tabs and quitting Zion. Try another.`,
       );
     const conflict = rows.find(
       (row) =>
@@ -594,7 +594,7 @@ function ShortcutRow({
         subtitle={
           row.readOnly ? (
             explained ? undefined : (
-              "Reserved by Buzz"
+              "Reserved by Zion"
             )
           ) : row.override || sharedWith.length > 0 ? (
             <>

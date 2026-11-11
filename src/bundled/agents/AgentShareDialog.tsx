@@ -13,7 +13,6 @@ import {
 } from "../../features/agents/agent-share";
 import type { Agent, RegisteredAgentType } from "../../features/agents/service";
 import { cardModel, drawShareCard } from "../../features/agents/share-card";
-import { agentCardColor } from "../../features/agents/agent-card-color";
 import {
   type SharedAgent,
   sharedAgents,
@@ -126,7 +125,6 @@ async function cardArt(
     modelOf(agent, type),
   ]);
   const harness = type?.title ?? "";
-  const accentColor = agentCardColor(agent.pubkey, picture);
   for (const art of picture ? [picture, undefined] : [undefined]) {
     try {
       const card = await drawShareCard({
@@ -134,14 +132,8 @@ async function cardArt(
         harness,
         model: cardModel(harness, model),
         picture: art,
-        accentColor,
       });
-      return {
-        bytes: new Uint8Array(await card.arrayBuffer()),
-        accentColor,
-        portrait:
-          art && agent.picture ? bundledPoster(agent.picture) : undefined,
-      };
+      return new Uint8Array(await card.arrayBuffer());
     } catch {
       // Try without the picture, then give up.
     }
@@ -226,13 +218,7 @@ export function AgentShareDialog({
   // Export shows the card it will save before saving it.
   const [previewing, setPreviewing] = useState(false);
   const [card, setCard] = useState<
-    | {
-        bytes: Uint8Array<ArrayBuffer>;
-        url: string;
-        accentColor: string;
-        portrait?: string | undefined;
-      }
-    | "failed"
+    { bytes: Uint8Array<ArrayBuffer>; url: string } | "failed"
   >();
   const [targets, setTargets] = useState<ShareTarget[]>([]);
   const [query, setQuery] = useState("");
@@ -322,7 +308,7 @@ export function AgentShareDialog({
   const file = async (as: "png" | "json") =>
     definition &&
     (as === "png"
-      ? snapshotPng(definition, (await cardArt(agent, type, session))?.bytes)
+      ? snapshotPng(definition, await cardArt(agent, type, session))
       : new Blob([snapshotJson(definition)], { type: "application/json" }));
   // biome-ignore lint/correctness/useExhaustiveDependencies: A changed agent or picture is drawn again.
   useEffect(() => setCard(undefined), [current, agent.picture]);
@@ -330,14 +316,14 @@ export function AgentShareDialog({
   useEffect(() => {
     if (!previewing || card) return;
     let live = true;
-    void cardArt(agent, type, session).then((art) => {
+    void cardArt(agent, type, session).then((bytes) => {
       if (!live) return;
       setCard(
-        art
+        bytes
           ? {
-              ...art,
+              bytes,
               url: URL.createObjectURL(
-                new Blob([art.bytes], { type: "image/png" }),
+                new Blob([bytes], { type: "image/png" }),
               ),
             }
           : "failed",
@@ -496,18 +482,21 @@ export function AgentShareDialog({
       title={previewing ? `Export ${agent.name}` : `Share ${agent.name}`}
       description={
         previewing
-          ? `Anyone with this card can add ${agent.name}, instructions and settings included. Memories and chats stay with you.`
+          ? `Anyone can add ${agent.name} to Zion with this card. Instructions and settings come along. Memories and chats stay with you.`
           : "Everyone gets their own copy. Later changes won’t sync."
       }
-      // Keep the same frame across steps so entering and leaving the card
-      // does not resize the dialog during its crossfade.
-      size="default"
-      height="stable-tall"
+      // Sharing keeps a steady frame for its results. The preview is centred
+      // and only as wide as the card needs, giving it the height instead; the
+      // card is sized to fit whole inside.
+      size={previewing ? "compact" : "default"}
+      height={previewing ? "stable-tall" : "stable"}
       bodyLayout="flex"
       initialFocus={search}
       preventClose={busy}
       step={
-        previewing ? { key: "export", scale: 1 } : { key: "share", scale: 1 }
+        previewing
+          ? { key: "export", scale: 0.95 }
+          : { key: "share", scale: 1.05 }
       }
       onOpenChange={(open) => {
         // Dismissing the preview goes back to sharing.
@@ -527,7 +516,7 @@ export function AgentShareDialog({
               <>
                 <MenuNote>
                   An agent card is an image that holds the agent’s setup, so
-                  anyone can add it to Buzz.
+                  anyone can add it to Zion.
                 </MenuNote>
                 <MenuRadioGroup
                   value={format}
@@ -633,8 +622,6 @@ export function AgentShareDialog({
             }
           >
             <AgentCardPreview
-              portrait={ready ? card.portrait : undefined}
-              accentColor={ready ? card.accentColor : undefined}
               src={ready ? card.url : undefined}
               alt={`${agent.name}’s agent card`}
             />

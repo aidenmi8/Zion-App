@@ -71,6 +71,7 @@ test.each(["button", "native menu"])(
       />,
     );
     expect(sessions.ensure).toHaveBeenCalledWith(context, true);
+    expect(screen.getByRole("heading", { name: "Terminal" })).toBeVisible();
     await user.click(input);
     await user.keyboard("{Escape}");
     expect(inputKey).toHaveBeenCalled();

@@ -21,7 +21,6 @@ import {
   useProfileGeneration,
   useRelayConnection,
 } from "../../features/relay/react";
-import { communityRefusalTitle } from "../../features/federated-identity/CommunitySignIn";
 import type { RelayData } from "../../features/relay/service";
 import type { RelaySession } from "../../features/relay/session";
 import { ArrowRightIcon, ChecksIcon } from "../../shared/design-system/icons";
@@ -85,12 +84,9 @@ export function InboxPreview({
       <p className={`text-body text-subtle ${styles.notice}`} role="status">
         {connection.status === "connecting"
           ? "Connecting to your activity…"
-          : connection.denied
-            ? // Its notice, on every page, offers what fixes it.
-              communityRefusalTitle(connection.refusal)
-            : (connection.error ?? "Choose a community to see your activity.")}
+          : (connection.error ?? "Choose a community to see your activity.")}
       </p>
-      {connection.status === "error" && !connection.denied && (
+      {connection.status === "error" && (
         <div className={styles.notice}>
           <Button size="sm" onClick={relay.retry}>
             Retry connection
@@ -258,15 +254,13 @@ function InboxPreviewCard({
     if (failure || document.activeElement !== document.body) return;
     unreadOnlyControl.current?.focus({ preventScroll: true });
   }, [failure]);
-  // Each conversation counts once, under its most specific kind, as the
-  // page's filters with Unread only would list it. A Solo chat's own row has
-  // no kind, so the total leads.
+  // Each conversation counts once, under its most specific kind.
   let dms = 0;
   let mentions = 0;
   let threads = 0;
   for (const item of unread) {
     if (channelOf(item.channelId)?.channelType === "dm") dms++;
-    else if (item.mention && hasUnread(item.mention)) mentions++;
+    else if (item.mentioned) mentions++;
     else if (item.thread) threads++;
   }
   const kinds = [
@@ -277,7 +271,7 @@ function InboxPreviewCard({
   const summary = loading
     ? "Checking recent activity…"
     : unread.length
-      ? [`${unread.length} unread`, ...kinds].join(" · ")
+      ? `${kinds.length ? kinds.join(" · ") : unread.length} unread`
       : checked
         ? "Nothing unread"
         : undefined;

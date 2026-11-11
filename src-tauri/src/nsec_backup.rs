@@ -86,18 +86,8 @@ pub(crate) struct BackupStatus {
     pass: u64,
     /// Storage root present and `source_allowed(Builderlab)`.
     builderlab: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    management: Option<Management>,
     #[serde(flatten)]
     progress: Progress,
-}
-/// Public presentation policy, separate from consent and the latest pass's health.
-#[derive(Clone, Debug, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Management {
-    pubkey: String,
-    policy: &'static str,
-    initial_backup_confirmed: bool,
 }
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
 #[serde(tag = "status", rename_all = "snake_case")]
@@ -243,7 +233,6 @@ struct State {
     seq: u64,
     pass: u64,
     progress: Progress,
-    management: Option<Management>,
     watcher: Option<Channel<BackupStatus>>,
 }
 impl State {
@@ -349,8 +338,6 @@ impl NsecBackupHost {
         if let Ok(mut state) = self.state.lock() {
             state.retire();
             state.retire_restore();
-            state.management = None;
-            self.publish(&mut state, Progress::Idle);
         }
         self.trigger(identity);
     }
@@ -369,46 +356,11 @@ impl NsecBackupHost {
         let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         self.snapshot(&state)
     }
-    async fn initialize_management(&self, identity: &IdentityHost) -> Result<()> {
-        let epoch = self.state.lock().map_err(|_| RETRY)?.epoch;
-        let pubkey = identity.saved_viewer().await?;
-        let mut state = self.state.lock().map_err(|_| RETRY)?;
-        if state.closed || state.epoch != epoch {
-            return Err(CANCELED.into());
-        }
-        if let Some(pubkey) = pubkey {
-            self.management_for(&mut state, &pubkey);
-        } else {
-            state.management = None;
-        }
-        let progress = state.progress.clone();
-        self.publish(&mut state, progress);
-        Ok(())
-    }
-    fn management_for(&self, state: &mut State, pubkey: &str) {
-        if state
-            .management
-            .as_ref()
-            .is_some_and(|m| m.pubkey == pubkey)
-        {
-            return;
-        }
-        state.management = Some(Management {
-            pubkey: pubkey.into(),
-            policy: if managed_build() {
-                "organization-managed"
-            } else {
-                "self-managed"
-            },
-            initial_backup_confirmed: false,
-        });
-    }
     fn snapshot(&self, state: &State) -> BackupStatus {
         BackupStatus {
             seq: state.seq,
             pass: state.pass,
             builderlab: self.builderlab(),
-            management: state.management.clone(),
             progress: state.progress.clone(),
         }
     }
@@ -468,13 +420,6 @@ impl NsecBackupHost {
         }
         state.retire();
         state.session = federated;
-        // A new account must prove its own scoped receipt. Signing out
-        // keeps the already-confirmed presentation.
-        if state.session.is_some() {
-            if let Some(management) = &mut state.management {
-                management.initial_backup_confirmed = false;
-            }
-        }
         drop(state);
         Ok(self.trigger(identity))
     }
@@ -576,14 +521,7 @@ impl NsecBackupHost {
                     return;
                 }
                 let progress = match outcome {
-                    Ok(Outcome::Complete) => {
-                        // Complete comes only from a scoped persisted receipt or a
-                        // confirmed upload, after checking this account's binding.
-                        if let Some(management) = &mut state.management {
-                            management.initial_backup_confirmed = true;
-                        }
-                        Progress::Complete
-                    }
+                    Ok(Outcome::Complete) => Progress::Complete,
                     Ok(Outcome::Waiting(reason)) => Progress::Waiting { reason },
                     Err(Stop::Failed(kind)) => Progress::Failed { kind },
                     Ok(Outcome::Idle) | Err(Stop::Canceled) => Progress::Idle,
@@ -616,13 +554,6 @@ impl NsecBackupHost {
             // A denied, busy or locked store is not an absent key.
             Err(_) => return Err(Stop::Failed(Failure::Storage)),
         };
-        {
-            let mut state = self.state.lock().map_err(|_| RETRY)?;
-            if state.closed || state.epoch != epoch {
-                return Err(Stop::Canceled);
-            }
-            self.management_for(&mut state, &pubkey);
-        }
         // Hold consent's shared lease until this pass ends, including persisted retries.
         let Some(_consent) = crate::nsec_backup_choice::admit(
             &self.root.as_ref().ok_or(UNAVAILABLE)?.join("choice.json"),
@@ -1289,12 +1220,8 @@ pub(crate) fn nsec_backup_retry(
     host.retry(identity.inner().clone())
 }
 #[tauri::command]
-pub(crate) async fn nsec_backup_state(
-    host: tauri::State<'_, NsecBackupHost>,
-    identity: tauri::State<'_, IdentityHost>,
-) -> Result<BackupStatus> {
-    host.initialize_management(&identity).await?;
-    Ok(host.status())
+pub(crate) fn nsec_backup_state(host: tauri::State<'_, NsecBackupHost>) -> BackupStatus {
+    host.status()
 }
 /// Replace the status watcher. Register before reading `nsec_backup_state`, then keep
 /// whichever status has the higher `seq`.

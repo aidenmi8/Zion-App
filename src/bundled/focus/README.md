@@ -1,6 +1,6 @@
 # Focus
 
-Work with your agents without the rest of Buzz competing for attention.
+Work with your agents without the rest of Zion competing for attention.
 
 ## Getting started
 
@@ -27,7 +27,7 @@ Work with your agents without the rest of Buzz competing for attention.
 - Alerts from everything else, including Reminders, are not shown or saved.
   Those conversations keep their unread state.
 - Turning the plugin off mid-Focus shows everything again at once, and 🔭
-  stays until it expires. Quitting Buzz keeps Focus on for next time.
+  stays until it expires. Quitting Zion keeps Focus on for next time.
 - **Settings → Plugins → Focus** sets the default length: the one the dialog
   starts with and ⌥F uses. Change the shortcut's keys in
   **Settings → Shortcuts**.

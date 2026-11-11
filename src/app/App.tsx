@@ -352,14 +352,14 @@ function ConnectedAppContent({ services }: { services: AppServices }) {
   // Keep the parser launch surface through local bootstrap, not network refresh.
   if (!settings && restoring)
     return document.getElementById("buzz-launch") ? null : (
-      <div className="buzz-launch" role="status" aria-label="Opening Buzz">
+      <div className="buzz-launch" role="status" aria-label="Opening Zion">
         <LoadingWindowHeader />
         <picture>
           <source
             media="(prefers-reduced-motion: reduce)"
             srcSet="/buzz-mark.svg"
           />
-          <img src="/buzz-loading-mark.svg" alt="Buzz" width="72" height="72" />
+          <img src="/buzz-loading-mark.svg" alt="Zion" width="72" height="72" />
         </picture>
       </div>
     );
@@ -384,7 +384,6 @@ function ConnectedAppContent({ services }: { services: AppServices }) {
             version: 1,
             kind: "settings",
             section: "block.builderlab/login",
-            route: { version: 1, params: "create-community" },
           })
         }
       />
@@ -555,7 +554,7 @@ function ConnectedAppContent({ services }: { services: AppServices }) {
         <EmptyState
           icon={<WarningCircleIcon />}
           title="This page isn’t available"
-          description="It may have been removed, or you may need to update Buzz."
+          description="It may have been removed, or you may need to update Zion."
           action={
             <>
               {messagesButton("primary")}
@@ -692,6 +691,7 @@ function ConnectedAppContent({ services }: { services: AppServices }) {
           companion={pageOwnsCompanion ? undefined : companion}
           pages={startup === "ready" ? route.pages : []}
           selected={workspace.selected}
+          target={workspace.target}
           navigationAttempt={workspace.attempt}
           onSelect={select}
           tone={presentation.tone}

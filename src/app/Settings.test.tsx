@@ -14,7 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { useSyncExternalStore } from "react";
 import { ToastProvider } from "../shared/design-system/ui/Toast";
 import { Context } from "@deepseek-ai/cordis";
-import { afterEach, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { createCommunityMembership } from "../bundled/moderation/membership";
 import {
   SettingsCardsService,
@@ -22,7 +22,6 @@ import {
   type SettingsCards,
 } from "../features/settings/service";
 import type { ClientSnapshot } from "../features/communities/service";
-import { federatedFixture } from "../features/federated-identity/testing";
 import type { DecisionsService } from "../features/decisions/service";
 import type { RelayData } from "../features/relay/service";
 import type { Contribution } from "../plugins/contributions";
@@ -253,7 +252,7 @@ it.each([false, true])("groups plugins (Essentials=%s)", async (essentials) => {
               id: "buzz.channels",
               name: "Channels",
               apiVersion: 1,
-              description: "Navigate channels and hold conversations in Buzz.",
+              description: "Navigate channels and hold conversations in Zion.",
               discovery: {
                 category: "communication",
                 ...(essentials ? { tags: ["Essentials"] } : {}),
@@ -271,7 +270,7 @@ it.each([false, true])("groups plugins (Essentials=%s)", async (essentials) => {
               id: "buzz.codex",
               name: "Codex",
               apiVersion: 1,
-              description: "Run local Codex coding agents in Buzz.",
+              description: "Run local Codex coding agents in Zion.",
               discovery: {
                 category: "agents",
                 ...(essentials ? { tags: ["Essentials"] } : {}),
@@ -418,9 +417,9 @@ it.each([false, true])("groups plugins (Essentials=%s)", async (essentials) => {
     }),
   ).toBeEnabled();
   expect(content).toHaveTextContent(
-    "Navigate channels and hold conversations in Buzz.",
+    "Navigate channels and hold conversations in Zion.",
   );
-  expect(content).toHaveTextContent("Run local Codex coding agents in Buzz.");
+  expect(content).toHaveTextContent("Run local Codex coding agents in Zion.");
   expect(
     within(content).getByRole("button", { name: "View Voice Notes details" }),
   ).toHaveAttribute("data-enabled", "true");
@@ -573,7 +572,7 @@ it("opens each plugin's existing metadata and controls in a detail aside", () =>
   fireEvent.error(artwork);
   expect(bundledCard.querySelector("img")).toBeNull();
   expect(bundledCard.querySelectorAll("svg")).toHaveLength(3);
-  expect(within(bundledCard).queryByText("Buzz")).toBeNull();
+  expect(within(bundledCard).queryByText("Zion")).toBeNull();
   expect(
     within(bundledCard).getByText("Channels").nextElementSibling,
   ).toHaveAttribute("aria-hidden", "true");
@@ -591,10 +590,10 @@ it("opens each plugin's existing metadata and controls in a detail aside", () =>
   expect(bundled.parentElement).toContainElement(
     screen.getByRole("navigation", { name: "Settings sections" }),
   );
-  expect(within(bundled).queryByText("Buzz")).toBeNull();
+  expect(within(bundled).queryByText("Zion")).toBeNull();
   expect(within(bundled).getByText("buzz.channels")).toBeVisible();
   expect(within(bundled).queryByText("Signature")).toBeNull();
-  const badge = within(bundled).getByText("Made by Buzz");
+  const badge = within(bundled).getByText("Made by Sentra");
   expect(badge).toBeVisible();
   expect(badge.parentElement?.parentElement).toContainElement(
     within(bundled).getByRole("heading", { name: "Channels" }),
@@ -672,7 +671,7 @@ it("opens each plugin's existing metadata and controls in a detail aside", () =>
     expect(within(external).getByText(value)).toBeVisible();
   expect(within(external).getAllByText("publisher-public-key")).toHaveLength(2);
   expect(within(external).getByText("Installed")).toBeVisible();
-  expect(within(external).queryByText("Made by Buzz")).toBeNull();
+  expect(within(external).queryByText("Made by Sentra")).toBeNull();
   expect(within(external).getByText("tasks")).toBeVisible();
   expect(within(external).queryByText("Essentials")).toBeNull();
 
@@ -1330,94 +1329,6 @@ it("opens Manage plugins from the Decisions API hint", async () => {
   expect(screen.getByRole("region", { name: "Manage plugins" })).toHaveFocus();
 });
 
-it("opens Builderlab from Identity sync only while its card is registered", async () => {
-  vi.stubEnv("VITE_BUZZ_BUILDERLAB_URL", "https://builderlab.example");
-  onTestFinished(() => {
-    vi.unstubAllEnvs();
-  });
-  const user = userEvent.setup();
-  const builderlab = {
-    ...card("login", "Builderlab", "Plugins"),
-    key: "block.builderlab/login",
-    pluginId: "block.builderlab",
-  };
-  const { cards, set } = registry([builderlab]);
-  const status = {
-    seq: 1,
-    pass: 1,
-    builderlab: true,
-    status: "waiting",
-    reason: "not_linked",
-    management: {
-      pubkey: communityState.viewer,
-      policy: "self-managed",
-      initialBackupConfirmed: false,
-    },
-  };
-  const identity = {
-    exportKey: vi.fn(),
-    backup: {
-      subscribe: () => () => {},
-      snapshot: () => status,
-      ready: async () => status,
-    },
-  } as unknown as Parameters<typeof Settings>[0]["identity"];
-  const onSection = vi.fn();
-  const view = (section: string) => (
-    <ToastProvider>
-      <main id="main-content" tabIndex={-1}>
-        <Settings
-          {...host}
-          cards={cards}
-          identity={identity}
-          navigation={
-            {
-              target: { version: 1, kind: "settings", section },
-              complete: () => true,
-            } as never
-          }
-          onSection={onSection}
-        />
-      </main>
-    </ToastProvider>
-  );
-  const identitySection = () =>
-    screen.getByRole("region", { name: "Identity" });
-  const link = () =>
-    within(identitySection()).queryByRole("button", { name: "Builderlab" });
-  const sentence = () =>
-    within(identitySection()).queryByText(
-      (_, el) =>
-        el?.tagName === "P" &&
-        el.textContent ===
-          "This key isn’t linked to your Builderlab account yet, so it can’t be backed up",
-    );
-  const { rerender } = render(view("identity"));
-  await user.click(screen.getByRole("button", { name: "More options" }));
-  await within(identitySection()).findByRole("button", { name: "Builderlab" });
-  const shown = sentence();
-  expect(shown).not.toBeNull();
-  // Turning the plugin off while Identity is open unlinks the name in place.
-  act(() => set([]));
-  expect(link()).toBeNull();
-  expect(sentence()).toBe(shown);
-  act(() => set([builderlab]));
-  await user.click(link() as HTMLElement);
-  expect(onSection).toHaveBeenCalledExactlyOnceWith("block.builderlab/login");
-  // The link goes with Identity, so focus moves into the section it opened.
-  rerender(view("block.builderlab/login"));
-  expect(screen.getByText("Builderlab body")).toBeVisible();
-  expect(document.getElementById("main-content")).toHaveFocus();
-
-  // With the plugin off, the sentence still names Builderlab, unlinked.
-  act(() => set([]));
-  rerender(view("identity"));
-  await user.click(screen.getByRole("button", { name: "More options" }));
-  await waitFor(() => expect(sentence()).not.toBeNull());
-  expect(link()).toBeNull();
-  expect(sentence()).not.toBeNull();
-});
-
 function pluginSectionsFixture(
   cards: SettingsCards,
   decisions?: DecisionsService,
@@ -1807,7 +1718,7 @@ it("keeps the plugin Open in Buzz shows when the import's dismissal lands later"
   onPluginImportClosed.mockImplementation(() =>
     setTimeout(() => land("plugins", { entryId: "p1", traversal: true })),
   );
-  fireEvent.click(await screen.findByRole("button", { name: "Open in Buzz" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Open in Zion" }));
   await waitFor(() => expect(entry()).toBe("p1"));
   expect(shown()).toBe("Codex");
   expect(stored("p1")).toBe("buzz.codex");
@@ -1822,7 +1733,7 @@ it("records the plugin Open in Buzz shows on the visit replacing its import", as
   onPluginImportClosed.mockImplementation(() =>
     land("plugins", { entryId: "p2" }),
   );
-  fireEvent.click(await screen.findByRole("button", { name: "Open in Buzz" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Open in Zion" }));
   await waitFor(() => expect(shown()).toBe("Codex"));
   expect(stored("p2")).toBe("buzz.codex");
   visit("appearance", { entryId: "s3" });
@@ -2055,7 +1966,6 @@ it("keeps Community admin hidden after applying a verified ordinary-member roste
       session: {
         relayAuthor,
         read: () => roster,
-        subscribeLive: () => () => {},
         profiles: { ensure: vi.fn(async () => {}) },
       },
     }),
@@ -2169,7 +2079,7 @@ it.each(["primary", null])(
       ...(selected
         ? [undefined, "Community", "Community admin"]
         : ["Personal space"]),
-      "Buzz",
+      "Zion",
       "Plugins",
       "Communities",
     ]);
@@ -2242,7 +2152,7 @@ it("renders a bundled plugin's README below its status, never an external one's"
   const summary = within(bundled).getByText("One-line description.");
   expect(summary).toBeVisible();
   expect(summary.parentElement).toContainElement(
-    within(bundled).getByText("Made by Buzz"),
+    within(bundled).getByText("Made by Sentra"),
   );
   expect(within(about).getByText("Hold conversations.")).toBeVisible();
   expect(
@@ -2792,54 +2702,17 @@ it("keeps identity independent of community profile and clears revealed keys on 
     screen.queryByRole("button", { name: "Reveal private key" }),
   ).toBeNull();
   await user.click(screen.getByRole("button", { name: "Identity" }));
-  await user.click(screen.getByRole("button", { name: "More options" }));
-  await user.click(screen.getByRole("button", { name: "Private key actions" }));
-  await user.click(
-    await screen.findByRole("menuitem", { name: "Reveal private key" }),
-  );
+  await user.click(screen.getByRole("button", { name: "Reveal private key" }));
   expect(screen.getByLabelText("Private key (nsec)")).toHaveValue(
     "nsec-public-test-fixture",
   );
   await user.click(screen.getByRole("button", { name: "Appearance" }));
   expect(screen.queryByLabelText("Private key (nsec)")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Identity" }));
-  await user.click(screen.getByRole("button", { name: "More options" }));
-  expect(
-    screen.getByRole("button", { name: "Private key actions" }),
-  ).toHaveTextContent("••••••••••••••••");
-  expect(exportKey).toHaveBeenCalledTimes(1);
-});
-
-it("retires contributed identity rows and their stale actions with the owning revision", async () => {
-  const navigate = vi.fn();
-  let stillActive = () => false;
-  const entry = {
-    ...card("account", "Account", "Plugins"),
-    identityRow: ({ active }: { active(): boolean }) => {
-      stillActive = active;
-      return (
-        <button type="button" onClick={() => active() && navigate()}>
-          Open account settings
-        </button>
-      );
-    },
-  };
-  const { cards, set } = registry([entry]);
-  const h = federatedFixture();
-  render(
-    <ToastProvider>
-      <Settings {...host} cards={cards} federatedIdentity={h.service} />
-    </ToastProvider>,
+  expect(screen.getByLabelText("Private key (nsec)")).toHaveValue(
+    "••••••••••••••••",
   );
-  fireEvent.click(screen.getByRole("button", { name: "Identity" }));
-  const link = await screen.findByRole("button", {
-    name: "Open account settings",
-  });
-  fireEvent.click(link);
-  expect(navigate).toHaveBeenCalledOnce();
-  act(() => set([]));
-  expect(screen.queryByText("Open account settings")).toBeNull();
-  expect(stillActive()).toBe(false);
+  expect(exportKey).toHaveBeenCalledTimes(1);
 });
 
 it("offers Retry beside a failed installed revision without changing saved state", () => {
@@ -3006,33 +2879,6 @@ it("allows Add to install while an independent folder check is pending, includin
   );
 });
 
-it("shows a URL-installed plugin's pinned file instead of offering a folder or Git update", async () => {
-  const fixture = reviewPluginFixture();
-  const sha256 = "e".repeat(64);
-  const checkFolder = vi.fn();
-  Object.assign(fixture.external, {
-    updateSource: { url: "https://plugins.example.org/zebra.json", sha256 },
-  });
-  Object.assign(fixture.manager, {
-    imports: { checkFolder, discard: vi.fn(async () => {}) },
-  });
-  act(fixture.publish);
-  fireEvent.click(
-    screen.getByRole("button", { name: "View Zebra external details" }),
-  );
-  const updates = await screen.findByRole("region", {
-    name: "Plugin updates",
-  });
-  expect(updates).toHaveTextContent("https://plugins.example.org/zebra.json");
-  expect(updates).toHaveTextContent(`SHA-256: ${sha256}`);
-  expect(updates).toHaveTextContent(/plugin marketplace or a new install link/);
-  expect(screen.queryByText(/No saved source/)).toBeNull();
-  expect(
-    screen.queryByRole("button", { name: "Check for updates" }),
-  ).toBeNull();
-  expect(checkFolder).not.toHaveBeenCalled();
-});
-
 const pinned = "0123456789abcdef0123456789abcdef01234567";
 const managedPolicy = (...states: ("missing" | "current" | "outdated")[]) => ({
   status: "ready" as const,
@@ -3096,7 +2942,7 @@ it("recommends managed plugins in Settings and points to them from navigation", 
     }),
   );
   const dialog = await screen.findByRole("dialog", {
-    name: "Review Managed Plugin access",
+    name: "Review plugin access",
   });
   await within(dialog).findByRole("button", { name: "Install plugin" });
   expect(git).toHaveBeenCalledWith(
@@ -3339,53 +3185,4 @@ it("leaves a confirmed install's request to the install when Settings closes", a
   requests.settle(id, "installed");
   unconfirm();
   await expect(outcome).resolves.toBe("installed");
-});
-
-it("reviews a requested plugin artifact in place of the add dialog and cancels it when Settings closes", async () => {
-  const url = vi.fn(async () => ({
-    token: "preview",
-    source: "https://cdn.example.com/a.json",
-    commit: null,
-    warnings: [],
-    candidates: [
-      {
-        path: ".",
-        revision: "d".repeat(64),
-        manifest: { id: "example.artifact", name: "Artifact", apiVersion: 1 },
-      },
-    ],
-  }));
-  const git = vi.fn();
-  const { cards, plugins, requests } = installRequestFixture({
-    git,
-    url,
-    discard: vi.fn(async () => {}),
-  });
-  const view = render(
-    <Settings
-      {...host}
-      cards={cards}
-      plugins={plugins}
-      installRequests={requests}
-    />,
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Manage plugins" }));
-  const outcome = requests.request(
-    {
-      id: "example.artifact",
-      url: "https://cdn.example.com/a.json",
-      sha256: "d".repeat(64),
-    },
-    market,
-  );
-  const dialog = await screen.findByRole("dialog", {
-    name: "Review Artifact Plugin access",
-  });
-  expect(
-    await within(dialog).findByText(`SHA-256: ${"d".repeat(64)}`),
-  ).toBeVisible();
-  expect(screen.queryByRole("dialog", { name: "Add a plugin" })).toBeNull();
-  expect(git).not.toHaveBeenCalled();
-  view.unmount();
-  await expect(outcome).resolves.toBe("cancelled");
 });

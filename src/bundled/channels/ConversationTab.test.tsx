@@ -85,7 +85,6 @@ vi.mock("../../features/messages/MessageComposer", () => ({
   ),
 }));
 const unreadEvidence = {
-  setChannelActive: vi.fn(),
   revision: () => 0,
   sync: () => ({ capability: "unsupported" }),
 };
@@ -243,10 +242,7 @@ it.each(["thread", "conversation"] as const)(
         "false",
       );
     mounted.rerender(<ConversationTab {...props} active />);
-    expect(enterChannel).toHaveBeenCalledExactlyOnceWith(
-      "beta",
-      document.hasFocus(),
-    );
+    expect(enterChannel).toHaveBeenCalledExactlyOnceWith("beta");
     if (kind === "thread")
       expect(screen.getByText("Thread content")).toHaveAttribute(
         "data-active",

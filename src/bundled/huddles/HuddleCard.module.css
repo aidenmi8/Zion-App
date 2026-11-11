@@ -20,7 +20,7 @@
 }
 .status {
   margin-inline-end: var(--space-3);
-  color: var(--text-standard);
+  color: var(--status-online);
   width: var(--space-6);
   flex-shrink: 0;
   display: grid;

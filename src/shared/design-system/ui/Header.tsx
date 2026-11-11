@@ -6,7 +6,6 @@ type HeaderProps = {
   eyebrow?: ReactNode;
   icon?: ReactNode;
   actions?: ReactNode;
-  align?: "start" | "end";
   id?: string;
   level?: 1 | 2 | 3 | 4;
 };
@@ -26,7 +25,6 @@ function ContentHeader({
   eyebrow,
   icon,
   actions,
-  align = "start",
   id,
   level = 2,
   inline = false,
@@ -37,7 +35,6 @@ function ContentHeader({
       data-buzz-ui=""
       className="buzz-content-header"
       data-inline={inline || undefined}
-      data-align={align === "start" ? undefined : align}
     >
       {icon && (
         <span className="buzz-content-header-icon" aria-hidden="true">

@@ -1142,8 +1142,8 @@ export class PiRuntime {
       agent,
       // Whichever host runs the agent fills in its tools' credential.
       ...(handle && { as: { pubkey: handle.pubkey, relay: handle.relay } }),
-      tools: sessionTools(this.added()),
-      hint: sessionHint(this.added()),
+      tools: sessionTools(this.added(), !!handle?.ownerAccess),
+      hint: sessionHint(this.added(), !!handle?.ownerAccess),
     });
   }
 
@@ -1380,7 +1380,7 @@ export class PiRuntime {
    * it. */
   private memories(agent: AgentKey, slug?: string) {
     const reads = this.reads(agent);
-    if (!reads) return Promise.reject(new Error("Buzz is not connected"));
+    if (!reads) return Promise.reject(new Error("Zion is not connected"));
     return this.memoryReads.read(
       reads,
       pubkeyOf(agent),

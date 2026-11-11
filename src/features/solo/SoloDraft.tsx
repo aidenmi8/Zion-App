@@ -37,7 +37,6 @@ import {
 import type { DraftPicks } from "../messages/ComposerModels";
 import type { MentionPicks } from "../relay/messages";
 import { useDefaultAgent } from "./default-agent";
-import { draftLifetime } from "./default-lifetime";
 import { WorkspaceControl } from "./WorkspaceControl";
 import { rememberedMentions } from "../messages/remembered-mentions";
 import { composerMarkdown } from "../messages/composer-markdown";
@@ -76,11 +75,6 @@ function readDraftSettings(scope: string, draftKey: string) {
     ttlSeconds: ("ttlSeconds" in settings ? settings.ttlSeconds : undefined) as
       | number
       | undefined,
-    // A chosen Ongoing saves no ttlSeconds, which older builds also read as
-    // Ongoing. Without either, the draft follows the default for new chats.
-    ...("lifetimeChosen" in settings && settings.lifetimeChosen === true
-      ? { lifetimeChosen: true as const }
-      : {}),
   };
 }
 
@@ -217,8 +211,6 @@ export function SoloDraft({
     { initialDraft: linkedSource },
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // The lifetime Chat settings opened with.
-  const [settingsLifetime, setSettingsLifetime] = useState<number>();
   // New chats tag their agent in the draft: the one the route names, else the
   // default.
   const defaultAgent = useDefaultAgent(session, scope, agent);
@@ -340,7 +332,7 @@ export function SoloDraft({
       typeof draftSettings.name === "string"
         ? canonicalDetailsName(draftSettings.name) || startingChatTitle(draft)
         : draftSettings.name;
-    const ttlSeconds = draftLifetime(scope, draftSettings);
+    const { ttlSeconds } = draftSettings;
     const project = selectedProject;
     const canvas = draftCanvas;
     const draftModelPicksKey = soloModelPicksKey(`${draftKey}:new-draft`);
@@ -711,9 +703,6 @@ export function SoloDraft({
                 const next = {
                   name: draftSettings.name,
                   ttlSeconds: draftSettings.ttlSeconds,
-                  ...(draftSettings.lifetimeChosen
-                    ? { lifetimeChosen: true as const }
-                    : {}),
                   canvas: undefined,
                 };
                 setDraftSettings(next);
@@ -759,10 +748,7 @@ export function SoloDraft({
           title="Chat settings"
           icon={<GearIcon size="1rem" aria-hidden="true" />}
           disabled={busy}
-          onClick={() => {
-            setSettingsLifetime(draftLifetime(scope, draftSettings));
-            setSettingsOpen(true);
-          }}
+          onClick={() => setSettingsOpen(true)}
         />
       }
     >
@@ -774,21 +760,10 @@ export function SoloDraft({
           projectId={selectedProject || undefined}
           canvas={draftCanvas}
           name={draftSettings.name}
-          ttlSeconds={settingsLifetime}
+          ttlSeconds={draftSettings.ttlSeconds}
           close={() => setSettingsOpen(false)}
           save={(canvas, ttlSeconds, name) => {
-            // A lifetime changed here, or chosen before, stays chosen; an
-            // unchanged one keeps following the default.
-            const chosen =
-              !!draftSettings.lifetimeChosen ||
-              draftSettings.ttlSeconds !== undefined ||
-              ttlSeconds !== settingsLifetime;
-            const next = {
-              canvas,
-              ttlSeconds: chosen ? ttlSeconds : undefined,
-              ...(chosen ? { lifetimeChosen: true as const } : {}),
-              name: name ?? "",
-            };
+            const next = { canvas, ttlSeconds, name: name ?? "" };
             if (!writeView(scope, `${draftKey}:settings`, next))
               throw new Error(
                 "Settings couldn’t be saved on this device. Try again.",

@@ -15,10 +15,7 @@ import type {
   RegisteredAgentType,
   TranscriptRequest,
 } from "../../features/agents/service";
-import type {
-  AgentMemories,
-  MemoryLinks,
-} from "../../features/agents/MemoryPanel";
+import type { AgentMemories } from "../../features/agents/MemoryPanel";
 import type { CommunityReader } from "../../features/communities/service";
 import { agentSections } from "../../features/agents/tabs";
 import { Tabs } from "../../shared/design-system/ui/Tabs";
@@ -38,7 +35,6 @@ export function AgentTabs(props: {
   channels: readonly ChannelChoice[];
   settingsHost: AgentSettingsHost;
   memories: AgentMemories | undefined;
-  memoryLinks?: MemoryLinks | undefined;
   communities?: CommunityReader | undefined;
   settingsContent: ReactNode;
   conversation?: AgentConversation | undefined;

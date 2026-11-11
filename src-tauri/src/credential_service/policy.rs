@@ -69,7 +69,7 @@ pub(super) fn classify(
         Verdict::Sign
     } else if SENSITIVE.contains(&kind) {
         Verdict::Deny(format!(
-            "Kind {kind} can't be signed by a local tool; use Buzz"
+            "Kind {kind} can't be signed by a local tool; use Zion"
         ))
     } else {
         Verdict::Deny(format!("Kind {kind} is not signed for local callers"))

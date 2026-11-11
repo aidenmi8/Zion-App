@@ -1,4 +1,3 @@
-import { protectionTranscript } from "./protection-transcript";
 import { fileStore } from "../../features/agents/state";
 import type { AgentExecution } from "../../features/agents/execution";
 import { executionSpawn } from "./execution";
@@ -68,6 +67,7 @@ import {
   turnPrompt,
 } from "./prompt";
 import { AgentSessions, localSessions, Spare } from "./sessions";
+import { protectionHistoryEntry } from "./security";
 import {
   readLatestTurns,
   readSessionTitle,
@@ -162,8 +162,8 @@ const where = ({ workspace, model, effort }: Config) => ({
 /** How Claude lists the session tools: in full up front only those marked
  * `alwaysLoad`, and the rest by name until its tool search loads them, with
  * the server's instructions saying what they are. */
-const listing = (added: readonly AddedTool[]): Listing => ({
-  instructions: sessionHint(added),
+const listing = (added: readonly AddedTool[], owner = false): Listing => ({
+  instructions: sessionHint(added, owner),
   tool: ({ load, ...tool }) =>
     load === "always"
       ? { ...tool, _meta: { "anthropic/alwaysLoad": true } }
@@ -205,16 +205,13 @@ export class ClaudeRuntime {
   >();
   /** Solo chats whose title was already offered to the host this app run. */
   private readonly titled = new Set<string>();
-  /** Counts changes of credentials, which start processes again. */
-  private credentials = 0;
   /** One process started ahead of need, for any agent's next new conversation. */
   private readonly spare = new Spare(
     (id, options) => this.spawn(id, options),
     (_conversation, message) =>
       respond(undefined, {}, message, this.added(), listing(this.added())),
     undefined,
-    // A spare started with old credentials is not handed over either.
-    () => JSON.stringify([addedKey(this.added()), this.credentials]),
+    () => addedKey(this.added()),
   );
 
   constructor(
@@ -246,13 +243,9 @@ export class ClaudeRuntime {
     private readonly targetKey?: string,
   ) {}
 
-  /** A failed turn's error as its report says it, such as where to fix
-   * Claude's credentials. */
-  explain: (error: string) => string = (error) => error;
-
   private executionKey(agent: AgentKey, conversation: string) {
     const scope = this.reads(agent)?.scope;
-    if (!scope) throw new Error("Buzz is not connected");
+    if (!scope) throw new Error("Zion is not connected");
     return `buzz.claude-code.sessions.execution.v1:${JSON.stringify([scope, agent, conversation])}`;
   }
   private savedSessions(agent: AgentKey) {
@@ -830,13 +823,6 @@ export class ClaudeRuntime {
     });
   }
 
-  /** The credentials changed: idle sessions stop, to start again with the new
-   * ones, and busy ones when they next fall idle. */
-  restart() {
-    this.credentials++;
-    for (const entry of this.agents.values()) entry.sessions.reconfigure();
-  }
-
   dispose() {
     this.disposed = true;
     for (const pending of this.opening.values())
@@ -1223,7 +1209,7 @@ export class ClaudeRuntime {
     return agent
       .publish({
         kind: 9,
-        content: `⚠️ I couldn't finish that: ${this.explain(error.slice(0, 500))}`,
+        content: `⚠️ I couldn't finish that: ${error.slice(0, 500)}`,
         tags: [
           ["h", channel],
           ...(topLevel
@@ -1382,12 +1368,12 @@ export class ClaudeRuntime {
           appClient(handle, {
             // Its PreToolUse hook reviews every tool, Buzz's included.
             nativeToolGate: true,
-            captureProtectionContext: async () => {
+            protectionContext: async () => {
               if (!conversation)
                 throw new Error(
                   "The native Claude conversation is unavailable",
                 );
-              return entry.sessions.captureProtectionContext(conversation);
+              return entry.sessions.protectionContext(conversation);
             },
             relayAuthor: this.reads(agent)?.relayAuthor?.(),
             signingAuthority: this.reads(agent)?.workflowAuthority(),
@@ -1404,7 +1390,6 @@ export class ClaudeRuntime {
             memories: (slug) => this.memories(agent, slug),
             remembered: () => this.forget(agent),
             signal,
-            callSignal: signal,
           });
         const context =
           (conversation && entry.contexts.get(conversation)) || {};
@@ -1413,7 +1398,7 @@ export class ClaudeRuntime {
           context,
           message,
           this.added(),
-          listing(this.added()),
+          listing(this.added(), !!client?.ownerAccess),
         );
       };
     const saved = this.savedSessions(agent);
@@ -1453,7 +1438,6 @@ export class ClaudeRuntime {
           entry.team,
           entry.name,
           addedKey(this.added()),
-          this.credentials,
         ]),
       launch: async (key) => {
         const { workspace, instructions, scope } = entry.config;
@@ -1477,14 +1461,26 @@ export class ClaudeRuntime {
             ? {
                 protection: {
                   gate,
-                  history: (path: string, signal: AbortSignal) =>
-                    protectionTranscript(
+                  history: async (path: string, signal: AbortSignal) => {
+                    const bytes = await readFile(
                       this.spawn,
                       workspace,
                       path,
                       signal,
                       gate.processProtection,
-                    ),
+                    );
+                    const lines = new TextDecoder().decode(bytes).split("\n");
+                    // Claude appends to its transcript as it goes, so the last
+                    // line may still be partial; the next hook reads it whole.
+                    const last = lines.pop() ?? "";
+                    const rows = lines
+                      .filter((line) => line.trim())
+                      .map((line) => JSON.parse(line) as unknown);
+                    try {
+                      if (last.trim()) rows.push(JSON.parse(last));
+                    } catch {}
+                    return rows.map(protectionHistoryEntry);
+                  },
                 },
               }
             : {}),
@@ -1518,7 +1514,7 @@ export class ClaudeRuntime {
    * it. `stop` ends the read sooner than its own limit. */
   private memories(agent: AgentKey, slug?: string, stop?: AbortSignal) {
     const reads = this.reads(agent);
-    if (!reads) return Promise.reject(new Error("Buzz is not connected"));
+    if (!reads) return Promise.reject(new Error("Zion is not connected"));
     const limit = AbortSignal.timeout(READ_TIMEOUT_MS);
     return this.memoryReads.read(
       reads,

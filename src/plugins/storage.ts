@@ -55,7 +55,7 @@ export function createPluginStorage(bundledCatalog: () => Catalog["plugins"]) {
       for (const plugin of catalog.plugins) {
         const id = plugin.manifest.id;
         flags[id] ??=
-          (plugin.enabled && !(existing && id === "buzz.bestie")) ||
+          plugin.enabled ||
           (existing && (id === "buzz.reminders" || id === "buzz.workflows"));
         plugin.enabled = flags[id];
       }
@@ -71,9 +71,6 @@ export function createPluginStorage(bundledCatalog: () => Catalog["plugins"]) {
   }
   async function getCatalog(): Promise<StorageResult> {
     return desktop ? invoke("plugin_catalog") : webCatalog();
-  }
-  async function refreshManaged(): Promise<StorageResult> {
-    return desktop ? invoke("plugin_managed_refresh") : webCatalog();
   }
   async function changePlugin(
     action: ManagementAction,
@@ -142,7 +139,6 @@ export function createPluginStorage(bundledCatalog: () => Catalog["plugins"]) {
             authorization,
             checkOnly: true,
           }),
-        url: (url, sha256) => invoke("plugin_import_url", { url, sha256 }),
         install: (token, path) =>
           invoke("plugin_import_install", { token, path }),
         discard: (token) => invoke("plugin_import_discard", { token }),
@@ -154,14 +150,12 @@ export function createPluginStorage(bundledCatalog: () => Catalog["plugins"]) {
     recoverSettings,
     readModule,
     reloadPlugin,
-    refreshManaged,
     imports,
   };
 }
 export type PluginStorage = Omit<
   ReturnType<typeof createPluginStorage>,
-  "imports" | "refreshManaged"
+  "imports"
 > & {
   imports?: PluginImports | undefined;
-  refreshManaged?: (() => Promise<StorageResult>) | undefined;
 };

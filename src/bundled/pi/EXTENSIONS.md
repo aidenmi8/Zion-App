@@ -22,8 +22,7 @@ under `pi.durable`:
   "type": "module",
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
-    "@earendil-works/pi-durable": "*",
-    "@earendil-works/pi-schema": "*"
+    "@earendil-works/pi-durable": "*"
   },
   "pi": { "durable": ["./durable.ts"] }
 }
@@ -35,13 +34,13 @@ recursive deletes, adds a house rule to the system prompt, and adds a
 `word_count` tool:
 
 ```ts
+import { Type } from "@earendil-works/pi-ai";
 import { defineExtension, defineTool, hook, section, ToolTask } from "@earendil-works/pi-durable";
-import { obj, str } from "@earendil-works/pi-schema";
 
 const wordCount = defineTool({
   name: "word_count",
   description: "Count the words in a text",
-  parameters: obj({ text: str() }),
+  parameters: Type.Object({ text: Type.String() }),
   execute: async (args: { text: string }) => ({
     output: [{ type: "text", text: `${args.text.trim().split(/\s+/).filter(Boolean).length} words` }],
   }),

@@ -27,9 +27,7 @@ function harness() {
   const listeners = new Set<() => void>();
   const call: Huddles = {
     voiceError() {},
-    remoteVoiceError() {},
     voiceListening() {},
-    voiceThinking() {},
     snapshot: () => snapshot,
     subscribe(fn) {
       listeners.add(fn);
@@ -695,14 +693,13 @@ it("projects listening only for locally active seats in a connected call", async
     ...h.call.snapshot(),
     participants: ["local", "remote"],
     listening: ["local"],
-    thinking: ["local"],
   });
   h.release();
   await h.companion.open();
   expect(
     vi.mocked(h.bridge.open).mock.lastCall?.[0].participants,
   ).toMatchObject([
-    { key: "local", listening: true, thinking: true },
+    { key: "local", listening: true },
     { key: "remote", listening: false },
   ]);
   h.release();
@@ -711,7 +708,7 @@ it("projects listening only for locally active seats in a connected call", async
     expect(
       vi.mocked(h.bridge.update).mock.lastCall?.[1]?.participants,
     ).toMatchObject([
-      { key: "local", listening: false, thinking: false },
+      { key: "local", listening: false },
       { key: "remote", listening: false },
     ]),
   );

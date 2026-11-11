@@ -25,6 +25,8 @@ pre-commit:
       run: bin/pnpm exec biome check --write --error-on-warnings --files-ignore-unknown=true --no-errors-on-unmatched -- {staged_files}
     - name: rustfmt
       glob: "*.rs"
+      # Archived dependency sources retain their upstream formatting and edition.
+      exclude: ["vendor/**"]
       stage_fixed: true
       run: bin/rustfmt --edition 2021 -- {staged_files}
 pre-push:

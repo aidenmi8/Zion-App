@@ -121,12 +121,12 @@ export function CommunityDepartureSettings({
       <Header
         id="leave-community-title"
         title="Leave or remove"
-        subtitle="Remove community from Buzz on this device or leave community completely."
+        subtitle="Remove community from Zion on this device or leave community completely."
       />
       <SettingsGroup>
         <PreferenceRow
           title="Remove from this device"
-          subtitle="Removes community connection and data from Buzz on this device only. Your membership won't change."
+          subtitle="Removes community connection and data from Zion on this device only. Your membership won't change."
           trailing={
             <Button
               ref={removeButton}
@@ -164,7 +164,7 @@ export function CommunityDepartureSettings({
           description={
             intent === "leave"
               ? "This will send a leave request to the community’s relay and remove it from this device. You may need a new invite to rejoin."
-              : "The community connection and any saved drafts or data will be removed from Buzz on this device."
+              : "The community connection and any saved drafts or data will be removed from Zion on this device."
           }
           pending={pending}
           finalFocus={() =>
@@ -177,11 +177,15 @@ export function CommunityDepartureSettings({
           onClose={() => setIntent(null)}
           actions={
             <>
-              <Button disabled={pending} onClick={() => setIntent(null)}>
+              <Button
+                variant={intent === "leave" ? "subtle" : "prominent"}
+                disabled={pending}
+                onClick={() => setIntent(null)}
+              >
                 Cancel
               </Button>
               <Button
-                variant={intent === "leave" ? "destructive" : "prominent"}
+                variant={intent === "leave" ? "destructive" : "subtle"}
                 loading={pending}
                 onClick={() => void run()}
               >

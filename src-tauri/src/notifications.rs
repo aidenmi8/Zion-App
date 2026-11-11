@@ -92,7 +92,7 @@ fn respond<R: tauri::Runtime>(
         response.error = (|| {
             let window = main_app
                 .get_webview_window("main")
-                .ok_or("Buzz window unavailable")?;
+                .ok_or("Zion window unavailable")?;
             focus(&window)
         })()
         .err();

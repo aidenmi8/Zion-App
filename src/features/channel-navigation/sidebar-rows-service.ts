@@ -10,9 +10,8 @@ import { isSidebarSortMode, type SidebarSortMode } from "../relay/sidebar-sort";
 
 export type SidebarRow = Readonly<{
   id: string;
-  kind: "team" | "dm" | "solo";
+  kind: "team" | "dm";
   label: string;
-  /** Team section key, or Solo workspace id ("" for unfiled chats). */
   sectionKey: string;
   channel: ChannelSummary;
   unread: UnreadSnapshot;
@@ -126,12 +125,7 @@ export function sidebarRow(
 ): SidebarRow {
   return {
     id: channel.id,
-    kind:
-      channel.channelType === "dm"
-        ? "dm"
-        : channel.channelType === "solo"
-          ? "solo"
-          : "team",
+    kind: channel.channelType === "dm" ? "dm" : "team",
     label: channel.name,
     sectionKey,
     channel,

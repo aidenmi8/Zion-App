@@ -1,13 +1,49 @@
 import { watchPageErrors } from "./page-errors.mjs";
 import { test, expect } from "./playwright-test.mjs";
-import { previewFixtures } from "./vite-server.mjs";
-let fixtures;
-// A dev server serves this fixture as about 800 modules, and WebKit's first
-// navigation outlasted the navigation timeout on a busy runner.
+import { build, preview } from "./vite-server.mjs";
+import react from "@vitejs/plugin-react";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+let server, directory, url;
+// A dev server serves this fixture as about 800 modules. On a busy runner,
+// WebKit's first navigation took longer than the navigation timeout to load
+// them, so build the page once and serve the bundle.
 test.beforeAll(async () => {
-  fixtures = await previewFixtures(["tests/fixtures/voice-notes.html"]);
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+  directory = await mkdtemp(join(tmpdir(), "buzz-voice-notes-"));
+  const config = {
+    root,
+    configFile: false,
+    envDir: false,
+    logLevel: "error",
+    plugins: [react()],
+    // Development React, as the dev server served, keeps StrictMode's checks.
+    define: {
+      "import.meta.env.DEV": "true",
+      "process.env.NODE_ENV": '"development"',
+    },
+    build: {
+      rollupOptions: {
+        input: join(root, "tests/fixtures/voice-notes.html"),
+      },
+      outDir: join(directory, "dist"),
+      emptyOutDir: true,
+      target: "esnext",
+    },
+  };
+  await build(config);
+  server = await preview({
+    ...config,
+    preview: { host: "127.0.0.1", port: 0, strictPort: true },
+  });
+  url = `http://127.0.0.1:${server.httpServer.address().port}/tests/fixtures/voice-notes.html`;
 });
-test.afterAll(() => fixtures?.close());
+test.afterAll(async () => {
+  if (server) await new Promise((resolve) => server.httpServer.close(resolve));
+  if (directory) await rm(directory, { recursive: true, force: true });
+});
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/relay/media?*", async (route) => {
     const url = new URL(route.request().url()).searchParams.get("url");
@@ -23,7 +59,7 @@ test.beforeEach(async ({ page }) => {
       body: Buffer.from(bytes),
     });
   });
-  await page.goto(`${fixtures.origin}/tests/fixtures/voice-notes.html`);
+  await page.goto(url);
   await page.evaluate(() => {
     const mic = {
       mode: "allow",
@@ -221,7 +257,7 @@ test("permission cancellation, denial and plugin removal release microphones", {
   await page
     .getByRole("button", { name: "Record voice note", exact: true })
     .click();
-  await expect(page.getByRole("alert")).toContainText("Allow Buzz");
+  await expect(page.getByRole("alert")).toContainText("Allow Zion");
   await expect(
     page.getByRole("button", { name: "Close", exact: true }),
   ).toBeFocused();

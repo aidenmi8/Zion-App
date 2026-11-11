@@ -149,7 +149,7 @@ export function createAppsClient(
       .find((part) => part !== 0);
     if (difference !== undefined && difference < 0)
       throw new Error(
-        `Apps Platform requires client ${minimum}; update Buzz before creating or deploying apps`,
+        `Apps Platform requires client ${minimum}; update Zion before creating or deploying apps`,
       );
     return result;
   };
@@ -231,7 +231,7 @@ export function createAppsClient(
     },
     /** Uploads `artifact` as the app's next version. */
     async deploy(id: string, artifact: string) {
-      if (!http.upload) throw new Error("Deploying needs the Buzz desktop app");
+      if (!http.upload) throw new Error("Deploying needs the Zion desktop app");
       signedIn();
       const response = await http.upload({
         url: `${base}${app(id, "deploy")}`,

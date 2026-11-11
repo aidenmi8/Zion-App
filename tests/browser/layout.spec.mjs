@@ -27,9 +27,7 @@ import {
 } from "./timeline.mjs";
 
 // These layout/navigation journeys exercise opt-in page surfaces.
-test.use({
-  enabledPlugins: ["buzz.bestie", "buzz.workflows", "buzz.drafts-and-sent"],
-});
+test.use({ enabledPlugins: ["buzz.bestie", "buzz.workflows"] });
 
 const scroll = test.extend({ historyCounts: { alpha: 20, beta: 1 } });
 const companionTest = test.extend({ companionFixture: true });
@@ -55,14 +53,11 @@ const button = (page, name) => page.getByRole("button", { name, exact: true });
 const companionLauncher = (page, name) =>
   button(page, name).and(page.locator("button[aria-expanded]"));
 // Global destinations live in the dock independently of the Messages sidebar.
-const destinationTitles = ["Create an agent", "Workflows"];
+const destinationTitles = ["Bestie", "Activity"];
 const dockDestinations = (page, options = {}) =>
   page
     .getByRole("navigation", { name: "Apps dock", ...options })
-    .getByRole("tab", {
-      name: /^(Create an agent|Bestie|Workflows)$/,
-      ...options,
-    });
+    .getByRole("tab", { name: /^(Bestie|Activity)$/, ...options });
 const companionReadingTest = readingTest.extend({ companionFixture: true });
 const box = async (locator) => {
   const bounds = await locator.boundingBox();
@@ -140,7 +135,7 @@ async function link(page, app, target) {
     );
   });
 }
-async function shellFits(page, width, bestieLabel = "Create an agent") {
+async function shellFits(page, width) {
   // The Workflows page renders no toggle at wide widths, so settle only when
   // the drawer is in play.
   if (width <= 650) await settleShellToggle(page);
@@ -150,7 +145,7 @@ async function shellFits(page, width, bestieLabel = "Create an agent") {
   // Settings is a modal with its own navigation; the shell is measured with
   // Settings closed.
   const destinations = dockDestinations(page);
-  await expect(destinations).toHaveText([bestieLabel, "Workflows"]);
+  await expect(destinations).toHaveText(destinationTitles);
   const dock = await box(page.getByRole("navigation", { name: "Apps dock" }));
   for (const destination of [destinations.first(), destinations.last()]) {
     await destination.scrollIntoViewIfNeeded();
@@ -254,12 +249,9 @@ test("joined sidebar and workspace surface, real link panel and compact communit
   const sidebar = await box(
     page.getByRole("complementary", { name: "Sidebar", exact: true }),
   );
-  // A narrow link panel covers the conversation, removing it from the
-  // accessibility tree; its geometry still applies.
   const conversation = page.getByRole("article", {
     name: "Conversation",
     exact: true,
-    includeHidden: true,
   });
   // The sidebar and main are flush regions inside one outer panel.
   const mainPanel = page.locator("#main-content > [data-joined]");
@@ -338,11 +330,9 @@ test("joined sidebar and workspace surface, real link panel and compact communit
     "background-color",
     shellColor,
   );
-  // The draft must survive under the covering link panel at narrow widths.
   const composer = page.getByRole("textbox", {
     name: "Message #Alpha",
     exact: true,
-    includeHidden: true,
   });
   await composer.fill("Layout draft");
   await page.screenshot({ path: testInfo.outputPath("joined-no-panel.png") });
@@ -487,7 +477,7 @@ test("joined sidebar and workspace surface, real link panel and compact communit
   await selectSettingsSection(page, "Manage plugins");
   // Channels is required; use another page to exercise UI activation.
   const projects = pluginAction(page, "Workflows");
-  const search = page.getByRole("dialog", { name: "Search Buzz", exact: true });
+  const search = page.getByRole("dialog", { name: "Search Zion", exact: true });
   // Header search is inert behind Settings; close it to read the palette.
   const expectWorkflowsChoice = async (count) => {
     await closeSettings(page);
@@ -495,7 +485,7 @@ test("joined sidebar and workspace surface, real link panel and compact communit
     // Messages proves the Pages group rendered before counting Workflows.
     await expect(pageChoice(choices, "Messages")).toBeVisible();
     await page
-      .getByRole("combobox", { name: "Search Buzz", exact: true })
+      .getByRole("combobox", { name: "Search Zion", exact: true })
       .fill("Workflows");
     await expect(pageChoice(choices, "Workflows")).toHaveCount(count);
     await page.keyboard.press("Escape");
@@ -524,13 +514,8 @@ test("narrow link panels begin after the rendered sidebar", async ({
   const sidebar = await box(
     page.getByRole("complementary", { name: "Sidebar", exact: true }),
   );
-  // The card covers the conversation, removing it from the accessibility tree.
   const conversation = await box(
-    page.getByRole("article", {
-      name: "Conversation",
-      exact: true,
-      includeHidden: true,
-    }),
+    page.getByRole("article", { name: "Conversation", exact: true }),
   );
   const dock = await box(page.locator("[data-panel-workspace]"));
   near(conversation.x, sidebar.x + sidebar.width);
@@ -976,7 +961,7 @@ companionTest(
       [390, 400],
     ]) {
       await page.setViewportSize({ width, height });
-      await shellFits(page, width, "Bestie");
+      await shellFits(page, width);
       await expect(
         button(page, "Close Companion fixture panel"),
       ).toBeInViewport();
@@ -1411,7 +1396,6 @@ for (const [control, key] of [
   ["link", "PageUp"],
   ["button", "PageUp"],
   ["link", process.platform === "darwin" ? "Meta+ArrowUp" : "Control+Home"],
-  ...(process.platform === "darwin" ? [["link", "Alt+ArrowUp"]] : []),
 ]) {
   readingTest(
     `${key} from a message ${control} preserves native scroll ownership`,
@@ -1484,6 +1468,35 @@ for (const [control, key] of [
     },
   );
 }
+
+// Option+Up is the app's previous-conversation shortcut, not a native
+// message-history scroll. Keep its focused-link routing covered in the browser.
+readingTest(
+  "Option+Up from a message link opens the previous conversation",
+  async ({ page, app }) => {
+    await open(page, app);
+    const sidebar = page.getByRole("navigation", {
+      name: "Subscribed channels",
+    });
+    const alpha = sidebar.locator('button[data-channel-id="alpha"]');
+    const beta = sidebar.locator('button[data-channel-id="beta"]');
+    await beta.click();
+    await expect(beta).toHaveAttribute("aria-current", "page");
+    const target = "https://example.com/keyboard-reading";
+    const added = app.append("primary", "beta", `Read ${target}`);
+    const link = page
+      .locator(`[data-message-id="${added.id}"]`)
+      .getByRole("link", { name: target, exact: true });
+    await expect(link).toBeVisible();
+    await link.focus();
+    await expect(link).toBeFocused();
+    await page.keyboard.press("Alt+ArrowUp");
+    await expect(alpha).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("textbox", { name: "Message #Alpha", exact: true }),
+    ).toBeVisible();
+  },
+);
 
 // Exercise both propagation and no-op lifecycle against the same engine's
 // native baseline, rather than imposing macOS behavior on Linux WebKit.

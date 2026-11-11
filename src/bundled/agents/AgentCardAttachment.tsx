@@ -1,5 +1,5 @@
 // An agent card sent in a conversation, drawn as the agent's card from the
-// Marketplace, with an explicit Add agent action beneath its name.
+// Marketplace: choosing it opens Add rather than the picture.
 import { useEffect, useRef, useState } from "react";
 import { MAX_PNG_BYTES, readSnapshot } from "../../features/agents/agent-share";
 import { useAgents } from "../../features/agents/react";
@@ -9,7 +9,7 @@ import type { Navigation } from "../../features/navigation/controller";
 import type { Attachment } from "../../features/relay/contracts";
 import { useRelayConnection } from "../../features/relay/react";
 import type { RelayData } from "../../features/relay/service";
-import { Button } from "../../shared/design-system/ui/Button";
+import { SurfaceButton } from "../../shared/design-system/ui/SurfaceButton";
 import { useToastNotification } from "../../shared/design-system/ui/Toast";
 import { SharedAgentCardContent, SharedImportDialog } from "./AgentBrowse";
 import cardStyles from "./AgentCard.module.css";
@@ -113,31 +113,26 @@ export function AgentCardAttachment({
   const runnable = types.filter((type) => !type.remote);
   return (
     <div className={styles.frame}>
-      <div className={`${cardStyles.card} ${cardStyles.agentCard}`}>
+      <SurfaceButton
+        ref={trigger}
+        className={`${cardStyles.card} ${cardStyles.agentCard}`}
+        aria-label={`${shared?.name ?? name}, shared agent${failed ? ". Couldn’t load. Try again" : ""}`}
+        aria-haspopup="dialog"
+        disabled={!shared && !failed}
+        onClick={() => {
+          if (!failed) return setAdding(true);
+          retried.current = true;
+          setAttempt((value) => value + 1);
+        }}
+      >
         <SharedAgentCardContent
           agent={shared ?? { name, model: "" }}
-          action={
-            <Button
-              ref={trigger}
-              variant="prominent"
-              size="sm"
-              aria-label={`${failed ? "Try again" : "Add agent"}: ${shared?.name ?? name}`}
-              aria-haspopup="dialog"
-              disabled={!shared && !failed}
-              onClick={() => {
-                if (!failed) return setAdding(true);
-                retried.current = true;
-                setAttempt((value) => value + 1);
-              }}
-            >
-              {failed ? "Couldn’t load. Try again" : "Add agent"}
-            </Button>
-          }
+          {...(failed && { detail: "Couldn’t load. Try again" })}
           community={
             connection.status === "ready" ? connection.origin : undefined
           }
         />
-      </div>
+      </SurfaceButton>
       {adding && shared && (
         <SharedImportDialog
           shared={shared}

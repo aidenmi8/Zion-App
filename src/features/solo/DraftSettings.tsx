@@ -16,11 +16,7 @@ import {
   readWorkspace,
   workspaceCanvas,
 } from "./workspace";
-import {
-  ChatInstructions,
-  ChatSettingsDialog,
-  instructionsCanvas,
-} from "./ChatSettingsDialog";
+import { ChatInstructions, ChatSettingsDialog } from "./ChatSettingsDialog";
 
 /** Edits only the local draft; first-send owns remote setup and its retry receipt. */
 export function DraftSettings({
@@ -42,9 +38,7 @@ export function DraftSettings({
   save(canvas: string, ttlSeconds?: number, name?: string): void;
   close(): void;
 }) {
-  // A persisted name arrives unchecked; a malformed one opens blank.
-  const openedName = typeof name === "string" ? name : "";
-  const [value, setValue] = useState(openedName);
+  const [value, setValue] = useState(typeof name === "string" ? name : "");
   const normalized = canonicalDetailsName(value);
   const nameError = normalized
     ? detailsDraftErrors({
@@ -67,9 +61,7 @@ export function DraftSettings({
   }).lifetime;
   const [workspace, setWorkspace] = useState(emptyWorkspace);
   const [raw, setRaw] = useState<string>();
-  // The Canvas the dialog opened with; undefined until it has loaded.
-  const [opened, setOpened] = useState<string>();
-  const loaded = opened !== undefined;
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   // biome-ignore lint/correctness/useExhaustiveDependencies: attempt explicitly retries a failed settings read.
@@ -87,7 +79,7 @@ export function DraftSettings({
         } catch {
           setRaw(content);
         }
-        setOpened(content);
+        setLoaded(true);
       } catch (reason) {
         if (active)
           setError(reason instanceof Error ? reason.message : String(reason));
@@ -100,11 +92,6 @@ export function DraftSettings({
   return (
     <ChatSettingsDialog
       dismissOnOutsideClick={false}
-      dirty={
-        canonicalDetailsName(value) !== canonicalDetailsName(openedName) ||
-        ttl !== ttlSeconds ||
-        (loaded && instructionsCanvas(workspace, raw) !== opened)
-      }
       finalFocus={finalFocus}
       close={close}
       saveDisabled={!loaded || !!nameError || !!lifetimeError}

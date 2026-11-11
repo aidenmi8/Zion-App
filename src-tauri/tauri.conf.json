@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Buzz",
-  "version": "0.7.0",
-  "identifier": "xyz.block.buzz.desktop",
+  "productName": "Zion",
+  "version": "0.7.0-zion.1",
+  "identifier": "xyz.block.buzz.app",
   "build": {
     "beforeDevCommand": "pnpm dev:desktop --port 1430",
     "devUrl": "http://localhost:1430",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Buzz",
+        "title": "Zion",
         "dragDropEnabled": false,
         "width": 1200,
         "height": 800,
@@ -35,7 +35,13 @@
     "active": true,
     "macOS": {
       "entitlements": "entitlements.plist",
-      "minimumSystemVersion": "12.0"
+      "minimumSystemVersion": "12.0",
+      "dmg": {
+        "background": "icons/dmg-background.png",
+        "windowSize": { "width": 660, "height": 532 },
+        "appPosition": { "x": 191, "y": 330 },
+        "applicationFolderPosition": { "x": 469, "y": 330 }
+      }
     },
     "resources": {
       "resources/bin/": "bin/"

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Delivery } from "../../features/agents/service";
 import { watchMatches, type EventWatch } from "../../features/agents/attention";
 import {
+  DEFAULT_PROMPT,
   conversationKey,
   instructions,
   type MeshAgentConfig,
@@ -506,8 +507,11 @@ describe("Mesh agent runtime", () => {
     expect(meshAgentConfig({ preset: "nope" }).preset).toBeUndefined();
   });
 
-  it("gives Buzz access automatic response delivery guidance", () => {
+  it("gives Zion access automatic response delivery guidance", () => {
+    expect(DEFAULT_PROMPT).toContain("Zion community");
     const tools = instructions(meshAgentConfig({ prompt: "be brief" }));
+    expect(tools).toContain("Zion's send tool");
+    expect(tools).not.toContain("Buzz send");
     expect(tools).not.toContain("## Posting Conventions");
     expect(tools).toContain("final prose response is automatically delivered");
     expect(tools).not.toContain("Engineering Discipline");

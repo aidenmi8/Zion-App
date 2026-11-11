@@ -8,7 +8,7 @@ import {
   readFileSync,
   renameSync,
 } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const pin =
@@ -23,20 +23,6 @@ export function buzzPin(manifest) {
   return { git: match[1], rev: match[2] };
 }
 
-// The build depends only on the pinned revision, never on worktree sources, so
-// linked worktrees share the main checkout's target/. A single checkout, as in
-// CI, keeps its own target/ and the Rust cache that covers it.
-export function cliTarget(root, env = process.env) {
-  if (env.CARGO_TARGET_DIR) return env.CARGO_TARGET_DIR;
-  const git = spawnSync(
-    "git",
-    ["rev-parse", "--path-format=absolute", "--git-common-dir"],
-    { cwd: root, env, encoding: "utf8" },
-  );
-  const common = git.status === 0 ? git.stdout.trim() : "";
-  return join(basename(common) === ".git" ? dirname(common) : root, "target");
-}
-
 if (import.meta.main) {
   const root = fileURLToPath(new URL("../", import.meta.url));
   const { git, rev } = buzzPin(
@@ -48,7 +34,7 @@ if (import.meta.main) {
     ? triple.includes("windows")
     : process.platform === "win32";
   const name = windows ? "buzz.exe" : "buzz";
-  const target = cliTarget(root);
+  const target = process.env.CARGO_TARGET_DIR || join(root, "target");
   // A separate prefix per revision, target and profile lets Cargo skip an
   // install that is already current without --force.
   const prefix = join(

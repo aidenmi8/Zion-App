@@ -10,8 +10,7 @@ import { Button } from "../../shared/design-system/ui/Button";
 import { communityRequest, inspectProfile, type CommunityInfo } from "./api";
 import type { Communities, PersonalProfile } from "./service";
 import { canSaveProfile, ProfileFields, profilesEqual } from "./ProfileFields";
-import { communityDestination } from "./destination";
-import { parsePastedInvite, pastedInviteError } from "./invite-link";
+import { communityDestination, relayOrigin } from "./destination";
 import { nativeIdentityEnabled } from "../identity/service";
 import { isTransientFailure, readErrorKind } from "../relay/errors";
 import { createJoinJournal, type PendingJoin } from "./join-journal";
@@ -177,20 +176,16 @@ export function CommunityDialog({
     focusProfile.current = true;
     setStep("profile");
   }
-  /**
-   * The access step's admission, with the account's consent when it covers
-   * `url`. `inviteCode` is given when it is newer than the rendered `code`.
-   */
+  /** The access step's admission, with the account's consent when it covers `url`. */
   async function admit(
     community: string,
     url: string,
     joinPolicy: JoinPolicy | null | undefined,
-    inviteCode = code,
   ) {
     const admission = await admitCommunity({
       community,
       journal,
-      code: inviteCode,
+      code,
       policy: joinPolicy,
       consent: accountConsents(federatedIdentity, url)
         ? ACCOUNT_CONSENT
@@ -203,19 +198,7 @@ export function CommunityDialog({
     if (uploading || unavailable) return;
     if (step === "destination") {
       await work(async (signal) => {
-        const entered = parsePastedInvite(url);
-        if (!entered)
-          throw new Error(
-            pastedInviteError(url, "Enter a community address or invite link."),
-          );
-        const next = communityDestination(entered.community);
-        // A pasted invite link carries its code the way an opened invite does.
-        // This submission uses it directly; the state serves later retries.
-        const inviteCode = entered.code || code;
-        if (entered.code) {
-          setCode(entered.code);
-          setNeedsInvite(true);
-        }
+        const next = communityDestination(relayOrigin(url));
         setDestination(next);
         // Transport text names neither the host nor a next step, and differs by engine.
         const explained = (reason: unknown) =>
@@ -253,14 +236,14 @@ export function CommunityDialog({
           if (found && (found.exists || pending)) showProfile(found, pending);
           else if (
             !accountConsents(federatedIdentity, next.url) ||
-            (!found && !inviteCode.trim())
+            (!found && !code.trim())
           )
             setStep("access");
           else {
             // The account's consent leaves the access step nothing to ask
             // (no code is needed, or one is given), so Continue goes on to its
             // admission. A refusal is shown there, where a code can be entered.
-            await admit(next.id, next.url, value.policy, inviteCode).catch(
+            await admit(next.id, next.url, value.policy).catch(
               (reason: unknown) => {
                 if (current()) {
                   setStep("access");
@@ -464,7 +447,7 @@ export function CommunityDialog({
               ? "Opening your local identity…"
               : client.status === "ready"
                 ? "Your identity is ready, but connecting to communities is not available in this build yet. You can manage your local profile and identity in Settings."
-                : "Live identity access is unavailable. For development, set BUZZ_DEV_VIEWER to your Buzz public key in .env.local, then restart just web or just desktop. See docs/contributing.md for requirements."}
+                : "Live identity access is unavailable. For development, set BUZZ_DEV_VIEWER to your Zion public key in .env.local, then restart just web or just desktop. See docs/contributing.md for requirements."}
           </p>
         ) : (
           <>
@@ -478,7 +461,7 @@ export function CommunityDialog({
                   description={
                     connectionFrom
                       ? undefined
-                      : "Paste your community link. Continue shares your Buzz identity with the community so you can preview it before joining."
+                      : "Paste your community link. Continue shares your Zion identity with the community so you can preview it before joining."
                   }
                 >
                   <Input

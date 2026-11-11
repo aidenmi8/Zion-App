@@ -1843,12 +1843,8 @@ it("offers to install Codex from its card when Buzz has no copy", async () => {
       onChange={vi.fn()}
     />,
   );
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Install integration" }),
-  );
-  const dialog = await screen.findByRole("dialog", {
-    name: "Codex integration",
-  });
+  fireEvent.click(await screen.findByRole("button", { name: "Install Codex" }));
+  const dialog = await screen.findByRole("dialog", { name: "Set up Codex" });
   expect(within(dialog).getByText(/about 130 MB/)).toBeVisible();
   expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
   // A failed download leaves the offer in place, with what went wrong.
@@ -1859,7 +1855,7 @@ it("offers to install Codex from its card when Buzz has no copy", async () => {
     await within(dialog).findByRole("log", { name: "Setup output" }),
   ).toHaveTextContent("Codex downloads need the desktop app");
   expect(
-    await within(dialog).findByRole("button", { name: "Install integration" }),
+    await within(dialog).findByRole("button", { name: "Install Codex" }),
   ).toBeEnabled();
 
   f.disk.installed = true;
@@ -1870,7 +1866,7 @@ it("offers to install Codex from its card when Buzz has no copy", async () => {
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-it("moves the card from Install integration to Sign in once the install succeeds", async () => {
+it("moves the card from Install Codex to Sign in once the install succeeds", async () => {
   const f = fixture({ installed: false, signedIn: false });
   // Stands in for the download, which setup.test.ts covers.
   const download = deferred<void>();
@@ -1888,15 +1884,9 @@ it("moves the card from Install integration to Sign in once the install succeeds
       onChange={vi.fn()}
     />,
   );
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Install integration" }),
-  );
-  const dialog = await screen.findByRole("dialog", {
-    name: "Codex integration",
-  });
-  const install = within(dialog).getByRole("button", {
-    name: "Install integration",
-  });
+  fireEvent.click(await screen.findByRole("button", { name: "Install Codex" }));
+  const dialog = await screen.findByRole("dialog", { name: "Set up Codex" });
+  const install = within(dialog).getByRole("button", { name: "Install Codex" });
   install.focus();
   expect(
     await within(dialog).findByRole("button", { name: "Cancel" }),
@@ -1957,20 +1947,20 @@ it("installs and signs in Buzz's copy of Codex from its provider settings", asyn
   );
   render(<ProviderDialogBody onClose={vi.fn()} />);
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "The Codex integration isn't installed yet.",
+    "Codex is not installed.",
   );
   expect(provider.snapshot()).toMatchObject({
     readiness: "attention",
-    attentionLabel: "Install Codex integration",
+    attentionLabel: "Install Codex",
   });
   expect(screen.getByText(/about 130 MB/)).toBeVisible();
   // A failed download leaves the offer in place, with what went wrong.
-  fireEvent.click(screen.getByRole("button", { name: "Install integration" }));
+  fireEvent.click(screen.getByRole("button", { name: "Install Codex" }));
   expect(
     await screen.findByRole("log", { name: "Setup output" }),
   ).toHaveTextContent("Codex downloads need the desktop app");
   expect(
-    await screen.findByRole("button", { name: "Install integration" }),
+    await screen.findByRole("button", { name: "Install Codex" }),
   ).toBeVisible();
 
   f.disk.installed = true;
@@ -1991,6 +1981,37 @@ it("installs and signs in Buzz's copy of Codex from its provider settings", asyn
   expect(provider.snapshot()).toMatchObject({ readiness: "ready" });
   expect(provider.snapshot()).not.toHaveProperty("blocking");
   provider.dispose();
+});
+
+it("signs in again from provider settings once Codex is ready, for security reviews", async () => {
+  const f = fixture();
+  render(<f.tabs.ProviderDialogBody onClose={vi.fn()} />);
+  const again = await screen.findByRole("button", { name: "Sign in again" });
+  expect(f.provider.snapshot()).toMatchObject({ readiness: "ready" });
+  fireEvent.click(again);
+  expect(await screen.findByText("Waiting for Codex sign-in…")).toBeVisible();
+  expect(f.spawn.mock.calls.filter(([id]) => id === "login")).toHaveLength(1);
+  expect(again).toHaveAttribute("aria-busy", "true");
+
+  f.logins[0]?.resolve(0);
+  await waitFor(() => expect(again).not.toHaveAttribute("aria-busy", "true"));
+  expect(screen.queryByText("Waiting for Codex sign-in…")).toBeNull();
+  expect(f.provider.snapshot()).toMatchObject({ readiness: "ready" });
+});
+
+it("keeps a failed sign-in's output once Codex is ready", async () => {
+  const f = fixture();
+  render(<f.tabs.ProviderDialogBody onClose={vi.fn()} />);
+  const again = await screen.findByRole("button", { name: "Sign in again" });
+  fireEvent.click(again);
+  await waitFor(() => expect(f.logins).toHaveLength(1));
+  f.logins[0]?.resolve(1);
+  await waitFor(() => expect(again).not.toHaveAttribute("aria-busy", "true"));
+  expect(f.provider.snapshot()).toMatchObject({ readiness: "ready" });
+  expect(screen.getByRole("log", { name: "Setup output" })).toHaveTextContent(
+    "Sign-in ended (1).",
+  );
+  expect(screen.getByRole("log", { name: "Setup output" })).toBeVisible();
 });
 
 it("separates identity fields from runtime settings without changing the stored config", () => {
@@ -2259,7 +2280,7 @@ it("opens scoped model settings from a remote card when local Codex is unavailab
   );
   const control = await screen.findByRole("button", { name: "Model settings" });
   expect(control).toHaveTextContent("Codex default");
-  expect(screen.queryByText("Install integration")).not.toBeInTheDocument();
+  expect(screen.queryByText("Install Codex")).not.toBeInTheDocument();
   await userEvent.setup().click(control);
   expect(openSettings).toHaveBeenCalledOnce();
   expect(f.spawn).not.toHaveBeenCalled();
@@ -2281,7 +2302,7 @@ it("refreshes a mounted card after its agent receives an execution binding", asy
     openSettings,
   };
   const view = render(<tabs.CreateModel {...props} agent={agent} />);
-  await screen.findByRole("button", { name: "Install integration" });
+  await screen.findByRole("button", { name: "Install Codex" });
   f.spawn.mockClear();
   binding = { provider: "test/guest" };
   view.rerender(
@@ -2291,7 +2312,7 @@ it("refreshes a mounted card after its agent receives an execution binding", asy
     />,
   );
   try {
-    expect(screen.queryByText("Install integration")).not.toBeInTheDocument();
+    expect(screen.queryByText("Install Codex")).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Model" })).toHaveTextContent(
       "Loading models",
     );
@@ -2300,7 +2321,7 @@ it("refreshes a mounted card after its agent receives an execution binding", asy
   }
   const control = await screen.findByRole("button", { name: "Model settings" });
   expect(control).toHaveTextContent("Codex default");
-  expect(screen.queryByText("Install integration")).not.toBeInTheDocument();
+  expect(screen.queryByText("Install Codex")).not.toBeInTheDocument();
   await userEvent.setup().click(control);
   expect(openSettings).toHaveBeenCalledOnce();
   expect(f.spawn).not.toHaveBeenCalled();

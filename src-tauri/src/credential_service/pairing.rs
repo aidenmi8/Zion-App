@@ -105,9 +105,6 @@ struct State {
     /// The request waiting for the human: its id, relay and answer.
     pending: Option<(String, String, oneshot::Sender<bool>)>,
     asked: VecDeque<Instant>,
-    /// Prompts the page has listening to ask the human; with none, nothing is
-    /// asked, since nobody could answer.
-    prompts: usize,
     /// Bumped by every revoke-all; a token admitted, or an approval begun,
     /// under an earlier one never acts or is saved.
     generation: u64,
@@ -184,7 +181,7 @@ impl Pairings {
             .unwrap_or_else(PoisonError::into_inner);
         let communities = communities
             .as_ref()
-            .ok_or_else(|| Failure::new("unavailable", "Buzz is starting; try again"))?;
+            .ok_or_else(|| Failure::new("unavailable", "Zion is starting; try again"))?;
         Ok(is_saved(communities, relay))
     }
     fn state(&self) -> MutexGuard<'_, State> {
@@ -375,12 +372,12 @@ impl Pairings {
         if !self.saved(relay)? {
             return Err(Failure::new(
                 "denied",
-                &format!("{relay} isn't a community in Buzz; add it first"),
+                &format!("{relay} isn't a community in Zion; add it first"),
             ));
         }
         let approver = match human().await {
             Human::Ready(approver) => approver,
-            Human::Absent => return Err(Failure::new("denied", "Set up Buzz first")),
+            Human::Absent => return Err(Failure::new("denied", "Set up Zion first")),
             Human::Pending(message) => return Err(Failure::new("unavailable", message)),
         };
         self.settled().await.map_err(Failure::unavailable)?;
@@ -391,7 +388,7 @@ impl Pairings {
         let unsaved = || {
             Failure::new(
                 "denied",
-                &format!("{relay} isn't a community in Buzz; add it first"),
+                &format!("{relay} isn't a community in Zion; add it first"),
             )
         };
         let answer = {
@@ -408,13 +405,6 @@ impl Pairings {
                 return Err(unsaved());
             }
             let mut state = self.state();
-            // Before the rate limit: a request nobody could see spends no slot.
-            if state.prompts == 0 {
-                return Err(Failure::new(
-                    "unavailable",
-                    "Buzz can't ask you yet; finish signing in or setting up in Buzz, then pair again",
-                ));
-            }
             let now = Instant::now();
             while state
                 .asked
@@ -473,17 +463,17 @@ impl Pairings {
         match tokio::time::timeout(APPROVAL, answer).await {
             Ok(Ok(true)) => {}
             Ok(_) if !self.saved(relay)? => return Err(unsaved()),
-            Ok(_) => return Err(Failure::new("denied", "Pairing was declined in Buzz")),
+            Ok(_) => return Err(Failure::new("denied", "Pairing was declined in Zion")),
             Err(_) => {
                 return Err(Failure::new(
                     "approval_required",
-                    "Nobody approved the pairing in Buzz in time",
+                    "Nobody approved the pairing in Zion in time",
                 ))
             }
         }
         match human().await {
             Human::Ready(now) if now == approver => {}
-            _ => return Err(Failure::new("denied", "Your Buzz account changed")),
+            _ => return Err(Failure::new("denied", "Your Zion account changed")),
         }
         let token =
             super::new_token().map_err(|_| Failure::new("unavailable", "Could not pair"))?;
@@ -497,7 +487,7 @@ impl Pairings {
             last_used: now,
             approved_by: approver.clone(),
         };
-        let account_changed = || Failure::new("denied", "Your Buzz account changed");
+        let account_changed = || Failure::new("denied", "Your Zion account changed");
         // Saved only under the generation it was approved in, and returned
         // only if no revoke-all began while it was saved: that one removes it.
         // A community removed while it was saved is seen before the write
@@ -549,24 +539,6 @@ impl Pairings {
         if let Some((.., send)) = pending {
             let _ = send.send(approve);
         }
-    }
-
-    /// The page mounted (`true`) or unmounted a prompt that asks the human.
-    pub(crate) fn prompt(&self, mounted: bool) {
-        let mut state = self.state();
-        state.prompts = if mounted {
-            state.prompts + 1
-        } else {
-            state.prompts.saturating_sub(1)
-        };
-    }
-    /// A new page has mounted no prompt yet, and never heard a request still
-    /// waiting: dropping its sender declines it, as the old page's unmount
-    /// would have.
-    pub(crate) fn page_load(&self) {
-        let mut state = self.state();
-        state.prompts = 0;
-        state.pending = None;
     }
 
     pub(crate) async fn list(&self) -> Result<Vec<Listed>, String> {
@@ -747,7 +719,6 @@ mod tests {
         pairings.set(made.clone()).ok();
         let relay = "wss://relay.example";
         made.set_communities(vec![relay.into()]).await;
-        made.prompt(true);
         let pairing = tokio::spawn({
             let made = made.clone();
             async move {

@@ -1,5 +1,5 @@
-// Matches the repeated SMIL tracks in public/buzz-loading-mark.svg.
-const CYCLE_MS = 1760;
+// Matches the approved Zion breath in public/buzz-loading-mark.svg.
+const CYCLE_MS = 1800;
 const FADE_MS = 220;
 // A saved workspace stays usable if its live refresh stalls.
 const SETTLING_BUDGET_MS = CYCLE_MS * 2;
@@ -15,31 +15,6 @@ let bypassPending = false;
 let revision = 0;
 const fallbackStartedAt = performance.now();
 const listeners = new Set<() => void>();
-
-declare global {
-  interface Window {
-    /** Installed by public/launch-init.js, which owns the startup fallback. */
-    __buzzStartup?: Readonly<{
-      failed(error: unknown, detail?: string): void;
-      started(): void;
-    }>;
-  }
-}
-
-/** Shows "Buzz couldn’t open", which needs nothing from this bundle, when
- * startup throws or React unmounts the app after an error no boundary caught
- * before its launch ended; "Buzz stopped working" when React unmounts it after
- * the launch ended. */
-export function showStartupFailure(error: unknown, detail?: string) {
-  console.error("Buzz could not start or continue", error);
-  window.__buzzStartup?.failed(error, detail);
-}
-
-/** React has the app: from here, its root reports what stops it, and other
- * uncaught errors leave the app running. */
-export function startupHandedToReact() {
-  window.__buzzStartup?.started();
-}
 
 // Native window chrome must remain usable while app content is still inert.
 export const launchVisible = () => !!document.getElementById("buzz-launch");

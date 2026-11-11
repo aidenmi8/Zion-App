@@ -692,7 +692,7 @@ it("shows the failure and native cause in Auto mode without presenting it as an 
   render(<Component />);
   await screen.findByText(/Native model startup failed: fixture cause/);
   expect(screen.getByText(/Mesh needs recovery\./)).toHaveTextContent(
-    "Restart Buzz before starting Mesh again",
+    "Restart Zion before starting Mesh again",
   );
   expect(screen.queryByText(/Saved model:/)).not.toBeInTheDocument();
 });
@@ -859,7 +859,7 @@ it("failed with saved sharing: Off persists the disarm, then On stays blocked un
   await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "false"));
   // Consent is cleared; the unconfirmed runtime is never presented as stopped.
   expect(
-    screen.getByText(/Shutdown could not be confirmed\. Restart Buzz/),
+    screen.getByText(/Shutdown could not be confirmed\. Restart Zion/),
   ).toBeInTheDocument();
   expect(toggle).toHaveAttribute("aria-disabled", "true");
   fireEvent.click(toggle);
@@ -936,7 +936,7 @@ it("unsafe failed runtime with no lease: Off disarms consent without selection o
   native.invoke.mockImplementation((command, args) => {
     // Native select must confirm shutdown first; a sticky failure always rejects.
     if (command === "mesh_compute_select")
-      return Promise.reject("Mesh shutdown timed out; restart Buzz");
+      return Promise.reject("Mesh shutdown timed out; restart Zion");
     if (command === "mesh_compute_disarm") {
       expect(args).toEqual({
         community: "https://fixture.example",
@@ -965,7 +965,7 @@ it("unsafe failed runtime with no lease: Off disarms consent without selection o
     expectedViewer: "viewer",
   });
   expect(
-    screen.getByText(/Shutdown could not be confirmed\. Restart Buzz/),
+    screen.getByText(/Shutdown could not be confirmed\. Restart Zion/),
   ).toBeInTheDocument();
   expect(toggle).toHaveAttribute("aria-disabled", "true");
 });
@@ -1039,7 +1039,7 @@ for (const retire of ["identity", "dispose"] as const) {
     const retired = shareActionSettled();
     try {
       await act(async () => {
-        rejectRetry("Mesh shutdown timed out; restart Buzz");
+        rejectRetry("Mesh shutdown timed out; restart Zion");
         // Wait for the retired Off action itself to finish, not a timer tick.
         await retired;
       });

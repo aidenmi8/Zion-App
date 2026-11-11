@@ -29,6 +29,5 @@ export function modelChoice(model: RemoteAgentModel): ModelChoice {
     id: model.id,
     label: model.displayName,
     ...(family ? { family } : {}),
-    ...(model.fast ? { fast: true } : {}),
   };
 }

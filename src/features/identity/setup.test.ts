@@ -42,7 +42,6 @@ it("retries from the failed step and rests where the steps would have", async ()
     error: "Linking failed",
     retryable: true,
     skipsLink: false,
-    bound: false,
   });
 
   failing.heal();
@@ -53,28 +52,6 @@ it("retries from the failed step and rests where the steps would have", async ()
   expect(after.run).toHaveBeenCalledTimes(1);
 });
 
-it.each(["pubkey_already_bound", "identity_already_bound"])(
-  "reports a link Builderlab refused as %s as bound, which Try again cannot change",
-  async (code) => {
-    const setup = createSetup();
-    const refusal = Object.assign(new Error("Refused"), { code });
-    await setup.start([
-      { label: "Linking", run: () => Promise.reject<void>(refusal) },
-    ]);
-    expect(setup.snapshot()).toMatchObject({ status: "failed", bound: true });
-    await setup.start([
-      {
-        label: "Linking",
-        run: () =>
-          Promise.reject<void>(
-            Object.assign(new Error("Busy"), { code: "too_many_attempts" }),
-          ),
-      },
-    ]);
-    expect(setup.snapshot()).toMatchObject({ status: "failed", bound: false });
-  },
-);
-
 it("reports only an error that says so as retryable", async () => {
   const setup = createSetup();
   await setup.start([flaky("Backing up", false).step]);
@@ -83,7 +60,6 @@ it("reports only an error that says so as retryable", async () => {
     error: "Backing up failed",
     retryable: false,
     skipsLink: false,
-    bound: false,
   });
   await setup.start([
     { label: "Odd", run: () => Promise.reject<void>("text") },
@@ -353,10 +329,10 @@ it("creating or importing a key refuses while another key is on this device, bef
     importKey: importNsec,
   } as unknown as Identity;
   await expect(createKey(identity).run()).rejects.toThrow(
-    "already has a different Buzz key",
+    "already has a different Zion key",
   );
   await expect(importKey(identity, "nsec1")).rejects.toThrow(
-    "already has a different Buzz key",
+    "already has a different Zion key",
   );
   expect(create).not.toHaveBeenCalled();
   expect(importNsec).not.toHaveBeenCalled();

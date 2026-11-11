@@ -90,7 +90,6 @@ export function ConvertToChannel({
   const attempt = useSyncExternalStore(details.subscribe, () =>
     details.snapshot(id),
   );
-  const cancel = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(true);
   const completed = useRef(false);
   const [base, setBase] = useState<ChannelDetails>();
@@ -289,7 +288,6 @@ export function ConvertToChannel({
         close();
         if (completed.current && !signal?.aborted) onConverted?.();
       }}
-      initialFocus={cancel}
       title="Convert to channel"
       size="compact"
       headerGap="compact"
@@ -309,7 +307,7 @@ export function ConvertToChannel({
       finalFocus={completed.current ? false : finalFocus}
       actions={
         <>
-          <Button ref={cancel} onClick={() => setOpen(false)} disabled={busy}>
+          <Button onClick={() => setOpen(false)} disabled={busy}>
             {converted ? "Close" : "Cancel"}
           </Button>
           {canFinish ? (

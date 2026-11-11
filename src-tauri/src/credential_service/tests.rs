@@ -153,8 +153,6 @@ pub(crate) fn service_over(
         Arc::new(move |notice| notices.lock().unwrap().push(notice)),
     );
     *service.0.pairings.communities.lock().unwrap() = Some(vec![RELAY.into()]);
-    // The page's prompt is listening, as it is once the app shell shows.
-    service.0.pairings.prompt(true);
     service
 }
 
@@ -957,7 +955,7 @@ fn every_kind_has_one_class() {
         0, 3, 5, 9005, 9044, 10002, 10100, 28936, 30621, 41011, 45011,
     ] {
         assert!(
-            matches!(classes(kind), Verdict::Deny(reason) if reason.contains("use Buzz")),
+            matches!(classes(kind), Verdict::Deny(reason) if reason.contains("use Zion")),
             "{kind}"
         );
     }

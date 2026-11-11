@@ -266,7 +266,7 @@ describe("the NIP-FI sign-in", () => {
         vi
           .mocked(fi.service.signIn)
           .mockRejectedValueOnce(new Error("storage-busy")),
-      "Secure storage is busy. Close another Buzz instance and try again.",
+      "Secure storage is busy. Close another Zion instance and try again.",
     ],
     [
       "the browser step outlasts native's wait",

@@ -79,7 +79,6 @@ import { Header } from "../../shared/design-system/ui/Header";
 import { channelIcon } from "../../features/channels/channel-icon";
 import { NavigationItem } from "../../shared/design-system/ui/NavigationItem";
 import { Switch } from "../../shared/design-system/ui/Switch";
-import { Tooltip } from "../../shared/design-system/ui/Tooltip";
 import { SettingsGroup } from "../../shared/design-system/ui/SettingsGroup";
 import { SwitchPreferenceRow } from "../../shared/design-system/ui/SwitchPreferenceRow";
 import { WorkflowDeletionNotices } from "./WorkflowDeletionNotices";
@@ -143,10 +142,6 @@ export function workflowOperationLocked(
   }
   return !!newestSave && saveAwaitsReadback(newestSave, definition);
 }
-
-/** The relay still accepts saves and runs there, but every run fails. */
-export const ARCHIVED_REASON =
-  "This channel is archived, so its workflows can't run.";
 
 /** A save is resolved once its exact revision, or a newer head, is read. */
 export function saveAwaitsReadback(
@@ -560,21 +555,16 @@ function WorkflowCard({
   const awaitingReadback =
     submitted?.revision === definition.revision &&
     submittedOperation?.outcome !== "rejected";
-  // An enabled workflow can still be turned off, so it stops failing.
-  const archivedOff = !!channel.archived && !enabled;
-  const toggleReason = archivedOff
-    ? ARCHIVED_REASON
-    : readonly
-      ? "Only the author can change this workflow."
-      : locked || awaitingReadback
-        ? "Waiting for the submitted change to be resolved."
-        : !fields.editable
-          ? "Correct the YAML before changing the configured state."
-          : !capability.availability.save
-            ? "Saving is unavailable from this host."
-            : undefined;
+  const toggleReason = readonly
+    ? "Only the author can change this workflow."
+    : locked || awaitingReadback
+      ? "Waiting for the submitted change to be resolved."
+      : !fields.editable
+        ? "Correct the YAML before changing the configured state."
+        : !capability.availability.save
+          ? "Saving is unavailable from this host."
+          : undefined;
   const reasonId = useId();
-  const archivedReasonId = useId();
   const deleteReasonId = useId();
   const descriptionId = useId();
   const statusId = useId();
@@ -593,7 +583,6 @@ function WorkflowCard({
     <>Owner: {keyLabel}</>
   );
   const runDisabled =
-    !!channel.archived ||
     readonly ||
     locked ||
     awaitingReadback ||
@@ -611,11 +600,6 @@ function WorkflowCard({
     }
   };
   const toggle = (next: boolean) => {
-    // Like runNow: a confirmation can outlive the state that allowed it.
-    if (toggleReason) {
-      onError(toggleReason);
-      return;
-    }
     const yaml = yamlWithWorkflowEnabled(definition.yaml, next);
     if (yaml === null) {
       onError("This workflow cannot be changed from the landing page.");
@@ -651,45 +635,23 @@ function WorkflowCard({
         size="sm"
         variant="ghost"
         aria-label={`Run now: ${name}`}
-        title={channel.archived ? ARCHIVED_REASON : "Run now"}
-        aria-describedby={channel.archived ? archivedReasonId : undefined}
+        title="Run now"
         disabled={runDisabled}
-        // A natively disabled button gets no hover, so its reason would never show.
-        focusableWhenDisabled={channel.archived}
         icon={<PlayIcon size="1rem" aria-hidden="true" />}
         onClick={runNow}
       />
       {fields.editable && (
-        // Like Run now, the archived reason shows on hover and keyboard focus.
-        <Tooltip
-          content={ARCHIVED_REASON}
-          {...(archivedOff ? {} : { open: false })}
-          disableHoverablePopup
-        >
-          <Switch
-            aria-label={`Enabled in configuration: ${name}`}
-            aria-describedby={toggleReason ? reasonId : undefined}
-            checked={enabled}
-            disabled={!!toggleReason}
-            // Base UI's Switch has no focusableWhenDisabled; a disabled one
-            // leaves the tab order unless given a tabIndex.
-            {...(archivedOff
-              ? {
-                  tabIndex: 0,
-                  // Space would otherwise scroll the list. useButton drops a
-                  // plain onKeyDown while disabled, so this uses capture.
-                  onKeyDownCapture: (event) => {
-                    if (event.key === " ") event.preventDefault();
-                  },
-                }
-              : {})}
-            onCheckedChange={(next) => {
-              if (next === enabled) return;
-              if (next && warning) setConfirmEnable(true);
-              else toggle(next);
-            }}
-          />
-        </Tooltip>
+        <Switch
+          aria-label={`Enabled in configuration: ${name}`}
+          aria-describedby={toggleReason ? reasonId : undefined}
+          checked={enabled}
+          disabled={!!toggleReason}
+          onCheckedChange={(next) => {
+            if (next === enabled) return;
+            if (next && warning) setConfirmEnable(true);
+            else toggle(next);
+          }}
+        />
       )}
       <MenuRoot>
         <MenuTrigger
@@ -757,11 +719,6 @@ function WorkflowCard({
           {toggleReason}
         </span>
       )}
-      {channel.archived && (
-        <span id={archivedReasonId} hidden>
-          {ARCHIVED_REASON}
-        </span>
-      )}
     </>
   );
   const updated = (
@@ -788,19 +745,11 @@ function WorkflowCard({
           {presentation.description}
         </p>
         <p className="text-caption text-subtle">
-          #{channel.name} · {channel.archived && "Archived · "}
-          {updated}
+          #{channel.name} · {updated}
         </p>
         <p className="text-caption text-subtle">{owner}</p>
         <div className="workflow-detail-actions">
-          <Button
-            variant="primary"
-            title={channel.archived ? ARCHIVED_REASON : undefined}
-            aria-describedby={channel.archived ? archivedReasonId : undefined}
-            disabled={runDisabled}
-            focusableWhenDisabled={channel.archived}
-            onClick={runNow}
-          >
+          <Button variant="primary" disabled={runDisabled} onClick={runNow}>
             <PlayIcon size="1rem" aria-hidden="true" />
             Run now
           </Button>
@@ -936,12 +885,6 @@ function WorkflowCard({
                         #{channel.name}
                       </span>
                       <span aria-hidden="true">·</span>
-                      {channel.archived && (
-                        <>
-                          <span>Archived</span>
-                          <span aria-hidden="true">·</span>
-                        </>
-                      )}
                     </>
                   )}
                   {updated}
@@ -1086,7 +1029,6 @@ function WorkflowCards({
           level={2}
           icon={<Icon size={24} />}
           title={channel.name}
-          subtitle={channel.archived && "Archived"}
         />
       )}
       <SettingsGroup>
@@ -1363,8 +1305,7 @@ export function WorkflowLanding({
   refreshRequest: number;
   saveReadback?: Pick<WorkflowDefinition, "channelId" | "revision"> | undefined;
   viewer: string;
-  /** Absent when no channel can take a new workflow here. */
-  onCreate?: (() => void) | undefined;
+  onCreate: () => void;
   onDelete: (definition: WorkflowDefinition) => void;
   onOpen: (definition: WorkflowDefinition, channel: ChannelSummary) => void;
 }) {
@@ -1759,7 +1700,7 @@ export function WorkflowLanding({
             ) : emptyFromFilters ? (
               <Button onClick={resetFilters}>Clear filters</Button>
             ) : (
-              onCreate && (
+              capability.availability.save && (
                 <Button onClick={onCreate}>
                   <PlusIcon size="1rem" aria-hidden="true" />
                   New workflow

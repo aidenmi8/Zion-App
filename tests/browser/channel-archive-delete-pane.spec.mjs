@@ -1,7 +1,6 @@
 import { openChannelDetails } from "./channel-details.mjs";
 import { openPage } from "./navigation.mjs";
 import { test, expect } from "./fixture.mjs";
-import { animationsSettled } from "./animations.mjs";
 
 const channelId = "11111111-1111-4111-8111-111111111111";
 const panelFor = (page) =>
@@ -126,7 +125,7 @@ for (const action of ["archive", "delete"]) {
         dialog.getByRole("button", { name: label, exact: true }),
       ).toHaveAttribute(
         "data-variant",
-        action === "delete" ? "destructive" : "prominent",
+        action === "delete" ? "destructive" : "subtle",
       );
       await expect(
         dialog.getByRole("button", {
@@ -271,10 +270,10 @@ for (const action of ["archive", "delete"]) {
         // Complete the round trip through real search/navigation, not a synthetic
         // exact route: the archived row must remain reachable after reload.
         await page
-          .getByRole("button", { name: "Search Buzz", exact: true })
+          .getByRole("button", { name: "Search Zion", exact: true })
           .click();
         const search = page.getByRole("dialog", {
-          name: "Search Buzz",
+          name: "Search Zion",
           exact: true,
         });
         await expect(
@@ -336,7 +335,11 @@ for (const action of ["archive", "delete"]) {
         await expect(restore).toBeFocused();
         expect(app.report.lifecyclePublications).toHaveLength(1);
         await restore.click();
-        await animationsSettled(unarchive);
+        await unarchive.evaluate(async (element) => {
+          await Promise.all(
+            element.getAnimations().map((animation) => animation.finished),
+          );
+        });
         // Force the operation to finish before the confirmation's exit does.
         const exitGate = await unarchive.evaluateHandle((element) => {
           const state = { held: false, animations: [] };

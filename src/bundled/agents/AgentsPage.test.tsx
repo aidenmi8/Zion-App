@@ -1,5 +1,4 @@
 import { ProfilePanel } from "../profiles/ProfilePanel";
-import { createAgentMemories } from "../../features/agents/memory";
 import {
   createRelaySession,
   type RelaySession,
@@ -592,90 +591,6 @@ it("opens the side panel with the type's tabs and the app's Settings and Memory 
   );
 });
 
-it("opens memory Buzz links in their community and rejects a retired page's callback", async () => {
-  const user = userEvent.setup();
-  const viewer = "f".repeat(64),
-    channelId = "11111111-1111-4111-8111-111111111111",
-    messageId = "e".repeat(64);
-  const url = `buzz://message?channel=${channelId}&id=${messageId}`;
-  const owner = createRelaySession({
-    viewer,
-    relayAuthor: "d".repeat(64),
-    query: async () => [],
-    media: () => undefined,
-  });
-  const memories = createAgentMemories(
-    async () => ({
-      entries: [
-        { slug: "core", body: url, eventId: "b".repeat(64), createdAt: 1 },
-      ],
-      partial: false,
-    }),
-    viewer,
-    () => true,
-  );
-  const signal = new AbortController();
-  const target = {
-    version: 1,
-    kind: "page",
-    pluginId: "buzz.agents",
-    pageId: "agents",
-    scope: null,
-  } as const;
-  let entryId = "agents";
-  const open = vi.fn(async () => ({ status: "opened" as const }));
-  const navigator = {
-    snapshot: () => ({ entry: { id: entryId, target } }),
-    open,
-  } as unknown as Navigation;
-  const navigation = {
-    entryId,
-    target,
-    signal: signal.signal,
-    position: () => undefined,
-    savePosition() {},
-  } as unknown as PageNavigation;
-  const page = { navigation, navigator };
-  const view = setup([agent("Ada", 1)]);
-  const connection = {
-    status: "ready",
-    generation: 1,
-    viewer,
-    origin: "https://relay.example",
-    scope: `https://relay.example:${viewer}`,
-    session: { ...owner.session, agentMemories: memories.capability },
-  };
-  const relay = {
-    snapshot: () => connection,
-    subscribe: () => () => {},
-  } as unknown as RelayData;
-  try {
-    view.rerender(<AgentsPage agents={view.agents} relay={relay} {...page} />);
-    await user.click(screen.getByRole("gridcell", { name: /Ada/ }));
-    await user.click(screen.getByRole("tab", { name: "Memory" }));
-    await user.click(await screen.findByRole("button", { name: "core" }));
-    const link = screen.getByRole("link", { name: url });
-    await user.click(link);
-    expect(open).toHaveBeenCalledExactlyOnceWith({
-      version: 1,
-      kind: "conversation",
-      scope: { viewer, communityOrigin: "https://relay.example" },
-      channelId,
-      messageId,
-    });
-    entryId = "another-page";
-    await user.click(link);
-    expect(open).toHaveBeenCalledTimes(1);
-    entryId = "agents";
-    signal.abort();
-    await user.click(link);
-    expect(open).toHaveBeenCalledTimes(1);
-  } finally {
-    view.unmount();
-    owner.dispose();
-  }
-});
-
 it("checks providers in Agent setup and opens their host-owned dialogs", async () => {
   const user = userEvent.setup();
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1195,7 +1110,7 @@ it("saves a reviewed provider change with the destination settings", async () =>
     "ThinkingDropped",
   );
   expect(dialog).toHaveTextContent(
-    "Your agent will continue the conversation in Buzz.",
+    "Your agent will continue the conversation in Zion.",
   );
   expect(dialog).toHaveTextContent("Anything Echo left running will stop.");
   expect(dialog).toHaveTextContent(
@@ -2749,7 +2664,7 @@ it("makes a team of chosen agents and lists it with its members", async () => {
   agents.teamSync.mockReturnValue({ local: "failed" });
   act(() => notify());
   expect(form).toHaveTextContent(
-    "Only on this Mac. Moving it to the community failed; Buzz will try again.",
+    "Only on this Mac. Moving it to the community failed; Zion will try again.",
   );
   await user.click(screen.getByRole("button", { name: "Delete team" }));
   let dialog = await screen.findByRole("alertdialog", { name: "Delete Crew?" });
@@ -5240,11 +5155,11 @@ it("removes a Bestie on another device from its card, asking first", async () =>
       name: "Remove Ada as your Bestie?",
     });
   };
-  // Removal starts on the secondary Cancel, which saves nothing; its
+  // Removal starts on the highlighted Cancel, which saves nothing; its
   // settings are on the device it runs on.
   let dialog = await ask();
   const cancel = within(dialog).getByRole("button", { name: "Cancel" });
-  expect(cancel).toHaveAttribute("data-variant", "subtle");
+  expect(cancel).toHaveAttribute("data-variant", "prominent");
   await waitFor(() => expect(cancel).toHaveFocus());
   expect(dialog).toHaveTextContent(
     "turn them off in its Former Bestie tab on the device it runs on.",
@@ -5398,7 +5313,6 @@ it("keeps a failed Bestie replacement visible and retries the account save", asy
     name: "Ada, Bestie",
   });
   expect(adaCard).toBeVisible();
-  expect(view.container.querySelector("[data-celebrating]")).toBeNull();
 
   const beaCard = screen.getByRole("gridcell", { name: "Bea" });
   await user.click(
@@ -5413,9 +5327,7 @@ it("keeps a failed Bestie replacement visible and retries the account save", asy
   await user.click(
     within(confirmation).getByRole("button", { name: "Switch to Bea" }),
   );
-  expect(view.container.querySelector("[data-celebrating]")).toBeNull();
   await act(async () => writes[0]?.(new Error("offline")));
-  expect(view.container.querySelector("[data-celebrating]")).toBeNull();
   expect(within(confirmation).getByRole("alert")).toHaveTextContent(
     "Your bestie couldn't be saved to your account. Try again.",
   );
@@ -5454,18 +5366,6 @@ it("keeps a failed Bestie replacement visible and retries the account save", asy
   expect(
     await screen.findByRole("gridcell", { name: "Bea, Bestie" }),
   ).toBeVisible();
-  const badge = view.container.querySelector("[data-celebrating]");
-  expect(badge).not.toBeNull();
-  const star = badge?.querySelector("svg");
-  if (!star?.parentElement) throw new Error("Missing celebrating star");
-  // React uses the prefixed animation event in jsdom (no AnimationEvent).
-  fireEvent(star, new Event("webkitAnimationEnd", { bubbles: true }));
-  expect(badge).toHaveAttribute("data-celebrating");
-  fireEvent(
-    star.parentElement,
-    new Event("webkitAnimationEnd", { bubbles: true }),
-  );
-  expect(view.container.querySelector("[data-celebrating]")).toBeNull();
 });
 
 it("retries a failed replacement in the same dialog after an earlier Bestie save", async () => {

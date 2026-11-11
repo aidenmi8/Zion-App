@@ -17,25 +17,16 @@ export type GitPluginSource = Readonly<{
   path?: string;
   commit?: string;
 }>;
-/** A single plugin artifact over HTTPS, accepted only at `sha256` and as plugin `id`. */
-export type UrlPluginSource = Readonly<{
-  id: string;
-  url: string;
-  sha256: string;
-}>;
-export type PluginLinkSource = GitPluginSource | UrlPluginSource;
 export type OpenTarget =
   | Readonly<{ version: 1; kind: "home" }>
   | Readonly<{
       version: 1;
       kind: "settings";
       section?: string;
-      /** Plugin-owned presentation data for a contributed Settings card. */
-      route?: Readonly<{ version: number; params: JsonValue }>;
       /** Nested provider controls within Agent setup; presentation only. */
       provider?: string;
       scope?: NavigationScope | null;
-      pluginImport?: PluginLinkSource;
+      pluginImport?: GitPluginSource;
       pluginId?: string;
     }>
   | Readonly<{
@@ -178,40 +169,6 @@ export function parseGitPluginSource(input: unknown): GitPluginSource {
       : {}),
   });
 }
-export function parseUrlPluginSource(input: unknown): UrlPluginSource {
-  const value = record(input);
-  fields(value, ["id", "url", "sha256"]);
-  if (
-    typeof value.url !== "string" ||
-    value.url.length > 2048 ||
-    /[\s\p{Cc}\p{Cf}\P{ASCII}]/u.test(value.url) ||
-    typeof value.sha256 !== "string" ||
-    !hex.test(value.sha256)
-  )
-    throw invalid();
-  const url = new URL(value.url);
-  if (
-    url.protocol !== "https:" ||
-    !url.hostname ||
-    url.hostname.startsWith("-") ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    !url.pathname.replaceAll("/", "")
-  )
-    throw invalid();
-  return Object.freeze({
-    id: text(value.id),
-    url: url.href,
-    sha256: value.sha256.toLowerCase(),
-  });
-}
-export function parsePluginLinkSource(input: unknown): PluginLinkSource {
-  return input && typeof input === "object" && "url" in input
-    ? parseUrlPluginSource(input)
-    : parseGitPluginSource(input);
-}
 function boundScope(input: unknown): NavigationScope {
   const value = record(input);
   fields(value, ["viewer", "communityOrigin"]);
@@ -270,17 +227,6 @@ function json(input: unknown, depth = 0, budget = { nodes: 1024 }): JsonValue {
   return Object.freeze(result);
 }
 
-function parseRoute(input: unknown) {
-  const raw = record(input);
-  fields(raw, ["version", "params"]);
-  if (!Number.isSafeInteger(raw.version) || (raw.version as number) < 1)
-    throw invalid();
-  return Object.freeze({
-    version: raw.version as number,
-    params: json(raw.params),
-  });
-}
-
 /** All bound ingresses use this parser. A valid address is not authorization. */
 export function parseOpenTarget(input: unknown): OpenTarget {
   try {
@@ -297,7 +243,6 @@ export function parseOpenTarget(input: unknown): OpenTarget {
           "version",
           "kind",
           "section",
-          "route",
           "provider",
           "scope",
           "pluginImport",
@@ -317,9 +262,6 @@ export function parseOpenTarget(input: unknown): OpenTarget {
           ...(value.section !== undefined
             ? { section: text(value.section, section) }
             : {}),
-          ...(value.route !== undefined
-            ? { route: parseRoute(value.route) }
-            : {}),
           ...(value.provider !== undefined
             ? { provider: text(value.provider, provider) }
             : {}),
@@ -327,7 +269,7 @@ export function parseOpenTarget(input: unknown): OpenTarget {
             ? { scope: value.scope === null ? null : boundScope(value.scope) }
             : {}),
           ...(value.pluginImport !== undefined
-            ? { pluginImport: parsePluginLinkSource(value.pluginImport) }
+            ? { pluginImport: parseGitPluginSource(value.pluginImport) }
             : {}),
           ...(value.pluginId !== undefined
             ? { pluginId: text(value.pluginId) }
@@ -343,6 +285,17 @@ export function parseOpenTarget(input: unknown): OpenTarget {
           "scope",
           "route",
         ]);
+        let route: { version: number; params: JsonValue } | undefined;
+        if (value.route !== undefined) {
+          const raw = record(value.route);
+          fields(raw, ["version", "params"]);
+          if (!Number.isSafeInteger(raw.version) || (raw.version as number) < 1)
+            throw invalid();
+          route = Object.freeze({
+            version: raw.version as number,
+            params: json(raw.params),
+          });
+        }
         target = {
           version: 1,
           kind: "page",
@@ -351,9 +304,7 @@ export function parseOpenTarget(input: unknown): OpenTarget {
           ...(value.scope !== undefined
             ? { scope: value.scope === null ? null : boundScope(value.scope) }
             : {}),
-          ...(value.route !== undefined
-            ? { route: parseRoute(value.route) }
-            : {}),
+          ...(route ? { route } : {}),
         };
         break;
       }

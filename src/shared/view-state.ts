@@ -1,5 +1,5 @@
 // View intent is durable and explicitly partitioned; connection generations are not storage keys.
-const viewListeners = new Map<string, Set<(key?: string) => void>>();
+const viewListeners = new Map<string, Set<() => void>>();
 const composerDraftKey =
   /^draft:([a-zA-Z0-9][a-zA-Z0-9._-]{0,255})(?::thread:([0-9a-f]{64}))?$/;
 export function draftCoordinates(key: string) {
@@ -8,12 +8,11 @@ export function draftCoordinates(key: string) {
     ? { channelId: match[1], ...(match[2] ? { threadRootId: match[2] } : {}) }
     : undefined;
 }
-// `key` names the one key that changed; undefined means any key may have.
-const changed = (scope: string, key?: string) => {
-  for (const listener of viewListeners.get(scope) ?? []) listener(key);
+const changed = (scope: string) => {
+  for (const listener of viewListeners.get(scope) ?? []) listener();
 };
 /** Same durable view keys as the composer; no parallel draft store or index. */
-export function subscribeView(scope: string, listener: (key?: string) => void) {
+export function subscribeView(scope: string, listener: () => void) {
   let listeners = viewListeners.get(scope);
   if (!listeners) {
     listeners = new Set();
@@ -29,8 +28,7 @@ export function subscribeView(scope: string, listener: (key?: string) => void) {
       }
       if (!event.key.startsWith("buzz-view.v1:")) return;
       const pair: unknown = JSON.parse(event.key.slice("buzz-view.v1:".length));
-      if (Array.isArray(pair) && pair[0] === scope)
-        listener(typeof pair[1] === "string" ? pair[1] : undefined);
+      if (Array.isArray(pair) && pair[0] === scope) listener();
     } catch {
       /* Storage may be unavailable while a window is closing. */
     }
@@ -66,7 +64,7 @@ export function writeView(scope: string, key: string, value: unknown) {
       revision,
     );
     if (viewRevision(scope, key) !== revision) return false;
-    changed(scope, key);
+    changed(scope);
     return true;
   } catch {
     // Ordinary view callers remain usable in memory; recovery callers check this.
@@ -84,25 +82,6 @@ export function replaceView(
   if (current === undefined) return "failed";
   if (current !== expected) return "changed";
   return writeView(scope, key, value) ? "saved" : "failed";
-}
-
-// Rich snapshots contain structure as well as text (up to 32,001 nodes).
-// Keep a receiver bound, not the old text-sized 128 KiB envelope cutoff.
-const MAX_DRAFT_VIEW_LENGTH = 8 * 1024 * 1024;
-
-/** A saved draft record as `listDraftViews` reads it: the parsed value,
- * "oversized" past the receiver bound, or undefined when absent, empty or
- * malformed. */
-export function parseDraftView(
-  raw: string | null | undefined,
-): { value: unknown } | "oversized" | undefined {
-  if (!raw) return undefined;
-  if (raw.length > MAX_DRAFT_VIEW_LENGTH) return "oversized";
-  try {
-    return { value: JSON.parse(raw) };
-  } catch {
-    return undefined;
-  }
 }
 
 /** Snapshot of a viewer's existing composer drafts, never other view coordinates. */
@@ -137,19 +116,22 @@ export function listDraftViews(
         !draftCoordinates(pair[1])
       )
         continue;
-      const draft = parseDraftView(localStorage.getItem(storageKey));
-      if (draft === "oversized") {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) continue;
+      // Rich snapshots contain structure as well as text (up to 32,001 nodes).
+      // Keep a receiver bound, not the old text-sized 128 KiB envelope cutoff.
+      if (raw.length > 8 * 1024 * 1024) {
         unavailable++;
         continue;
       }
-      if (!draft) continue;
       try {
-        if (!meaningful(draft.value, pair[1])) continue;
+        const value: unknown = JSON.parse(raw);
+        if (!meaningful(value, pair[1])) continue;
         if (drafts.length === 500) {
           limited = true;
           break;
         }
-        drafts.push({ key: pair[1], value: draft.value });
+        drafts.push({ key: pair[1], value });
       } catch {
         /* Malformed old draft. */
       }
@@ -167,7 +149,7 @@ export function listDraftViews(
       const raw = localStorage.getItem(
         `${prefix}${JSON.stringify([scope, selected])}`,
       );
-      if (raw && raw.length <= MAX_DRAFT_VIEW_LENGTH)
+      if (raw && raw.length <= 8 * 1024 * 1024)
         drafts.push({ key: selected, value: JSON.parse(raw) });
     } catch {
       /* Missing/malformed/removed draft has no list summary. */
@@ -227,5 +209,5 @@ export function clearView(scope: string, ...keys: string[]) {
     if (localStorage.getItem(storageKey) !== null)
       throw new Error("Could not clear the saved message. Try again.");
   }
-  changed(scope, keys.length === 1 ? keys[0] : undefined);
+  changed(scope);
 }

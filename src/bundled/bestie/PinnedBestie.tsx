@@ -112,8 +112,7 @@ export function PinnedBestie({
         navigator={navigator}
         navigation={navigation}
         icon={icon}
-        agent={{ pubkey: saved, name, picture: identity?.avatar }}
-        community={connection.origin}
+        agent={{ pubkey: saved, name }}
         channel={channel}
       />
     );
@@ -134,7 +133,7 @@ export function PinnedBestie({
         <Notice
           title="Your agents are unavailable"
           description={
-            choices.error ?? "Buzz couldn’t finish reading your agents."
+            choices.error ?? "Zion couldn’t finish reading your agents."
           }
           action={
             <Button
@@ -168,7 +167,7 @@ export function PinnedBestie({
           title="Your chats are unavailable"
           description={
             channels.error ??
-            "Buzz couldn’t read your chats, so this one can’t be opened."
+            "Zion couldn’t read your chats, so this one can’t be opened."
           }
           action={
             <Button
@@ -199,8 +198,7 @@ export function PinnedBestie({
           navigator={navigator}
           navigation={navigation}
           icon={icon}
-          agent={{ pubkey: agent.pubkey, name, picture: agent.avatar }}
-          community={connection.origin}
+          agent={{ pubkey: agent.pubkey, name }}
           channel={undefined}
         />
       );
@@ -226,7 +224,6 @@ function DirectMessage({
   navigator,
   navigation,
   agent,
-  community,
   icon,
   channel,
 }: {
@@ -236,8 +233,7 @@ function DirectMessage({
   extensions: ConversationExtensions;
   navigator: Navigation;
   navigation?: PageNavigation | undefined;
-  agent: { pubkey: string; name: string; picture?: string | undefined };
-  community?: string | undefined;
+  agent: { pubkey: string; name: string };
   icon: React.ReactNode;
   channel: ChannelSummary | undefined;
 }) {
@@ -264,7 +260,7 @@ function DirectMessage({
           setError(
             reason instanceof Error
               ? reason.message
-              : "Buzz couldn’t open this conversation.",
+              : "Zion couldn’t open this conversation.",
           );
       }
     })();
@@ -281,8 +277,7 @@ function DirectMessage({
         navigator={navigator}
         navigation={navigation}
         channel={channel}
-        agent={agent}
-        community={community}
+        bestie={agent.name}
         icon={icon}
       />
     );

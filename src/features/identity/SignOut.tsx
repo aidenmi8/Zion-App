@@ -75,8 +75,8 @@ export function SignOutDialog({
   }
   return (
     <AlertDialog
-      title="Remove your key from this device?"
-      description="Your private key is how you sign in to Buzz. This removes it from this device’s secure storage and signs you out of your organization, Builderlab and hosted communities. Account backups and copies saved elsewhere stay. Save a copy so you can sign back in."
+      title="Sign out of Zion?"
+      description="Signing out removes your private key from this device. Your key is how you sign in, so save it before you continue. You’ll need it to sign back in as this identity."
       onClose={onClose}
       pending={pending}
       actions={
@@ -89,7 +89,7 @@ export function SignOutDialog({
             disabled={!ready || pending}
             onClick={() => void confirm()}
           >
-            {wipe ? "Remove and erase data" : "Remove from device"}
+            {wipe ? "Sign out and erase" : "Sign out"}
           </Button>
         </>
       }
@@ -103,7 +103,7 @@ export function SignOutDialog({
           onCheckedChange={setHaveKey}
         />
         <Checkbox
-          label="Also erase everything else Buzz stores on this device"
+          label="Also erase everything else Zion stores on this device"
           checked={wipe}
           disabled={pending || wipeRefusal !== null}
           onCheckedChange={(checked) => {
@@ -147,7 +147,7 @@ export function SignOutDialog({
         )}
         {!wipe && (
           <p className="text-body-sm text-muted">
-            Your settings, agents and other Buzz data stay on this device. Sign
+            Your settings, agents and other Zion data stay on this device. Sign
             back in with this key and they’ll be here. Agents start only for
             this key.
           </p>

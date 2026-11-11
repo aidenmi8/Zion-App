@@ -248,7 +248,7 @@ it("a key in a hosted community is backed up with no prompt", async () => {
 });
 
 it.each([
-  ["Back up key", true],
+  ["Sync with Builderlab", true],
   ["I will manage my own key", false],
 ] as const)(
   "a key in only independent communities is asked, and %s saves its answer",
@@ -256,10 +256,10 @@ it.each([
     const app = setup(consent(), [INDEPENDENT]);
     const user = userEvent.setup();
     const dialog = await screen.findByRole("alertdialog", {
-      name: "Back up your key?",
+      name: "Sync your identity with Builderlab?",
     });
     expect(dialog).toHaveAccessibleDescription(
-      "Buzz will save an encrypted copy of your identity key with your Builderlab account. That copy can restore your identity, including in other apps where you use the same key.",
+      "Zion will save an encrypted copy of your identity key with your Builderlab account. That copy can restore your identity, including in other apps where you use the same key.",
     );
     expect(app.setBackupChoice).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: action }));
@@ -511,12 +511,16 @@ it("a refused save stays in the prompt with its reason, and Escape then closes i
       onClose={onClose}
     />,
   );
-  await user.click(await screen.findByRole("button", { name: "Back up key" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Sync with Builderlab" }),
+  );
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Another backup of this key is in progress.",
   );
   expect(onClose).not.toHaveBeenCalled();
-  expect(screen.getByRole("button", { name: "Back up key" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Sync with Builderlab" }),
+  ).toBeEnabled();
   await user.keyboard("{Escape}");
   expect(onClose).toHaveBeenCalledOnce();
   expect(setBackupChoice).toHaveBeenCalledOnce();

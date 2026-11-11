@@ -170,14 +170,13 @@ export function createPluginManager(
   async function update(
     operation: () => Promise<StorageResult>,
     timeoutMs = 10_000,
-    waitForSettlement = false,
   ) {
     if (busy || closed) return false;
     busy = true;
     changes++;
     error = null;
     publish();
-    // Ordinary edits may end the caller's wait, never the underlying native operation.
+    // A watchdog ends the caller's wait, not the underlying native operation.
     let settled = false;
     const pending = (async () => {
       try {
@@ -192,26 +191,12 @@ export function createPluginManager(
       publish();
     };
     try {
-      let next: StorageResult;
-      try {
-        next = await withTimeout(
-          pending,
-          `Plugin storage did not respond within ${timeoutMs / 1000} seconds`,
-          timeoutMs,
-        );
-      } catch (reason) {
-        if (!waitForSettlement || settled) throw reason;
-        if (!closed) {
-          error = String(reason);
-          publish();
-        }
-        // Import reviews own a confirmed operation until native actually settles.
-        next = await pending;
-      }
-      if (!closed) {
-        error = null;
-        accept(next);
-      }
+      const next = await withTimeout(
+        pending,
+        `Plugin storage did not respond within ${timeoutMs / 1000} seconds`,
+        timeoutMs,
+      );
+      if (!closed) accept(next);
       return !closed;
     } catch (reason) {
       if (!closed) {
@@ -249,15 +234,11 @@ export function createPluginManager(
     },
     imports: storage.imports,
     installImport: (token: string, path: string) =>
-      update(
-        () => {
-          if (!storage.imports)
-            throw new Error("Plugin imports require the desktop app");
-          return storage.imports.install(token, path);
-        },
-        10_000,
-        true,
-      ),
+      update(() => {
+        if (!storage.imports)
+          throw new Error("Plugin imports require the desktop app");
+        return storage.imports.install(token, path);
+      }),
     change,
     requests,
     reload: (id: string) => update(() => storage.reloadPlugin(id), 120_000),
@@ -271,8 +252,6 @@ export function createPluginManager(
       return true;
     },
     retry: () => update(getCatalog),
-    // The native fetch gives up after 30 seconds.
-    refreshManaged: () => update(storage.refreshManaged ?? getCatalog, 45_000),
     recover: () => update(storage.recoverSettings),
     dismissError: () => {
       error = null;

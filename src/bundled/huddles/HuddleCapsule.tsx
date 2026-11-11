@@ -119,8 +119,6 @@ function HuddleCapsuleContent({
         >
           <span className={styles.capsuleContent}>
             <HuddleAvatarStack
-              thinking={call.thinking}
-              speakers={call.speakers}
               participants={call.participants}
               relay={relay}
               transition
@@ -223,8 +221,6 @@ function HuddleCapsuleContent({
           <span className={styles.capsuleContent}>
             <HuddleWaveform level={call.level ?? 0} muted={call.muted} />
             <HuddleAvatarStack
-              thinking={call.thinking}
-              speakers={call.speakers}
               participants={call.participants}
               relay={relay}
               transition

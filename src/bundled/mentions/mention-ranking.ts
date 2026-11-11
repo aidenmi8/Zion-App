@@ -1,7 +1,7 @@
 import {
   exactName,
   extendsName,
-  matchTier,
+  matchPerson,
   nameStarts,
   normalizeName,
   startKey,
@@ -15,9 +15,8 @@ export type MentionChoice = ReturnType<typeof mentionCandidates>[number] & {
 };
 const normalized = normalizeName;
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-// `needle` is already normalized, so its code points are the folded query.
 const nameMatch = (text: string, needle: string) =>
-  needle ? (matchTier(text, [...needle]) ?? Infinity) : 0;
+  needle ? (matchPerson(text, needle)?.tier ?? Infinity) : 0;
 const aliasMatch = (choice: MentionChoice, needle: string) =>
   Math.min(...choice.aliases.map((name) => nameMatch(name, needle)));
 /**
@@ -46,13 +45,7 @@ export function mentionMatch(choice: MentionChoice, query: string) {
 // name too long to index are always kept for ranking to match directly.
 const indexes = new WeakMap<
   readonly MentionChoice[],
-  {
-    starts: string[];
-    owners: number[];
-    unindexed: number[];
-    /** The last query and its matches: one keystroke asks several times. */
-    last?: { needle: string; matches: readonly MentionChoice[] };
-  }
+  { starts: string[]; owners: number[]; unindexed: number[] }
 >();
 /**
  * The choices, in their given order, with a label or alias that the query can
@@ -94,7 +87,6 @@ export function matchingMentions(
     };
     indexes.set(choices, index);
   }
-  if (index.last?.needle === needle) return index.last.matches;
   let low = 0;
   let high = index.starts.length;
   while (low < high) {
@@ -105,11 +97,9 @@ export function matchingMentions(
   const found = new Set<number>(index.unindexed);
   for (let i = low; index.starts[i]?.startsWith(needle); i += 1)
     found.add(index.owners[i] ?? 0);
-  const matches = [...found]
+  return [...found]
     .sort((a, b) => a - b)
     .flatMap((owner) => choices[owner] ?? []);
-  index.last = { needle, matches };
-  return matches;
 }
 type Ranked = {
   c: MentionChoice;

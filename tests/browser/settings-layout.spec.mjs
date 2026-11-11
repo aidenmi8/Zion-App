@@ -5,7 +5,6 @@ import {
   settingsDialog,
 } from "./navigation.mjs";
 import { test, expect } from "./fixture.mjs";
-import { npubEncode } from "nostr-tools/nip19";
 
 test.use({ historyCounts: { alpha: 0, beta: 0 } });
 
@@ -29,15 +28,13 @@ test("settings share a centered, bounded column and keep controls contained acro
   await expect(settingsDialog(page).locator(":focus")).toHaveCount(1);
   await selectSettingsSection(page, "Identity");
   // Copy failure must leave the entire value selectable as ordinary text.
-  const identity = page.getByRole("region", {
+  const profile = page.getByRole("region", {
     name: "Identity",
     exact: true,
   });
-  const copyId = identity.getByRole("button", {
-    name: "Copy Buzz ID",
-    exact: true,
-  });
-  await expect(copyId).toBeVisible();
+  await expect(
+    profile.getByRole("button", { name: "Copy public key" }),
+  ).toBeVisible();
   await page.evaluate(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -48,20 +45,18 @@ test("settings share a centered, bounded column and keep controls contained acro
       },
     });
   });
-  await copyId.click();
+  await profile.getByRole("button", { name: "Copy public key" }).click();
   await expect(page.getByText(/Select it and copy manually/)).toBeVisible();
-  // The card abbreviates the ID; clipboard failure exposes the full value below it.
-  const publicKey = identity.getByText(/^Full Buzz ID:/).locator("code");
-  const key = npubEncode(app.viewer);
-  await expect(publicKey).toHaveText(key);
+  const publicKey = profile.locator("code").first();
+  const key = await publicKey.textContent();
   await publicKey.click();
   await expect
     .poll(() => page.evaluate(() => window.getSelection()?.toString()))
     .toBe(key);
-  await copyId.focus();
-  await page.keyboard.press("Shift+Tab");
+  await profile.getByRole("button", { name: "Copy public key" }).focus();
+  await page.keyboard.press("Tab");
   await expect(
-    identity.getByRole("button", { name: "More options", exact: true }),
+    profile.getByRole("button", { name: "Copy nostr address" }),
   ).toBeFocused();
   await page
     .getByRole("dialog", { name: "Identity wasn’t copied" })
@@ -438,27 +433,13 @@ fiBuild(
         for (const width of [1440, 800, 390]) {
           await page.setViewportSize({ width, height: 1000 });
           await selectSettingsSection(page, "Builderlab");
-          await expect(
-            page.getByRole("region", { name: "Builderlab", exact: true }),
-          ).toBeVisible();
-          const back = page.getByRole("button", { name: "Back to Builderlab" });
-          if (await back.isVisible()) await back.click();
-          const open = page.getByRole("button", { name: "Open Communities" });
-          await open.click();
-          const card = signedIn
-            ? page.getByRole("region", { name: "Communities", exact: true })
-            : page.locator(".buzz-empty-state").filter({
-                has: page.getByRole("heading", {
-                  name: "Sign in to manage hosted communities",
-                }),
-              });
-          if (signedIn) {
-            const create = card.getByRole("button", {
-              name: "Create community",
-              exact: true,
-            });
-            await expect(create).toBeEnabled();
-          }
+          const card = page.locator(".buzz-empty-state").filter({
+            has: page.getByRole("heading", {
+              name: signedIn
+                ? "No hosted communities yet"
+                : "Sign in to manage hosted communities",
+            }),
+          });
           await expect(card).toBeVisible();
           for (const scale of ["100%", "200%"]) {
             await page.evaluate((value) => {
@@ -471,7 +452,6 @@ fiBuild(
                     const box = root.getBoundingClientRect();
                     return (
                       [...root.querySelectorAll("*")].every((node) => {
-                        if (!node.getClientRects().length) return true;
                         const child = node.getBoundingClientRect();
                         return (
                           child.left >= box.left && child.right <= box.right

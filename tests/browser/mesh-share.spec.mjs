@@ -133,7 +133,7 @@ test("main Shared compute helpers disclose authority and create a preset directl
     await expect(
       helpers
         .getByText(
-          /Agent: the serving member’s model directs shell and files on this machine, plus Buzz access; workspace ~\/\.buzz\. Tool output and core memory may be sent to that member\./,
+          /Agent: the serving member’s model directs shell and files on this machine, plus Zion access; workspace ~\/\.buzz\. Tool output and core memory may be sent to that member\./,
         )
         .first(),
     ).toBeVisible();

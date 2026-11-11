@@ -5,9 +5,8 @@ import {
 } from "../repos/routes";
 import {
   parseGitPluginSource,
-  parseUrlPluginSource,
   parseOpenTarget,
-  type PluginLinkSource,
+  type GitPluginSource,
   type NavigationScope,
 } from "./targets";
 
@@ -16,8 +15,7 @@ import {
 export const AGENT_CARD_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 type BuzzLink =
-  | { format: "plugin-install"; source: PluginLinkSource }
-  | { format: "settings"; section?: string; provider?: string }
+  | { format: "plugin-install"; source: GitPluginSource }
   | { format: "agent-card"; card: string }
   | { format: "removed" }
   | { format: "entity"; route: EntityRoute }
@@ -82,41 +80,6 @@ function parsePluginLink(url: URL, href: string): BuzzLink | null {
   }
 }
 
-/** `buzz://settings[?section=<section>][&provider=<agent type>]`, such as
- * an agent type's setup in Agent setup. Presentation only, like the Settings
- * target it becomes: opening one changes nothing. */
-function parseSettingsLink(url: URL, href: string): BuzzLink | null {
-  if (
-    url.pathname !== "" &&
-    (url.pathname !== "/" || !/^buzz:\/\/settings\/\?/i.test(href))
-  )
-    return null;
-  if (
-    ["section", "provider"].some(
-      (key) => url.searchParams.getAll(key).length > 1,
-    )
-  )
-    return null;
-  const section = url.searchParams.get("section");
-  const provider = url.searchParams.get("provider");
-  try {
-    const target = parseOpenTarget({
-      version: 1,
-      kind: "settings",
-      ...(section !== null ? { section } : {}),
-      ...(provider !== null ? { provider } : {}),
-    });
-    if (target.kind !== "settings") return null;
-    return {
-      format: "settings",
-      ...(target.section !== undefined && { section: target.section }),
-      ...(target.provider !== undefined && { provider: target.provider }),
-    };
-  } catch {
-    return null;
-  }
-}
-
 /** The Agents page, starting an agent from card `card` in `scope`. */
 export const agentCardTarget = (card: string, scope: NavigationScope) =>
   ({
@@ -146,28 +109,11 @@ export function parseBuzzLink(href: string): BuzzLink | null {
         (url.pathname !== "" &&
           (url.pathname !== "/" ||
             !/^buzz:\/\/plugin-install\/\?/i.test(href))) ||
-        ["repository", "ref", "path", "commit", "url", "sha256", "id"].some(
+        ["repository", "ref", "path", "commit"].some(
           (key) => url.searchParams.getAll(key).length > 1,
         )
       )
         return null;
-      const artifact = url.searchParams.has("url");
-      if (
-        (artifact
-          ? ["repository", "ref", "path", "commit"]
-          : ["sha256", "id"]
-        ).some((key) => url.searchParams.has(key))
-      )
-        return null;
-      if (artifact)
-        return {
-          format: "plugin-install",
-          source: parseUrlPluginSource({
-            id: url.searchParams.get("id") ?? "",
-            url: url.searchParams.get("url") ?? "",
-            sha256: url.searchParams.get("sha256") ?? "",
-          }),
-        };
       return {
         format: "plugin-install",
         source: parseGitPluginSource({
@@ -200,7 +146,6 @@ export function parseBuzzLink(href: string): BuzzLink | null {
     const entity = parseEntityLink(url);
     if (entity) return { format: "entity", route: entity };
     if (url.hostname === "plugin") return parsePluginLink(url, href);
-    if (url.hostname === "settings") return parseSettingsLink(url, href);
     const channelPattern = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,255}$/;
     const eventPattern = /^[a-f0-9]{64}$/i;
     // Query parameters outside a form's grammar are ignored, values and repeats
@@ -256,18 +201,6 @@ export function parseBuzzLink(href: string): BuzzLink | null {
   }
 }
 
-/** A settings link's target; it has no community scope. */
-export const settingsTarget = ({
-  section,
-  provider,
-}: Readonly<{ section?: string; provider?: string }>) =>
-  ({
-    version: 1,
-    kind: "settings",
-    ...(section !== undefined && { section }),
-    ...(provider !== undefined && { provider }),
-  }) as const;
-
 export function buzzLinkKind(href: string) {
   const link = parseBuzzLink(href);
   if (!link) return null;
@@ -285,7 +218,6 @@ export function buzzLinkTarget(href: string, scope: NavigationScope) {
       section: "plugins",
       pluginImport: link.source,
     });
-  if (link.format === "settings") return settingsTarget(link);
   if (link.format === "entity") return entityTarget(link.route, scope);
   if (link.format === "agent-card") return agentCardTarget(link.card, scope);
   if (link.format === "removed")

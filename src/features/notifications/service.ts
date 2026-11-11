@@ -362,7 +362,7 @@ export class NotificationsService extends Service implements Notifications {
     valid: () => boolean,
     eligible: () => NotificationEligibility = () => true,
     text: () => NotificationText = () => ({
-      title: "Buzz",
+      title: "Zion",
       body: `New ${label.toLowerCase()}`,
     }),
   ) {

@@ -16,7 +16,6 @@ import {
   CaretRightIcon,
   CircleIcon,
 } from "../../shared/design-system/icons";
-import { AlertDialog } from "../../shared/design-system/ui/AlertDialog";
 import { Button } from "../../shared/design-system/ui/Button";
 import {
   PopoverRoot,
@@ -83,20 +82,6 @@ export function createWatchComponents({
     );
     const [open, setOpen] = React.useState(false);
     const action = useAction();
-    const trigger = React.useRef<HTMLButtonElement>(null);
-    const cancel = React.useRef<HTMLButtonElement>(null);
-    // The watch as the open dialog reviewed it; a watch changed meanwhile
-    // is refused rather than deleted unseen.
-    const [confirming, setConfirming] =
-      React.useState<Agent["attention"][string]>();
-    const remove = (expected: Agent["attention"][string]) =>
-      action.run(async () => {
-        await agents.save(agent.key, {
-          attentionExpected: { [slug]: expected },
-          attention: { [slug]: null },
-        });
-        setConfirming(undefined);
-      });
     const detailsId = React.useId();
     const history = agent.attentionHistory?.[slug];
     const command =
@@ -109,12 +94,14 @@ export function createWatchComponents({
         ? timer.used
         : undefined,
     );
-    // Timers have no name; a nameless watch is labelled by its Interest.
-    const ownName = "name" in watch && watch.name;
-    const label = heading(ownName || title(watch.interest_id ?? slug.slice(6)));
+    const label = heading(
+      ("name" in watch && watch.name) ||
+        title(watch.interest_id ?? slug.slice(6)),
+    );
     const completed = sourceCompleted(agent.sourceRuns, agent.attention[slug]);
     const state =
       watch.enabled &&
+      agent.attentionEnabled &&
       !interestPaused(agent.attention, watch.interest_id) &&
       !completed &&
       !description.spent
@@ -188,9 +175,14 @@ export function createWatchComponents({
         ref={row}
         className="attention-card"
         data-expanded={open || undefined}
-        data-disabled={!watch.enabled || undefined}
+        data-disabled={!watch.enabled || !agent.attentionEnabled || undefined}
         data-paused={
-          completed || description.spent || !watch.enabled ? "" : undefined
+          completed ||
+          description.spent ||
+          !watch.enabled ||
+          !agent.attentionEnabled
+            ? ""
+            : undefined
         }
       >
         <div className="attention-table-row">
@@ -343,7 +335,6 @@ export function createWatchComponents({
               <MenuTrigger
                 render={
                   <Button
-                    ref={trigger}
                     variant="subtle"
                     size="xs"
                     style={{ paddingInlineStart: "var(--space-2)" }}
@@ -411,19 +402,25 @@ export function createWatchComponents({
                   <MenuItem
                     tone="danger"
                     disabled={action.pending}
+                    closeOnClick={false}
                     aria-label={`Delete ${label.text}`}
-                    onClick={() => {
-                      // Pause/Resume share this action; a refused Pause's
-                      // error must not open inside the dialog.
-                      action.reset();
-                      setConfirming(agent.attention[slug]);
-                    }}
+                    onClick={() =>
+                      void action.run(() =>
+                        agents.save(agent.key, { attention: { [slug]: null } }),
+                      )
+                    }
                   >
                     {"Delete"}
                   </MenuItem>
                   {interestPaused(agent.attention, watch.interest_id) && (
                     <MenuNote>
                       This interest is paused. Resume it to run enabled watches.
+                    </MenuNote>
+                  )}
+                  {!agent.attentionEnabled && (
+                    <MenuNote>
+                      Attention is paused on this device. Resume Attention to
+                      run enabled watches.
                     </MenuNote>
                   )}
                   {watch.type === "timer" && !watch.enabled && (
@@ -434,51 +431,7 @@ export function createWatchComponents({
             </MenuRoot>
           </div>
         </div>
-        {confirming && (
-          <AlertDialog
-            // A nameless watch shares its Interest's label, and the Interest's
-            // own dialog is a few pixels away, so name the kind instead.
-            title={
-              ownName
-                ? `Delete ${label.text}?`
-                : watch.type === "timer"
-                  ? "Delete this timer?"
-                  : "Delete this watch?"
-            }
-            description={`This deletes the ${
-              watch.type === "timer" ? "timer" : "watch"
-            }. The agent will stop watching for this trigger. This cannot be undone.`}
-            pending={action.pending}
-            initialFocus={cancel}
-            finalFocus={() =>
-              trigger.current?.isConnected
-                ? trigger.current
-                : (returnFocus.current ?? false)
-            }
-            onClose={() => setConfirming(undefined)}
-            actions={
-              <>
-                <Button
-                  ref={cancel}
-                  disabled={action.pending}
-                  onClick={() => setConfirming(undefined)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  loading={action.pending}
-                  onClick={() => void remove(confirming)}
-                >
-                  Delete
-                </Button>
-              </>
-            }
-          >
-            {problem(action.error)}
-          </AlertDialog>
-        )}
-        {!confirming && problem(action.error)}
+        {problem(action.error)}
         <ActivityExpansion open={open} className="attention-expansion">
           <div id={detailsId} className="attention-details">
             <details className="attention-watch-details">

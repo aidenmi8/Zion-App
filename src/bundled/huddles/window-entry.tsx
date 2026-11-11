@@ -34,7 +34,7 @@ function Companion() {
     };
     void invoke("huddle_window_watch", { updates }).catch(() => {
       if (mounted)
-        setError("This Huddle window is unavailable. Reopen it from Buzz.");
+        setError("This Huddle window is unavailable. Reopen it from Zion.");
     });
     return () => {
       mounted = false;
@@ -44,7 +44,7 @@ function Companion() {
     if (!view) return;
     setError(undefined);
     void invoke("huddle_window_action", { id: view.id, action, text }).catch(
-      () => setError("Couldn’t update the call. Try again from Buzz."),
+      () => setError("Couldn’t update the call. Try again from Zion."),
     );
   };
   return view ? (

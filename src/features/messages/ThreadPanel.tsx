@@ -1057,13 +1057,6 @@ function ThreadMessages({
   const rootActivity = rootId ? rootPresentation.byRow.get(rootId) : undefined;
   // A stopped note may follow only a reply that is always shown: collapsed
   // branches do not mount their rows.
-  // Each displayed level is projected alone, but a signed claim may name a
-  // request loaded at another level.
-  const loadedRows = useMemo(
-    () =>
-      snapshot.root ? [snapshot.root, ...snapshot.replies] : snapshot.replies,
-    [snapshot.root, snapshot.replies],
-  );
   const rootReplies = useMemo(
     () =>
       activityPresentation(
@@ -1071,10 +1064,8 @@ function ThreadMessages({
         activitySnapshot,
         agentPubkeys,
         rootId,
-        undefined,
-        loadedRows,
       ),
-    [tree, activitySnapshot, agentPubkeys, rootId, loadedRows],
+    [tree, activitySnapshot, agentPubkeys, rootId],
   );
   const liveAgents = useLiveConversationAgents(session, channelId, rootId);
   const lastMessage = publicMessageNeighbor(rows, rows.length, -1);
@@ -1490,9 +1481,6 @@ function ThreadMessages({
       activitySnapshot,
       agentPubkeys,
       parent ?? rootId,
-      // A failure with replies needs its own visible branch controls.
-      (failure) => !tree.children.get(failure.id)?.length,
-      loadedRows,
     );
     const groups = presentation.groups.filter((group) =>
       group.ids.every((id) => !tree.children.get(id)?.length),
@@ -2141,7 +2129,7 @@ function ThreadLoading() {
           media="(prefers-reduced-motion: reduce)"
           srcSet="/buzz-mark.svg"
         />
-        <img src="/buzz-loading-mark.svg" alt="" width="498" height="341" />
+        <img src="/buzz-loading-mark.svg" alt="" width="64" height="64" />
       </picture>
       <span className="sr-only">Loading thread…</span>
     </div>

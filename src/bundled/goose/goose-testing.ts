@@ -74,8 +74,6 @@ export type FakeSession = Readonly<{
   cwd: string;
   updatedAt: string;
   conversation: readonly Record<string, unknown>[];
-  /** The tags it was opened with, which `session/list` filters by. */
-  tags?: Readonly<Record<string, string>>;
 }>;
 
 /** A loopback MCP server `serve` started, as the app's host would. */
@@ -229,7 +227,7 @@ export function fakeSpawn(
           (item) => item.url === declared.get(sessionId),
         );
         if (!server || server.closed)
-          throw new Error(`No Buzz MCP server for ${sessionId}`);
+          throw new Error(`No Zion MCP server for ${sessionId}`);
         const body = { jsonrpc: "2.0", id: ++mcpRequests, method, params };
         return (await answerMcp(
           server.handler,
@@ -413,15 +411,14 @@ export function fakeSpawn(
             models: options.supported ?? [],
           });
         case "session/list": {
-          const tags = (params._meta as { tags?: Record<string, string> })
-            ?.tags;
-          // A session carries every tag asked for, as goose's index filters.
+          const query = String(
+            (params._meta as { query?: string } | undefined)?.query ?? "",
+          );
+          const mentions = (session: FakeSession) =>
+            JSON.stringify(session.conversation).includes(query);
           const listed = (options.history ?? []).filter(
             (session) =>
-              session.cwd === params.cwd &&
-              Object.entries(tags ?? {}).every(
-                ([key, value]) => session.tags?.[key] === value,
-              ),
+              session.cwd === params.cwd && (!query || mentions(session)),
           );
           const from = Number(params.cursor ?? 0);
           const to = from + (options.page ?? listed.length);

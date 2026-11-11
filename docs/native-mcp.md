@@ -101,7 +101,17 @@ It rejects both `Origin` and `Sec-WebSocket-Origin` at the WebSocket handshake.
 Loopback clients without those headers still have full automation authority;
 this is a local test interface, not an authenticated service.
 
-The client is a pinned devDependency. The bridge reports version `0.12.0` and
+The client is a pinned devDependency with a local compatibility patch:
+`@modelcontextprotocol/sdk` is scoped to `1.32.2` and Zod to `4.6.6`.
+The patch retains the 19 tools, three prompts, input defaults and optional IPC
+payloads, using Zod's native input-schema conversion. Invalid tool arguments
+return the first validation error before dispatch; valid collections are not
+truncated or given a new length limit. Zod 4 also rejects integers outside
+JavaScript's safe-integer range. This is not a general stdio message-size limit.
+The package's supported typed entrypoint is checked without skipping declaration
+errors; private, unexported upstream declarations are not rewritten.
+
+The bridge reports version `0.12.0` and
 omits plugin-version metadata, so the
 standard client can show an upgrade warning. Do not replace the pinned revision
 with a release that lacks the Origin check to remove that warning.

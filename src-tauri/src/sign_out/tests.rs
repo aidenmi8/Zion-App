@@ -1667,7 +1667,20 @@ fn only_the_current_identifier_takes_every_folder_the_legacy_one_used() {
     use legacy_identifier::{moves, CURRENT, LEGACY};
     let config: serde_json::Value =
         serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
-    assert_eq!(config["identifier"], CURRENT);
+    assert_eq!(
+        config["identifier"],
+        crate::distribution::RELEASE_IDENTIFIER
+    );
+    // Zion starts fresh under its preserved app identifier; it must not silently
+    // adopt upstream's old profile or seed another app's data.
+    assert_eq!(
+        moves(crate::distribution::RELEASE_IDENTIFIER),
+        Some(Vec::new())
+    );
+    assert_eq!(
+        legacy_identifier::seeds(crate::distribution::RELEASE_IDENTIFIER),
+        Some(Vec::new())
+    );
     assert_eq!(
         moves("dev.local.buzz.foundation.nexus-test-012345abcdef"),
         Some(Vec::new())

@@ -1,20 +1,5 @@
 use super::*;
 
-#[test]
-fn inline_csp_hash_matches_html_newline_normalization() {
-    let expected =
-        base64::engine::general_purpose::STANDARD.encode(Sha256::digest("first\nsecond\nthird\n"));
-    for source in [
-        "first\nsecond\nthird\n",
-        "first\r\nsecond\r\nthird\r\n",
-        "first\rsecond\rthird\r",
-        "first\r\nsecond\rthird\n",
-    ] {
-        assert_eq!(inline_csp_hash(source), expected);
-    }
-    assert_ne!(inline_csp_hash("first\nsecond\nthird"), expected);
-}
-
 fn options(path: &str) -> OAuthRequest {
     OAuthRequest {
         authorization_url: "https://provider.example/authorize?client_id=buzz&scope=a%20b&scope=c"
@@ -235,8 +220,7 @@ async fn real_listener_preserves_callback_parameters_and_closes_after_completion
             .split_once("</style>")
             .unwrap()
             .0;
-        let parsed_style = style.replace("\r\n", "\n").replace('\r', "\n");
-        let hash = base64::engine::general_purpose::STANDARD.encode(Sha256::digest(parsed_style));
+        let hash = base64::engine::general_purpose::STANDARD.encode(Sha256::digest(style));
         assert!(headers.contains(&format!("style-src 'sha256-{hash}'")));
         assert!(headers.contains("default-src 'none'"));
         assert!(headers.contains("img-src data:;"));
@@ -278,9 +262,7 @@ async fn real_listener_preserves_callback_parameters_and_closes_after_completion
             .unwrap()
             .0;
         assert_eq!(script, include_str!("page.js"));
-        let parsed_script = script.replace("\r\n", "\n").replace('\r', "\n");
-        let script_hash =
-            base64::engine::general_purpose::STANDARD.encode(Sha256::digest(parsed_script));
+        let script_hash = base64::engine::general_purpose::STANDARD.encode(Sha256::digest(script));
         assert!(headers.contains(&format!("script-src 'sha256-{script_hash}'")));
         assert_eq!(body.matches("<script").count(), 1);
         assert!(!response.contains("one+time"));
@@ -380,7 +362,6 @@ async fn attempts_from_different_owners_resolve_independently() {
             "server-a",
             "https://identity.example/v1/login/start".into(),
             |_| Ok(()),
-            None,
         )
         .unwrap();
     let restore = start_as(&host, "restore", options("/callback/restore")).unwrap();
@@ -389,8 +370,7 @@ async fn attempts_from_different_owners_resolve_independently() {
         .begin_federated(
             "server-a",
             "https://identity.example/v1/login/start".into(),
-            |_| { panic!("A pending owner must not launch a second attempt") },
-            None,
+            |_| { panic!("A pending owner must not launch a second attempt") }
         )
         .is_err());
     assert!(start_as(&host, "restore", options("/callback/other")).is_err());
@@ -419,7 +399,6 @@ async fn attempts_from_different_owners_resolve_independently() {
             "server-b",
             "https://peer.example/v1/login/start".into(),
             |_| Ok(()),
-            None,
         )
         .unwrap();
     host.cancel(&server.id).unwrap();
@@ -638,7 +617,6 @@ async fn federated_handoff_uses_return_to_without_legacy_oauth_fields_and_keeps_
         OWNER,
         "https://identity.example/prefix/v1/login/start?handoff_challenge=fixture&handoff_challenge_method=S256".into(),
         |url| { opened = Some(url::Url::parse(url).unwrap()); Ok(()) },
-        Some("synthetic-browser".into()),
     ).unwrap();
     let opened = opened.unwrap();
     let params: Vec<_> = opened.query_pairs().into_owned().collect();
@@ -695,62 +673,26 @@ async fn federated_handoff_uses_return_to_without_legacy_oauth_fields_and_keeps_
         response(&[("code", "fixture-code")])
     );
     assert!(host.wait(&attempt.id).await.is_err());
-    assert!(host
-        .0
-        .lock()
-        .unwrap()
-        .values()
-        .find(|a| a.id == attempt.id)
-        .unwrap()
-        .focus
-        .deadline(&attempt.id)
-        .is_some());
-    host.cancel(&attempt.id).unwrap();
     let next = start(&host, options("/other")).unwrap();
     host.cancel(&next.id).unwrap();
 }
 
 fn assert_federated_callback(response: &str, message: &str) {
     let (headers, body) = response.split_once("\r\n\r\n").unwrap();
-    assert!(body.contains("<title>Buzz sign-in</title>"));
+    assert!(body.contains("<title>Zion sign-in</title>"));
     assert!(body.contains("data-provider=\"Buzz\""));
-    assert!(body.contains("role=\"img\" aria-label=\"Buzz\""));
+    assert!(body.contains("role=\"img\" aria-label=\"Zion\""));
     assert!(body.contains(include_str!("../../../public/buzz-mark.svg")));
-    assert!(body.contains("<span>Buzz</span>"));
+    assert!(body.contains("<span>Zion</span>"));
     assert!(body.contains(&format!("<p>{message}</p>")));
     assert!(body.contains("<main aria-labelledby=\"heading\">"));
     assert!(body.contains("name=\"viewport\""));
     assert!(!body.contains("{{"));
     assert!(!body.contains("Builderlab"));
-    assert!(body.contains(include_str!("page.js")));
-    let parsed_script = include_str!("page.js")
-        .replace("\r\n", "\n")
-        .replace('\r', "\n");
-    let script_hash =
-        base64::engine::general_purpose::STANDARD.encode(Sha256::digest(parsed_script));
-    assert!(headers.contains(&format!("script-src 'sha256-{script_hash}'")));
-    assert!(body.contains("Closing this window automatically"));
-    assert!(body.contains("id=\"close-spinner\""));
-    let (shell, card) = body
-        .split_once("<main aria-labelledby=\"heading\">")
-        .unwrap();
-    assert!(shell.contains("class=\"brand\""));
-    assert!(!card.contains("class=\"brand\""));
-    assert!(shell.contains("class=\"artwork\" aria-hidden=\"true\""));
-    let artwork = body
-        .split_once("data:image/webp;base64,")
-        .unwrap()
-        .1
-        .split_once('"')
-        .unwrap()
-        .0;
-    assert_eq!(
-        base64::engine::general_purpose::STANDARD
-            .decode(artwork)
-            .unwrap(),
-        include_bytes!("cubes.webp")
-    );
-    assert!(body.contains("data-close-delay=\"3\""));
+    assert!(!body.contains("<script"));
+    assert!(!body.contains("Closing this window automatically"));
+    assert!(!body.contains("id=\"close-spinner\""));
+    assert!(!body.contains("class=\"artwork\""));
     let style = body
         .split_once("<style>")
         .unwrap()
@@ -758,118 +700,18 @@ fn assert_federated_callback(response: &str, message: &str) {
         .split_once("</style>")
         .unwrap()
         .0;
-    let parsed_style = style.replace("\r\n", "\n").replace('\r', "\n");
-    let hash = base64::engine::general_purpose::STANDARD.encode(Sha256::digest(parsed_style));
+    let hash = base64::engine::general_purpose::STANDARD.encode(Sha256::digest(style));
     assert!(headers.contains(&format!("style-src 'sha256-{hash}'")));
     assert!(headers.contains("default-src 'none'"));
-    assert!(headers.contains("img-src data:;"));
     assert!(headers.contains("font-src data:;"));
     assert!(headers.contains("base-uri 'none'; frame-ancestors 'none'"));
-
+    assert!(!headers.contains("script-src"));
     assert!(!headers.contains("unsafe-inline"));
     assert!(headers.contains("Cache-Control: no-store\r\n"));
     assert!(headers
         .split("\r\n")
         .any(|header| header == "Referrer-Policy: no-referrer"));
     assert!(headers.contains(&format!("Content-Length: {}\r\n", body.len())));
-}
-
-#[tokio::test]
-async fn a_renewal_can_replace_a_consumed_callback_during_its_return_delay() {
-    use futures_util::FutureExt;
-
-    let host = OAuthCallbackHost::default();
-    let authorization = "https://identity.example/v1/login/start";
-    let first = host
-        .begin_federated(
-            OWNER,
-            authorization.into(),
-            |_| Ok(()),
-            Some("browser".into()),
-        )
-        .unwrap();
-    let focus = host.0.lock().unwrap()[OWNER].focus.clone();
-    let wait = host.wait(&first.id);
-    tokio::pin!(wait);
-    assert!(wait.as_mut().now_or_never().is_none());
-    assert!(host
-        .begin_federated(
-            OWNER,
-            authorization.into(),
-            |_| panic!("Still pending"),
-            None
-        )
-        .is_err());
-    let url = url::Url::parse(&first.callback_url).unwrap();
-    assert!(send(&url, &format!("{}?code=fixture", url.path()), "")
-        .await
-        .starts_with("HTTP/1.1 200"));
-    assert_eq!(wait.await.unwrap(), response(&[("code", "fixture")]));
-
-    // Freeze only after the real loopback response, so I/O cannot auto-advance time.
-    tokio::time::pause();
-    let deadline = focus.deadline(&first.id).unwrap();
-    assert!(tokio::time::Instant::now() < deadline);
-    let mut opened = false;
-    let renewal = host
-        .begin_federated(
-            OWNER,
-            authorization.into(),
-            |_| {
-                opened = true;
-                Ok(())
-            },
-            Some("next-browser".into()),
-        )
-        .unwrap();
-    assert!(opened);
-    assert!(tokio::time::Instant::now() < deadline);
-    assert!(focus.deadline(&first.id).is_none());
-    host.cancel(&first.id).unwrap(); // The preceding return's cleanup is stale.
-    assert_eq!(host.0.lock().unwrap()[OWNER].id, renewal.id);
-    assert!(host
-        .begin_federated(
-            OWNER,
-            authorization.into(),
-            |_| panic!("Renewal pending"),
-            None
-        )
-        .is_err());
-    host.cancel(&renewal.id).unwrap();
-}
-
-#[tokio::test]
-async fn concurrent_servers_keep_independent_return_permissions_until_cancel_or_reload() {
-    let host = OAuthCallbackHost::default();
-    let mut completed = Vec::new();
-    for owner in ["server-a", "server-b"] {
-        let attempt = host
-            .begin_federated(
-                owner,
-                "https://identity.example/v1/login/start".into(),
-                |_| Ok(()),
-                Some("synthetic-browser".into()),
-            )
-            .unwrap();
-        let url = url::Url::parse(&attempt.callback_url).unwrap();
-        let html = send(&url, &format!("{}?code=fixture", url.path()), "").await;
-        assert!(html.starts_with("HTTP/1.1 200"));
-        host.wait(&attempt.id).await.unwrap();
-        let focus = host.0.lock().unwrap()[owner].focus.clone();
-        assert!(focus.deadline(&attempt.id).is_some());
-        completed.push((attempt.id, focus));
-    }
-    let [(first, first_focus), (second, second_focus)] = completed.as_slice() else {
-        panic!("Both servers must complete their own callback");
-    };
-    host.cancel(first).unwrap();
-    assert!(first_focus.deadline(first).is_none());
-    assert!(second_focus.deadline(second).is_some());
-    host.cancel(first).unwrap();
-    assert!(second_focus.deadline(second).is_some());
-    host.document_load("main", tauri::webview::PageLoadEvent::Started)
-        .unwrap();
-    assert!(second_focus.deadline(second).is_none());
 }
 
 #[tokio::test]
@@ -880,7 +722,6 @@ async fn federated_error_uses_buzz_presentation_and_keeps_private_details_native
             OWNER,
             "https://organization.example/v1/login/start".into(),
             |_| Ok(()),
-            None,
         )
         .unwrap();
     let callback = url::Url::parse(&attempt.callback_url).unwrap();

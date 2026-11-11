@@ -81,7 +81,7 @@ it("lists, gets and sets whatever settings the host defines", async () => {
 it("refuses unknown keys, values outside the schema and stray arguments, changing nothing", async () => {
   const { client, write } = withSettings();
   for (const [args, error] of [
-    [{ key: "example.other", value: "busy" }, /No Buzz setting/],
+    [{ key: "example.other", value: "busy" }, /No Zion setting/],
     [{ key: "example.mood", value: "Busy" }, /example.mood takes/],
     [{ key: "example.mood", value: 1 }, /example.mood takes/],
     [{ key: "example.mood" }, /example.mood takes/],

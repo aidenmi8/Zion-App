@@ -64,7 +64,6 @@ import {
   type ToolServer,
 } from "./goose";
 import { AgentProcess, AgentSessions, localSessions } from "./sessions";
-import { sessionTags } from "./transcript";
 
 export type Config = Readonly<{
   /** A model the provider offers; empty uses the provider's default, or the
@@ -112,7 +111,7 @@ export function sessionTitle(
   root?: string,
 ) {
   const suffix = root ? ` · ${root.slice(0, 8)}` : "";
-  const title = `${agent?.trim() || "Buzz agent"} · ${place}`
+  const title = `${agent?.trim() || "Zion agent"} · ${place}`
     .replace(/\s+/g, " ")
     .slice(0, TITLE_LIMIT - suffix.length)
     .trim();
@@ -157,9 +156,6 @@ export class GooseRuntime {
     AgentKey,
     ReturnType<AgentSessions["snapshot"]>
   >();
-  /** A failed turn's error as its report says it, such as where to fix
-   * goose's provider key. */
-  explain: (error: string) => string = (error) => error;
 
   constructor(
     private readonly host: Host,
@@ -650,7 +646,7 @@ export class GooseRuntime {
       agent,
       channel,
       event,
-      `⚠️ I couldn't finish that: ${this.explain(error.slice(0, 500))}`,
+      `⚠️ I couldn't finish that: ${error.slice(0, 500)}`,
       topLevel,
       [["p", agent.owner]],
     );
@@ -913,7 +909,6 @@ export class GooseRuntime {
           title: title ?? "",
           conversation: conversation ?? null,
         }),
-      tags: (conversation) => sessionTags(agent, conversation),
       onChange: () => this.notify(),
       // Read as each turn starts, so a change needs no restart.
       choice: () => ({
@@ -962,7 +957,7 @@ export class GooseRuntime {
   private memories(agent: AgentKey, slug?: string) {
     const pubkey = pubkeyOf(agent);
     const reads = ownerReads(this.relay(agent), pubkey);
-    if (!reads) return Promise.reject(new Error("Buzz is not connected"));
+    if (!reads) return Promise.reject(new Error("Zion is not connected"));
     return this.memoryReads.read(
       reads,
       pubkey,

@@ -245,7 +245,7 @@ function ChangeReview({
     return (
       <AlertDialog
         title={`Delete ${name}?`}
-        description={`Requested by ${request.requester.name}. Removes this plugin and its rollback history from Buzz. You can install it again later.`}
+        description={`Requested by ${request.requester.name}. Removes this plugin and its rollback history from Zion. You can install it again later.`}
         pending={working}
         initialFocus={cancel}
         finalFocus={returnFocus}
@@ -282,11 +282,15 @@ function ChangeReview({
       finalFocus={returnFocus}
       actions={
         <>
-          <Button ref={cancel} disabled={working} onClick={onClose}>
+          <Button
+            variant="prominent"
+            ref={cancel}
+            disabled={working}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
-            variant="prominent"
             disabled={working || !plugin}
             loading={working}
             onClick={() => void confirm()}

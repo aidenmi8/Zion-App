@@ -631,6 +631,8 @@ it("checks in every hour only while memory is on, with a timer in the owner's DM
     config: { instructions: withFeature(remembering, checkinHourly, true) },
     base,
   });
+  // Turning it on lets the agent's Attention run.
+  expect(timers.attentionEnabled).toBe(true);
   expect(timers.attention?.["watch/bestie-hourly-check-in"]).toMatchObject({
     type: "timer",
     interest_id: "bestie-hourly-check-in",
@@ -729,11 +731,12 @@ it("undoes a failed check-in's timer, so none runs behind a switch that reads of
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Instructions changed elsewhere",
   );
-  // The timer and its Interest are removed again.
+  // The timer and its Interest are removed again, and Attention, which this
+  // turned on, goes back off.
   expect(save).toHaveBeenCalledTimes(3);
   expect(save.mock.calls[2]).toEqual([
     ada.key,
-    { attention: { [INTEREST]: null, [TIMER]: null } },
+    { attention: { [INTEREST]: null, [TIMER]: null }, attentionEnabled: false },
   ]);
   expect(hourly).not.toBeChecked();
   // Trying again saves it all again.
@@ -741,6 +744,23 @@ it("undoes a failed check-in's timer, so none runs behind a switch that reads of
   await user.click(hourly);
   expect(save).toHaveBeenCalledTimes(2);
   expect(screen.queryByRole("alert")).toBeNull();
+});
+
+it("leaves Attention on after a failed check-in when it was already on", async () => {
+  const user = userEvent.setup();
+  const { relay } = community(ada.pubkey);
+  const { agents, save } = host();
+  const Tab = bestieTab(relay, agents).component;
+  render(<Tab agent={remembering(true)} />);
+  save
+    .mockResolvedValueOnce()
+    .mockRejectedValueOnce(new Error("Instructions changed elsewhere"));
+  await user.click(screen.getByRole("switch", { name: "Every hour" }));
+  await screen.findByRole("alert");
+  expect(save.mock.calls[2]).toEqual([
+    ada.key,
+    { attention: { [INTEREST]: null, [TIMER]: null } },
+  ]);
 });
 
 it("offers to remove a timer left without its section when undoing fails too", async () => {

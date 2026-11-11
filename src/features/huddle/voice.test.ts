@@ -135,14 +135,12 @@ function setup() {
   } as unknown as Agents;
   const report = vi.fn();
   const listening = vi.fn();
-  const thinking = vi.fn();
   const start = () => {
     const dispose = createHuddleVoices(
       {
         snapshot: () => call,
         subscribe: h.subscribe,
         voiceListening: listening,
-        voiceThinking: thinking,
       },
       agents,
       relay,
@@ -160,7 +158,6 @@ function setup() {
     callbacks,
     report,
     listening,
-    thinking,
     resolveRoom,
     start,
     call: (patch: Partial<HuddleSnapshot>) => {
@@ -563,17 +560,3 @@ it.each(["abort", "failure"])(
     else expect(f.report).not.toHaveBeenCalled();
   },
 );
-
-it("publishes a seat's thinking state until the agent leaves the room", async () => {
-  const f = setup();
-  f.start();
-  await vi.waitFor(() => expect(f.connections.size).toBe(2));
-  const seat = required(f.seatArgs.get("a"));
-  seat.thinking?.(true);
-  expect(f.thinking).toHaveBeenCalledWith("human", "a", true);
-  f.room({ members: ["owner", "b"] });
-  expect(f.thinking).toHaveBeenLastCalledWith("human", "a", false);
-  f.thinking.mockClear();
-  seat.thinking?.(true);
-  expect(f.thinking).not.toHaveBeenCalled();
-});

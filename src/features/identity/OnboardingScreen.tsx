@@ -35,10 +35,10 @@ export function OnboardingScreen({
   );
   return (
     <main
-      className={`${styles.landing} ${welcome ? `${styles.welcome} light` : styles.step}`}
+      className={`${styles.landing} ${welcome ? `${styles.welcome} dark` : styles.step}`}
       data-intro={introPhase}
       aria-labelledby={labelledBy}
-      data-color-mode={welcome ? "light" : undefined}
+      data-color-mode={welcome ? "dark" : undefined}
     >
       {welcome && <OnboardingBees entering={introPhase !== "done"} />}
       <header
@@ -50,8 +50,8 @@ export function OnboardingScreen({
         {!welcome && (
           <img
             className={styles.cornerMark}
-            src="/welcome-bee.svg"
-            alt="Buzz"
+            src="/buzz-mark.svg"
+            alt="Zion"
             draggable={false}
           />
         )}

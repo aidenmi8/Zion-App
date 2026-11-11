@@ -221,7 +221,6 @@ it("leads an empty search with other unmuted unread channels and DMs, selecting 
       readStateFloor: () => 0,
       readPublisherLock: async (_signal, work) => work(),
       readStateStorage: {
-        capture: async () => structuredClone(journal),
         close() {},
         async update(change) {
           journal = readJournal(change(journal), viewer.pubkey);
@@ -254,7 +253,7 @@ it("leads an empty search with other unmuted unread channels and DMs, selecting 
     const first = render(<SearchResults {...props} query="" />);
     await waitFor(() => expect(rowsOf("Recent activity")).toHaveLength(4));
     // Nothing unread: the suggestions are unchanged and Enter opens nothing.
-    const idle = screen.getByRole("combobox", { name: "Search Buzz" });
+    const idle = screen.getByRole("combobox", { name: "Search Zion" });
     expect(screen.queryByRole("group", { name: "Unread" })).toBeNull();
     expect(idle).not.toHaveAttribute("aria-activedescendant");
     fireEvent.keyDown(idle, { key: "Enter" });
@@ -263,7 +262,7 @@ it("leads an empty search with other unmuted unread channels and DMs, selecting 
     // The conversation already open is not somewhere to jump to.
     for (const id of ["other", "muted", "dm", "read"]) await markUnread(id);
     const mounted = render(<SearchResults {...props} query="" />);
-    const input = screen.getByRole("combobox", { name: "Search Buzz" });
+    const input = screen.getByRole("combobox", { name: "Search Zion" });
     await waitFor(() => expect(rowsOf("Unread")).toHaveLength(2));
     const rows = rowsOf("Unread");
     expect(rows.map((row) => row.textContent)).toEqual([
@@ -335,7 +334,6 @@ it("shows the first six unread conversations ahead of the rest", async () => {
       readStateFloor: () => 0,
       readPublisherLock: async (_signal, work) => work(),
       readStateStorage: {
-        capture: async () => structuredClone(journal),
         close() {},
         async update(change) {
           journal = readJournal(change(journal), viewer.pubkey);
@@ -372,7 +370,7 @@ it("shows the first six unread conversations ahead of the rest", async () => {
     // Only six rows exist, so the group does not announce a larger set.
     expect(rows[0]).not.toHaveAttribute("aria-setsize");
     expect(
-      screen.getByRole("combobox", { name: "Search Buzz" }),
+      screen.getByRole("combobox", { name: "Search Zion" }),
     ).toHaveAttribute("aria-activedescendant", rows[0]?.id);
     // Unread rows past the first six are not repeated as recent activity.
     expect(rowsOf("Recent activity").map((row) => row.textContent)).toEqual([
@@ -442,7 +440,6 @@ it("previews and opens the newest unread reply of a channel unread only through 
       readStateFloor: () => 0,
       readPublisherLock: async (_signal, work) => work(),
       readStateStorage: {
-        capture: async () => structuredClone(journal),
         close() {},
         async update(change) {
           journal = readJournal(change(journal), viewer.pubkey);
@@ -643,7 +640,7 @@ it("ranks typed channel names and selects the best one for Enter", async () => {
     expect(groups.indexOf("This conversation")).toBeGreaterThan(
       groups.indexOf("Channels"),
     );
-    const input = screen.getByRole("combobox", { name: "Search Buzz" });
+    const input = screen.getByRole("combobox", { name: "Search Zion" });
     expect(input).toHaveAttribute(
       "aria-activedescendant",
       within(channels).getAllByRole("option")[0]?.id,
@@ -718,7 +715,7 @@ it("fuzzy-matches channel names after substring matches, word starts first", asy
     expect(marks("ops-bgp")).toEqual(["bgp"]);
     expect(marks("buzz-github-prs")).toEqual(["b", "g", "p"]);
     expect(marks("debug-pr")).toEqual(["b", "g", "p"]);
-    const input = screen.getByRole("combobox", { name: "Search Buzz" });
+    const input = screen.getByRole("combobox", { name: "Search Zion" });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(open).toHaveBeenCalledExactlyOnceWith("ops-bgp");
   } finally {
@@ -799,7 +796,7 @@ it("leads with the group holding the best match and ranks archived channels afte
         .getAllByRole("option")
         .map((option) => option.textContent),
     ).toEqual(["Work", "Workflows"]);
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     expect(work).toHaveBeenCalledOnce();
@@ -881,7 +878,7 @@ it("shows the real read failure, retains conversation choices, and retries to an
     });
     const hit = message(viewer, "crew", "wes-crew exact message", 1700000001);
     await act(async () => wire.next().respond([hit]));
-    const input = screen.getByRole("combobox", { name: "Search Buzz" });
+    const input = screen.getByRole("combobox", { name: "Search Zion" });
     // Typed text selects the first result; the late message sits below it.
     expect(
       screen.getByRole("option", { name: /^wes-crew(?! exact)/ }),
@@ -1428,13 +1425,9 @@ it("does not announce conversation enrichment over retained search choices", () 
   }
 });
 
-it.each(
-  (["stream", "forum", "solo"] as const).flatMap((channelType) =>
-    (["live", "saved"] as const).map((source) => ({ channelType, source })),
-  ),
-)(
-  "finds joined archived $channelType channels by name in a $source session without putting them in Recent activity",
-  async ({ channelType, source }) => {
+it.each(["stream", "forum", "solo"] as const)(
+  "finds joined archived %s channels by name without putting them in Recent activity",
+  async (channelType) => {
     const relay = keypair(),
       viewer = keypair();
     const wire = scriptedTransport(viewer.pubkey, relay.pubkey);
@@ -1455,41 +1448,14 @@ it.each(
       metadata(relay, "active", "Current project"),
       roster(relay, "active", [viewer.pubkey]),
     ];
-    const saved = source === "saved";
-    const owner = createRelaySession(
-      {
-        ...wire.transport,
-        async query(filters) {
-          // A saved session's relay reads fail.
-          if (saved) throw new Error("Relay unavailable");
-          return discovery.filter((event) =>
-            filters.some((filter) => filter.kinds?.includes(event.kind)),
-          );
-        },
+    const owner = createRelaySession({
+      ...wire.transport,
+      async query(filters) {
+        return discovery.filter((event) =>
+          filters.some((filter) => filter.kinds?.includes(event.kind)),
+        );
       },
-      saved
-        ? {
-            cachedOnly: true,
-            prepared: true,
-            persistence: {
-              readStartup: async () => ({
-                discovery: {
-                  savedAt: Date.now(),
-                  relayAuthor: relay.pubkey,
-                  events: discovery,
-                },
-              }),
-              read: async () => [],
-              write: async () => {},
-              remove: async () => {},
-              retain: async () => {},
-              clear: async () => {},
-              close() {},
-            },
-          }
-        : undefined,
-    );
-    if (saved) await owner.restore();
+    });
     const open = vi.fn();
     const props = {
       session: owner.session,
@@ -1497,18 +1463,13 @@ it.each(
       input: createRef<HTMLInputElement>(),
       pages: [],
       openConversation: open,
-      offline: saved ? (
-        <p>Only saved conversations are searched.</p>
-      ) : undefined,
     };
     try {
       const mounted = render(<SearchResults {...props} query="" />);
       await screen.findByRole("option", { name: /Current project/ });
-      const archived = owner.session.channels.get?.("archive");
-      expect(archived?.channelType).toBe(channelType);
-      // Restoration marks the saved member row read-only.
-      expect(!!archived?.readOnly).toBe(saved);
-      expect(!!archived?.cached).toBe(saved);
+      expect(owner.session.channels.get?.("archive")?.channelType).toBe(
+        channelType,
+      );
       expect(screen.queryByRole("option", { name: /Past project/ })).toBeNull();
       mounted.rerender(<SearchResults {...props} query="Past" />);
       fireEvent.click(
@@ -1536,10 +1497,8 @@ it.each([
   { channelType: "forum", readOnly: true },
   { channelType: "solo", readOnly: true },
   { channelType: "dm" },
-  { channelType: "dm", readOnly: true, cached: true },
-  { channelType: "stream", readOnly: true, cached: true, viewerRole: "guest" },
 ] as const)(
-  "does not surface archived nonmember, guest or non-channel destinations: %j",
+  "does not surface archived nonmember or non-channel destinations: %j",
   (state) => {
     const owner = createRelaySession(null);
     const snapshot = {
@@ -2149,7 +2108,7 @@ it("keeps a selected person and the delayed notice when channel results stream i
     );
     await act(async () => vi.advanceTimersByTimeAsync(0));
     await act(async () => vi.advanceTimersByTimeAsync(1000));
-    const field = screen.getByRole("combobox", { name: "Search Buzz" });
+    const field = screen.getByRole("combobox", { name: "Search Zion" });
     const personRow = within(
       screen.getByRole("group", { name: "People" }),
     ).getByRole("option");
@@ -2376,7 +2335,7 @@ it("opens the open channel that lands after an early Enter, without first saying
     expect(
       screen.queryByText("No matching messages in accessible conversations."),
     ).toBeNull();
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     expect(openConversation).not.toHaveBeenCalled();
@@ -2430,7 +2389,7 @@ it("holds an early Enter for an open channel over a message that lands first, an
     };
     const mounted = render(<SearchResults {...props} query="crew" />);
     await act(async () => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS));
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     await act(async () =>
@@ -2444,7 +2403,7 @@ it("holds an early Enter for an open channel over a message that lands first, an
     expect(openConversation).toHaveBeenCalledExactlyOnceWith("lobby");
     // With no channel to wait for, Enter waits for message search instead.
     mounted.rerender(<SearchResults {...props} query="news" />);
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     await act(async () => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS));
@@ -2501,7 +2460,7 @@ it("opens an open channel from the first directory page after an early Enter, wh
         openConversation={openConversation}
       />,
     );
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     await act(async () => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS));
@@ -2547,7 +2506,7 @@ it("holds an early Enter on the scope action for an open channel, and scopes onc
   const openConversation = vi.fn();
   const changeScope = vi.fn();
   const enter = (key = "Enter") =>
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key,
     });
   try {
@@ -2654,7 +2613,7 @@ it.each([
       expect(
         screen.getByRole("option", { name: "Show more messages" }),
       ).toBeVisible();
-      fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+      fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
         key: "Enter",
       });
       expect(wire.pending).toHaveLength(0);
@@ -2721,7 +2680,7 @@ it.each(["a click that does not focus the row", "its shortcut"])(
         />,
       );
       await act(async () => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS));
-      const field = screen.getByRole("combobox", { name: "Search Buzz" });
+      const field = screen.getByRole("combobox", { name: "Search Zion" });
       const scope = screen.getByRole("option");
       expect(scope).toHaveTextContent("Search in general");
       fireEvent.keyDown(field, { key: "Enter" });
@@ -2801,7 +2760,7 @@ it("returns keyboard focus to search when channel lookup retries, through repeat
         openConversation={openConversation}
       />,
     );
-    const input = screen.getByRole("combobox", { name: "Search Buzz" });
+    const input = screen.getByRole("combobox", { name: "Search Zion" });
     for (let attempt = 0; attempt < 2; attempt++) {
       const retry = await screen.findByRole("button", {
         name: "Retry channels",
@@ -2887,7 +2846,7 @@ it("puts the earlier choice for typed text first, unless another name is exact",
         "workshop",
       ]),
     );
-    const combobox = screen.getByRole("combobox", { name: "Search Buzz" });
+    const combobox = screen.getByRole("combobox", { name: "Search Zion" });
     fireEvent.keyDown(combobox, { key: "Enter" });
     expect(open).toHaveBeenLastCalledWith("team-work");
     // Typing a channel's whole name opens that channel.
@@ -3012,7 +2971,7 @@ it("keeps the remembered choice selected when a better match arrives late", asyn
         .slice(0, 2),
     ).toEqual(["Channels", "Pages"]);
     expect(page).toHaveAttribute("aria-selected", "true");
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     expect(workflows).toHaveBeenCalledOnce();
@@ -3277,46 +3236,6 @@ it("looks up an author by name only from two characters", async () => {
       "al",
       expect.objectContaining({ limit: 40 }),
     );
-  } finally {
-    cleanup();
-    owner.dispose();
-  }
-});
-
-it("asks for the connection, not more text, when a saved session's author picker finds no one", async () => {
-  vi.useFakeTimers();
-  const relay = keypair(),
-    viewer = keypair();
-  const owner = createRelaySession(
-    scriptedTransport(viewer.pubkey, relay.pubkey).transport,
-  );
-  const searchProfiles = vi.fn(async () => []);
-  const props = {
-    session: { ...owner.session, searchProfiles } as typeof owner.session,
-    onQueryChange: () => {},
-    input: createRef<HTMLInputElement>(),
-    pages: [],
-    openConversation: () => {},
-    offline: <p>Only saved conversations are searched.</p>,
-  };
-  try {
-    const view = render(<SearchResults {...props} query="from:a" />);
-    for (const query of ["from:a", "from:al"]) {
-      view.rerender(<SearchResults {...props} query={query} />);
-      await act(async () => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS));
-      expect(
-        screen.getByText("Connect to this community to search people."),
-      ).toBeVisible();
-      expect(screen.queryByText(/^Type at least/)).toBeNull();
-      expect(screen.queryByText(/Try a longer name/)).toBeNull();
-    }
-    expect(searchProfiles).not.toHaveBeenCalled();
-    // The offline notice sits below the results, outside their scrollport.
-    expect(
-      screen
-        .getByText("Only saved conversations are searched.")
-        .closest(".search-palette-scroll"),
-    ).toBeNull();
   } finally {
     cleanup();
     owner.dispose();
@@ -4312,7 +4231,7 @@ it.each([
           { name: /Alice/ },
         ),
       );
-      const input = screen.getByRole("combobox", { name: "Search Buzz" });
+      const input = screen.getByRole("combobox", { name: "Search Zion" });
       expect(
         screen.getByRole("button", { name: "Remove author Alice" }),
       ).toBeVisible();
@@ -4391,7 +4310,7 @@ it("renders from:<author chip> without exposing the signed operand in the input"
     const chip = screen.getByRole("button", { name: "Remove author Wes" });
     expect(chip).toHaveTextContent("from:@Wes");
     expect(chip).toHaveAttribute("title", npubEncode(human.pubkey));
-    const input = screen.getByRole("combobox", { name: "Search Buzz" });
+    const input = screen.getByRole("combobox", { name: "Search Zion" });
     expect(input).toHaveValue("");
     expect(input).toHaveFocus();
     expect(chip.closest(".search-field")).toContainElement(input);
@@ -4806,7 +4725,7 @@ it.each([
     try {
       render(<Search />);
       await pick(firstName);
-      const input = screen.getByRole("combobox", { name: "Search Buzz" });
+      const input = screen.getByRole("combobox", { name: "Search Zion" });
       fireEvent.change(input, { target: { value: second } });
       await pick(secondName);
       expect(changes.at(-1)).toBe(
@@ -4866,7 +4785,7 @@ it("turns date and channel picks into chips that Backspace edits", async () => {
         await screen.findByRole("group", { name: "Channels" }),
       ).findByRole("option", { name: /crew/ }),
     );
-    const input = screen.getByRole("combobox", { name: "Search Buzz" });
+    const input = screen.getByRole("combobox", { name: "Search Zion" });
     expect(input).toHaveValue("deploy ");
     fireEvent.change(input, { target: { value: "deploy on:" } });
     fireEvent.click(screen.getByRole("button", { name: /October 14th, 2026/ }));
@@ -5387,7 +5306,7 @@ it("holds an early Enter while an in: channel is still being found", async () =>
       />,
     );
     await listStarted;
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     await act(async () => releaseList());
@@ -5442,7 +5361,7 @@ it("holds an early Enter while the joined list is still loading", async () => {
       />,
     );
     await listStarted;
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     // Message search and the people lookup settle empty before the list.
@@ -5937,14 +5856,14 @@ it("finds a person by username and starts a DM with them", async () => {
     expect(row).toHaveTextContent("Alice Chen");
     expect(row).toHaveTextContent("@achen · Start a direct message");
     expect(row).toHaveAttribute("aria-selected", "true");
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     expect(
       await screen.findByText("Opening your conversation with Alice Chen…"),
     ).toBeVisible();
     // A second choice while one is opening does not start another.
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     expect(openConversation).not.toHaveBeenCalled();
@@ -6983,7 +6902,7 @@ it("preserves remembered page ranking when inline settings match", async () => {
       "aria-selected",
       "true",
     );
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     expect(open).toHaveBeenCalledOnce();
@@ -6995,8 +6914,8 @@ it("preserves remembered page ranking when inline settings match", async () => {
 });
 
 it.each([
-  ["buzz", "Channels", "buzz-dev", ["IdentityBuzz"]],
-  ["buzz", "People", "Buzz Aldrin", ["IdentityBuzz"]],
+  ["zion", "Channels", "zion-dev", ["IdentityZion"]],
+  ["zion", "People", "Zion Reader", ["IdentityZion"]],
   [
     "community",
     "Channels",
@@ -7106,7 +7025,7 @@ it.each([
         .getAllByRole("group")
         .map((element) => element.getAttribute("aria-label"));
       expect(groups.indexOf(group)).toBeLessThan(groups.indexOf("Settings"));
-      const input = screen.getByRole("combobox", { name: "Search Buzz" });
+      const input = screen.getByRole("combobox", { name: "Search Zion" });
       expect(input).toHaveAttribute("aria-activedescendant", lead?.id);
       fireEvent.keyDown(input, { key: "Enter" });
       await waitFor(() =>
@@ -7195,7 +7114,7 @@ it("holds an early Enter for a person still being found over a section holding t
   try {
     render(<Palette />);
     await waitFor(() => expect(t.people).toHaveBeenCalled());
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Buzz" }), {
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Search Zion" }), {
       key: "Enter",
     });
     expect(openSection).not.toHaveBeenCalled();

@@ -5,9 +5,7 @@ import { Radio, RadioGroup } from "../../shared/design-system/ui/RadioGroup";
 import { MinusIcon, PlusIcon } from "../../shared/design-system/icons";
 import styles from "./ChannelDurationField.module.css";
 
-/** The temporary lifetimes a person can choose, shortest first. */
-export const CHANNEL_DURATIONS = [86400, 604800, 1209600];
-const durations = CHANNEL_DURATIONS;
+const durations = [86400, 604800, 1209600];
 
 /** Exact temporary lifetime in its largest whole unit, such as "7 days". */
 export function channelDurationLabel(ttlSeconds: number) {

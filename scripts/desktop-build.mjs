@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "vite";
 import {
@@ -95,13 +97,38 @@ if (result.error) console.error(result.error.message);
 if (result.signal) process.kill(process.pid, result.signal);
 if (result.status !== 0) process.exit(result.status ?? 1);
 if (launch) {
+  let app;
+  try {
+    const directory = new URL("../src-tauri/", import.meta.url);
+    let { productName } = JSON.parse(
+      readFileSync(new URL("tauri.conf.json", directory), "utf8"),
+    );
+    // Tauri merges its platform configuration after the base configuration.
+    try {
+      const macOS = JSON.parse(
+        readFileSync(new URL("tauri.macos.conf.json", directory), "utf8"),
+      );
+      if (Object.hasOwn(macOS, "productName")) productName = macOS.productName;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    if (
+      typeof productName !== "string" ||
+      !productName.trim() ||
+      /[/\\\0]/.test(productName)
+    )
+      throw new Error("Tauri productName must name a single app bundle");
+    app = join(root, "target/debug/bundle/macos", `${productName}.app`);
+    if (!statSync(app).isDirectory())
+      throw new Error(`Expected an app bundle directory: ${app}`);
+  } catch (error) {
+    console.error(`Cannot launch built macOS app bundle: ${error.message}`);
+    process.exit(1);
+  }
   if (!config.bundle?.macOS?.signingIdentity)
     console.warn(
       "Warning: this bundle is ad-hoc signed. macOS notifications may reject it; set BUZZ_DEV_SIGNING_IDENTITY to a stable code-signing certificate.",
     );
-  const app = fileURLToPath(
-    new URL("../target/debug/bundle/macos/Buzz.app", import.meta.url),
-  );
   const opened = spawnSync("open", [app], { stdio: "inherit" });
   if (opened.error) console.error(opened.error.message);
   if (opened.signal) process.kill(process.pid, opened.signal);

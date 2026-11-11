@@ -1,4 +1,3 @@
-import { writeJSON } from "../../agent-protection/json-stream";
 // One ACP harness process, driven over line-delimited JSON-RPC. Each
 // conversation is one ACP session in it. Each session gets its own loopback
 // HTTP MCP server for its agent's Buzz tools, which the app serves and
@@ -22,7 +21,7 @@ import type {
  * failed, still leaves the harness's text to post. */
 const ANSWERS = new Set<string>([...MESSAGE_TOOLS, "edit", "react"]);
 const STOPPED =
-  "Buzz stopped this session's tools: another program used their token";
+  "Zion stopped this session's tools: another program used their token";
 
 /** How long a harness has to answer a request that starts it or opens or
  * closes a session. One that does not is stopped. A turn's prompt is never
@@ -187,7 +186,7 @@ export class AcpProcess {
       acp.capabilities = init.agentCapabilities ?? {};
       if (init.agentCapabilities?.mcpCapabilities?.http !== true)
         throw new Error(
-          `This ${hooks.label} cannot reach Buzz tools (no HTTP MCP support)`,
+          `This ${hooks.label} cannot reach Zion tools (no HTTP MCP support)`,
         );
     } catch (error) {
       if (signal?.aborted) {
@@ -245,9 +244,6 @@ export class AcpProcess {
       /** Replaces the harness's own base prompt with `systemPrompt` instead
        * of appending it, for small models that a long prompt throws off. */
       replacePrompt?: boolean;
-      /** Keys the harness can find the session by later; only a harness
-       * whose `newSessionMeta` sends them keeps them. */
-      tags?: Readonly<Record<string, string>>;
       /** Given the session as soon as the harness has opened it, before it
        * is set up, so a caller can close one whose open then fails. */
       onSession?: (session: AcpSession) => void;
@@ -267,7 +263,7 @@ export class AcpProcess {
     const { tools } = launch;
     if (tools) {
       if (!this.serve)
-        throw new Error(`This ${hooks.label} serves no Buzz tools`);
+        throw new Error(`This ${hooks.label} serves no Zion tools`);
       server = await this.serve((message) => this.mcp(tools, session, message));
     }
     const buzz: McpServer | undefined = server && {
@@ -306,7 +302,6 @@ export class AcpProcess {
               ...(title ? { title } : {}),
               provider,
               ...(launch.platform ? { platform: launch.platform } : {}),
-              ...(launch.tags ? { tags: launch.tags } : {}),
             }),
           }),
         },
@@ -449,7 +444,7 @@ export class AcpProcess {
   }
 
   private write(message: Wire) {
-    return writeJSON(this.process, message);
+    return this.process.write(`${JSON.stringify(message)}\n`);
   }
   private readError(data: string) {
     this.stderr = (this.stderr + data).slice(-STDERR_LIMIT);
@@ -511,7 +506,7 @@ export class AcpProcess {
       reply = {
         jsonrpc: "2.0",
         id,
-        error: { code: -32601, message: `Buzz does not handle ${method}` },
+        error: { code: -32601, message: `Zion does not handle ${method}` },
       };
     return this.write(reply).catch(() => undefined);
   }
@@ -533,17 +528,14 @@ export class AcpProcess {
     const call = (params ?? {}) as {
       name?: unknown;
       arguments?: { final?: unknown };
-      _meta?: Record<string, unknown>;
     };
     const worked =
       method === "tools/call" &&
       !response.error &&
       !(response.result as { isError?: unknown } | undefined)?.isError;
     if (worked && ANSWERS.has(String(call.name))) session?.answered();
-    // goose names the ACP tool call behind an MCP call in its `_meta`.
-    const toolCall = call._meta?.["agent-tool-call-request-id"];
     if (worked && isFinalMessage(call.name, call.arguments))
-      session?.finished(typeof toolCall === "string" ? toolCall : undefined);
+      session?.finished();
     return response;
   }
 }

@@ -165,7 +165,6 @@ type Active = {
   effort?: string;
   workspace: string;
   signal: AbortSignal;
-  tools: AbortController;
   /** Every request this turn has taken in, the first and each steered one. */
   requests: Request[];
   /** Latest acknowledged mention per Buzz thread; independent of session scope. */
@@ -321,9 +320,6 @@ export class CodexRuntime {
     { key: string; ready: Promise<Models> }
   >();
   private memoryReads = new MemoryReads();
-  /** A failed turn's notice as the thread reads it, such as where to sign
-   * Codex in again. */
-  explain: (notice: string) => string = (notice) => notice;
   constructor(
     private readonly spawn: Spawn,
     /** What each agent's turns read of its community, while it can be read. */
@@ -1419,10 +1415,6 @@ export class CodexRuntime {
     const server = this.open(agent);
     let loaded: Loaded | undefined;
     let media: Awaited<ReturnType<typeof openVoice>> | undefined;
-    let delegatedThinking = false;
-    let realtimeThinking = false;
-    const thinking = () =>
-      seat.thinking?.(delegatedThinking || realtimeThinking);
     let off = () => {};
     let closing: Promise<void> | undefined;
     const close = () => {
@@ -1474,7 +1466,7 @@ export class CodexRuntime {
           )
             .map((item) => item.value)
             .join("\n") +
-          `\nVoice work acts for owner ${agent.owner}. Buzz tools default to room ${channelId} at top level. This is the room's existing conversation. A turn that starts with <realtime_delegation> is a spoken request: the voice model speaks only your final answer, so put the result there in a few plain spoken sentences, not in a send. When you delegate, say only a short acknowledgement, then wait: never state a fact the delegated work has not returned yet.`;
+          `\nVoice work acts for owner ${agent.owner}. Zion tools default to room ${channelId} at top level. This is the room's existing conversation. A turn that starts with <realtime_delegation> is a spoken request: the voice model speaks only your final answer, so put the result there in a few plain spoken sentences, not in a send. When you delegate, say only a short acknowledgement, then wait: never state a fact the delegated work has not returned yet.`;
         loaded = await this.loadThread(
           request,
           entry,
@@ -1509,10 +1501,6 @@ export class CodexRuntime {
               }
             | undefined;
           if (signal.aborted || p?.threadId !== threadId) return;
-          if (method === "turn/started" || method === "turn/completed") {
-            delegatedThinking = method === "turn/started";
-            thinking();
-          }
           if (
             method === "turn/started" &&
             p.turn &&
@@ -1551,10 +1539,6 @@ export class CodexRuntime {
             seat.ended(error);
           },
           instructions,
-          (active) => {
-            realtimeThinking = active;
-            thinking();
-          },
         );
         signal.throwIfAborted();
         this.save(request, entry, key, {
@@ -1932,7 +1916,7 @@ export class CodexRuntime {
         {
           ...params,
           ephemeral: true,
-          dynamicTools: dynamicTools(this.added()),
+          dynamicTools: dynamicTools(this.added(), !!agent.ownerAccess),
         },
       );
       once.threadId = started.thread.id;
@@ -2007,7 +1991,6 @@ export class CodexRuntime {
     if (!active?.requests.includes(request) || active.finished)
       return Promise.resolve();
     active.stopped = true;
-    active.tools.abort(new Error("The owner stopped the turn"));
     active.stopping ??= (async () => {
       try {
         await active.ready;
@@ -2020,10 +2003,7 @@ export class CodexRuntime {
         // A turn that did not stop still reports how it ends, and can be
         // stopped again.
         delete active.stopping;
-        if (!active.finished) {
-          active.stopped = false;
-          active.tools = new AbortController();
-        }
+        if (!active.finished) active.stopped = false;
         throw error;
       }
     })();
@@ -2161,7 +2141,7 @@ export class CodexRuntime {
   private publish(request: Request, content: string) {
     return request.agent.publish({
       kind: 9,
-      content: this.explain(content),
+      content,
       tags: [
         ["h", request.conversation.channelId],
         ...(request.replyRoot !== undefined
@@ -2186,14 +2166,11 @@ export class CodexRuntime {
     if (
       !turn ||
       call.namespace !== "buzz" ||
-      !sessionTools(this.added()).some((tool) => tool.name === call.tool)
+      !sessionTools(this.added(), true).some((tool) => tool.name === call.tool)
     )
-      throw new Error("No active Buzz tool for this thread and turn");
-    const signal = active
-      ? AbortSignal.any([turn.signal, active.tools.signal])
-      : turn.signal;
+      throw new Error("No active Zion tool for this thread and turn");
     const check = () => {
-      signal.throwIfAborted();
+      turn.signal.throwIfAborted();
       if (turn.finished) throw new Error("The Codex turn has ended");
     };
     check();
@@ -2202,7 +2179,7 @@ export class CodexRuntime {
       typeof call.arguments !== "object" ||
       Array.isArray(call.arguments)
     )
-      throw new Error("Buzz tool arguments must be an object");
+      throw new Error("Zion tool arguments must be an object");
     const args = call.arguments as Record<string, unknown>;
     const request = active?.reply;
     const answering = active ? [...active.requests] : [];
@@ -2231,14 +2208,13 @@ export class CodexRuntime {
               this.spawn,
               turn.workspace,
               path,
-              signal,
+              turn.signal,
               agent.protection?.processProtection,
             ),
       check,
-      signal,
-      callSignal: signal,
+      signal: turn.signal,
       memories: async (slug) => {
-        const listing = await this.memories(owner, signal, slug);
+        const listing = await this.memories(owner, turn.signal, slug);
         check();
         return listing;
       },
@@ -2317,13 +2293,13 @@ export class CodexRuntime {
     const { key, pubkey } = request.agent;
     const reads = this.reads(key);
     if (reads?.scope !== request.scope)
-      throw new Error("Buzz is not connected to this community");
+      throw new Error("Zion is not connected to this community");
     const { connection } = reads;
     const listing = await this.memoryReads.read(reads, pubkey, signal, slug);
     signal.throwIfAborted();
     const current = this.reads(key);
     if (current?.scope !== request.scope || current.connection !== connection)
-      throw new Error("Buzz is not connected to this community");
+      throw new Error("Zion is not connected to this community");
     return listing;
   }
   /** Stops the thread's shells. `linger` keeps looking that long: a command
@@ -2593,14 +2569,15 @@ export class CodexRuntime {
       // Resume restores the thread's tools, so one started with other added
       // tools starts fresh.
       const added = this.added();
-      const tools = addedKey(added);
+      const owner = !!agent.ownerAccess;
+      const tools = addedKey(added) + (owner ? ":owner" : "");
       const resuming =
         existing?.workspace === workspace && (existing.tools ?? "") === tools;
       type Started = { thread: { id: string; cwd: string } };
       const start = () =>
         rpc.request<Started>("thread/start", {
           ...params,
-          dynamicTools: dynamicTools(added),
+          dynamicTools: dynamicTools(added, owner),
         });
       const resume = (threadId: string) =>
         rpc.request<Started>("thread/resume", {
@@ -2715,7 +2692,6 @@ export class CodexRuntime {
       finished: false,
       workspace: lane.voice?.loaded.workspace ?? request.settings.workspace,
       signal,
-      tools: new AbortController(),
       requests: [request],
       activity: new Map(),
     };
@@ -3014,12 +2990,12 @@ function follow(
  * keeps a deferred tool from the model until its tool search finds it. Every
  * model in Codex's catalog has tool search (supports_search_tool); one
  * without it would not see deferred tools. */
-const dynamicTools = (added: readonly AddedTool[]) => [
+const dynamicTools = (added: readonly AddedTool[], owner: boolean) => [
   {
     type: "namespace",
     name: "buzz",
-    description: sessionHint(added),
-    tools: sessionTools(added).map(({ load, ...tool }) => ({
+    description: sessionHint(added, owner),
+    tools: sessionTools(added, owner).map(({ load, ...tool }) => ({
       type: "function",
       ...tool,
       ...(load === "search" ? { deferLoading: true } : {}),

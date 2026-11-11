@@ -370,7 +370,7 @@ it("names a plugin built into Buzz as not changeable", async () => {
   const { manager } = fakeManager({}, { builtIn: "buzz.emoji" });
   const call = tools(manager);
   await expect(call("plugin_reload", { id: "buzz.emoji" })).rejects.toThrow(
-    /built into Buzz/,
+    /built into Zion/,
   );
 });
 

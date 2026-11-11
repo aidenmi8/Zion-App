@@ -10,7 +10,6 @@ export async function openVoice(
   output: (samples: number[]) => Promise<void>,
   ended: (error?: Error) => void,
   instructions: string,
-  thinking?: (active: boolean) => void,
 ) {
   signal.throwIfAborted();
   const peer = new RTCPeerConnection();
@@ -105,22 +104,7 @@ export async function openVoice(
     };
     for (const track of destination.stream.getTracks())
       peer.addTrack(track, destination.stream);
-    const events = peer.createDataChannel("oai-events");
-    events.onmessage = ({ data }) => {
-      if (closed || typeof data !== "string") return;
-      try {
-        const event = JSON.parse(data);
-        if (event.type === "response.created") thinking?.(true);
-        if (
-          event.type === "response.done" ||
-          event.type === "output_audio_buffer.started" ||
-          event.type === "input_audio_buffer.speech_started"
-        )
-          thinking?.(false);
-      } catch {
-        /* Ignore non-protocol data. */
-      }
-    };
+    peer.createDataChannel("oai-events");
     off = rpc.onMessage(({ method, params }) => {
       const p = params as
         | { threadId?: string; sdp?: string; message?: string }
