@@ -1242,8 +1242,10 @@ test("member rows hand off to Profiles without trapping or losing keyboard focus
     await expect(dialog).toHaveCount(0);
     await expect(profileTab).toBeFocused();
     await profileTab.press("Escape");
+    await expect(panel).toHaveCount(0);
     await expect(members).toBeFocused();
     await members.press("Enter");
+    await expect(dialog).toBeVisible();
   }
   await dialog.getByRole("button", { name: "Close" }).click();
   await page.evaluate(() =>
