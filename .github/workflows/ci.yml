@@ -385,6 +385,8 @@ jobs:
       browser: ${{ steps.select.outputs.browser }}
       browser_shards: ${{ steps.select.outputs.browser_shards }}
       browser_shard_total: ${{ steps.select.outputs.browser_shard_total }}
+      vitest_shards: ${{ steps.select.outputs.vitest_shards }}
+      vitest_shard_total: ${{ steps.select.outputs.vitest_shard_total }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -398,7 +400,7 @@ jobs:
         run: ./bin/node scripts/flake-check.mjs select HEAD^1 HEAD
 
   flake_vitest:
-    name: Flake check (Vitest, ${{ matrix.batch }}/2)
+    name: Flake check (Vitest, ${{ matrix.shard }}/${{ needs.flake_select.outputs.vitest_shard_total }})
     needs: [flake_select]
     if: needs.flake_select.outputs.vitest != ''
     runs-on: ubuntu-24.04
@@ -406,7 +408,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        batch: [1, 2]
+        shard: ${{ fromJSON(needs.flake_select.outputs.vitest_shards) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -417,14 +419,14 @@ jobs:
           # Match the JavaScript lane's worker contention.
           BUZZ_TEST_WORKERS: "2"
           SELECTED: ${{ needs.flake_select.outputs.vitest }}
-        # Keep ten independent repetitions without serial setup consuming
-        # the job budget; each batch retains two-worker contention.
-        run: ./bin/node scripts/flake-check.mjs vitest --iterations=5 $SELECTED
+        # Each selected filter runs ten times on its own shard. Larger diffs
+        # get more shards without reducing repetition coverage.
+        run: ./bin/node scripts/flake-check.mjs vitest --iterations=10 --shard=${{ matrix.shard }} --shards=${{ needs.flake_select.outputs.vitest_shard_total }} $SELECTED
       - name: Vitest iteration reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: flake-vitest-${{ matrix.batch }}
+          name: flake-vitest-${{ matrix.shard }}
           path: test-results/flake
           retention-days: 7
 
