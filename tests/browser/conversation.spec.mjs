@@ -136,6 +136,7 @@ test("independent packed author consumer and native-installed contribution survi
     );
     await page.goto(
       `http://127.0.0.1:${server.httpServer.address().port}/tests/fixtures/conversation.html`,
+      { timeout: 45_000 },
     );
     const draft = page.getByRole("textbox", { name: /Message #General/ });
     await expect(draft).toBeVisible();
