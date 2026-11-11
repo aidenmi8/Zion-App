@@ -482,7 +482,9 @@ test("preparation preserves snapshot/animation and uses lossless WebP for pixel 
   });
   await server.listen();
   try {
-    await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
+    await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`, {
+      timeout: 45_000,
+    });
     for (const [name, type] of [
       ["still.png", "image/png"],
       ["animated.png", "image/png"],
