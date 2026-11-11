@@ -271,6 +271,33 @@ test("the selection executes every case of a multiline Vitest parameterized test
   );
 });
 
+test("Vitest listing handles more than one MiB of test metadata", (t) => {
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+  process.env.BUZZ_FLAKE_CHECK_FIXTURE = "1";
+  t.after(() => delete process.env.BUZZ_FLAKE_CHECK_FIXTURE);
+  const dir = mkdtempSync(
+    join(root, "tests/fixtures/design-system/flake-selection-large-"),
+  );
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const file = join(dir, "large.test.tsx");
+  writeFileSync(
+    file,
+    [
+      'import { it } from "vitest";',
+      'it.each(Array.from({ length: 1600 }, (_, index) => ["case-" + index + "-" + "x".repeat(700)]))(',
+      '  "%s",',
+      "  () => {},",
+      ");",
+      "",
+    ].join("\n"),
+  );
+  const locations = listVitest([relative(root, file)]).get(
+    relative(root, file),
+  );
+  assert.equal(locations.length, 1600);
+  assert.ok(locations.every((line) => line === 2));
+});
+
 test("hunks inside tests select those tests; shared code, new or unlisted files select the whole file", () => {
   const bodies = [
     { start: 10, end: 22, line: 10 },
